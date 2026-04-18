@@ -1,0 +1,1997 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GiftBox4you - App Screens Preview V2</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+    h1 { text-align: center; color: #fff; margin-bottom: 8px; }
+    .subtitle { text-align: center; color: #888; font-size: 14px; margin-bottom: 40px; }
+
+    .screens-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 40px;
+      justify-content: center;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .screen-wrapper { text-align: center; }
+    .screen-title { color: #E07B5C; font-size: 18px; margin-bottom: 6px; font-weight: 700; }
+    .screen-desc { color: #888; font-size: 12px; margin-bottom: 16px; max-width: 280px; }
+
+    .phone-frame {
+      width: 290px;
+      height: 600px;
+      background: #000;
+      border-radius: 44px;
+      padding: 10px;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      border-radius: 36px;
+      overflow: hidden;
+      position: relative;
+      background: #FDF8F3;
+    }
+
+    .notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 26px;
+      background: #000;
+      border-radius: 0 0 16px 16px;
+      z-index: 100;
+    }
+
+    .replay-btn {
+      margin-top: 16px;
+      padding: 10px 24px;
+      background: #E07B5C;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .replay-btn:hover { background: #D06A4C; }
+
+    /* Common glows for splash-like feel */
+    .screen-glow {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      filter: blur(40px);
+    }
+
+    .glow-coral {
+      background: #E07B5C;
+      opacity: 0.15;
+    }
+
+    .glow-gold {
+      background: #C4956A;
+      opacity: 0.12;
+    }
+
+    /* ========== TAB BAR (IMPROVED) ========== */
+    .tab-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 75px;
+      background: white;
+      border-radius: 28px 28px 0 0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0 8px;
+      box-shadow: 0 -8px 30px rgba(0,0,0,0.08);
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 12px;
+      border-radius: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .tab-item.active {
+      background: rgba(224, 123, 92, 0.1);
+    }
+
+    .tab-icon {
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tab-icon svg {
+      width: 24px;
+      height: 24px;
+      stroke: #AAAAAA;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .tab-item.active .tab-icon svg {
+      stroke: #E07B5C;
+    }
+
+    .tab-label {
+      font-size: 10px;
+      color: #AAAAAA;
+      font-weight: 500;
+    }
+
+    .tab-item.active .tab-label {
+      color: #E07B5C;
+      font-weight: 600;
+    }
+
+    /* ========== LOGIN SCREEN ========== */
+    .login-screen {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .login-header {
+      height: 220px;
+      background: linear-gradient(145deg, #E07B5C 0%, #D06A4C 50%, #C4956A 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding-top: 30px;
+    }
+
+    .login-header::after {
+      content: '';
+      position: absolute;
+      bottom: -25px;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background: #FDF8F3;
+      border-radius: 40px 40px 0 0;
+    }
+
+    .login-logo {
+      width: 75px;
+      height: 75px;
+      background: white;
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+      opacity: 0;
+      transform: scale(0.5);
+      animation: logoPop 0.6s ease-out 0.3s forwards;
+    }
+
+    @keyframes logoPop {
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .login-logo svg {
+      width: 36px;
+      height: 36px;
+      fill: #E07B5C;
+    }
+
+    .login-welcome {
+      color: white;
+      font-size: 26px;
+      font-weight: 700;
+      opacity: 0;
+      animation: fadeUp 0.5s ease-out 0.5s forwards;
+    }
+
+    .login-subtitle {
+      color: rgba(255,255,255,0.85);
+      font-size: 14px;
+      margin-top: 6px;
+      opacity: 0;
+      animation: fadeUp 0.5s ease-out 0.65s forwards;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .login-form {
+      flex: 1;
+      padding: 30px 22px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .input-group {
+      margin-bottom: 18px;
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+
+    .input-group:nth-child(1) { animation: inputSlide 0.5s ease-out 0.8s forwards; }
+    .input-group:nth-child(2) { animation: inputSlide 0.5s ease-out 0.9s forwards; }
+
+    @keyframes inputSlide {
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .input-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #3D3D3D;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1.5px solid #F5E6DA;
+      border-radius: 14px;
+      background: white;
+      font-size: 14px;
+      color: #3D3D3D;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .input-field svg {
+      width: 20px;
+      height: 20px;
+      stroke: #AAAAAA;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .input-placeholder {
+      color: #AAAAAA;
+      font-size: 14px;
+    }
+
+    .forgot-link {
+      text-align: right;
+      margin-bottom: 22px;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 1s forwards;
+    }
+
+    .forgot-link span {
+      color: #E07B5C;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #E07B5C, #D06A4C);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 12px 30px rgba(224, 123, 92, 0.35);
+      opacity: 0;
+      transform: translateY(20px);
+      animation: btnPop 0.5s ease-out 1.1s forwards;
+    }
+
+    @keyframes btnPop {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .login-btn-text {
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .login-btn-icon {
+      width: 30px;
+      height: 30px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-btn-icon svg {
+      width: 16px;
+      height: 16px;
+      stroke: #E07B5C;
+      stroke-width: 2.5;
+      fill: none;
+    }
+
+    .login-divider {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 22px 0;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 1.2s forwards;
+    }
+
+    .login-divider-line {
+      flex: 1;
+      height: 1px;
+      background: #EDE5DD;
+    }
+
+    .login-divider-text {
+      color: #AAAAAA;
+      font-size: 12px;
+    }
+
+    .social-btns {
+      display: flex;
+      gap: 12px;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 1.3s forwards;
+    }
+
+    .social-btn {
+      flex: 1;
+      padding: 14px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1.5px solid #F5E6DA;
+      background: white;
+    }
+
+    .social-btn.apple {
+      background: #1F2937;
+      border-color: #1F2937;
+    }
+
+    .social-btn-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: #3D3D3D;
+    }
+
+    .social-btn.apple .social-btn-text {
+      color: white;
+    }
+
+    .signup-link {
+      text-align: center;
+      margin-top: 20px;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 1.4s forwards;
+    }
+
+    .signup-link span {
+      color: #888;
+      font-size: 14px;
+    }
+
+    .signup-link strong {
+      color: #E07B5C;
+      font-weight: 700;
+    }
+
+    /* ========== HOME SCREEN ========== */
+    .home-screen {
+      padding: 55px 18px 85px;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .home-screen .screen-glow.glow-coral {
+      width: 180px;
+      height: 180px;
+      top: -60px;
+      right: -60px;
+      animation: glowPulse 4s ease-in-out infinite;
+    }
+
+    .home-screen .screen-glow.glow-gold {
+      width: 150px;
+      height: 150px;
+      bottom: 100px;
+      left: -50px;
+      animation: glowPulse 4s ease-in-out infinite 2s;
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { opacity: 0.12; transform: scale(1); }
+      50% { opacity: 0.18; transform: scale(1.1); }
+    }
+
+    .home-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 22px;
+      opacity: 0;
+      animation: fadeSlideDown 0.6s ease-out 0.2s forwards;
+    }
+
+    .greeting { font-size: 13px; color: #888; }
+    .user-name { font-size: 22px; font-weight: 700; color: #3D3D3D; }
+
+    .home-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #E07B5C, #C4956A);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 18px;
+      box-shadow: 0 8px 20px rgba(224, 123, 92, 0.3);
+    }
+
+    .quick-stats {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .stat-card {
+      flex: 1;
+      background: white;
+      border-radius: 18px;
+      padding: 16px 12px;
+      text-align: center;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+      position: relative;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #E07B5C, #C4956A);
+    }
+
+    .stat-card:nth-child(1) { animation: statSlideUp 0.5s ease-out 0.4s forwards; }
+    .stat-card:nth-child(2) { animation: statSlideUp 0.5s ease-out 0.5s forwards; }
+    .stat-card:nth-child(3) { animation: statSlideUp 0.5s ease-out 0.6s forwards; }
+
+    @keyframes statSlideUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .stat-icon {
+      width: 36px;
+      height: 36px;
+      margin: 0 auto 8px;
+      background: rgba(224, 123, 92, 0.1);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stat-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: #E07B5C;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .stat-number {
+      font-size: 22px;
+      font-weight: 700;
+      color: #3D3D3D;
+    }
+
+    .stat-label { font-size: 11px; color: #888; margin-top: 2px; }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      opacity: 0;
+      animation: fadeSlideDown 0.5s ease-out 0.7s forwards;
+    }
+
+    .section-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #3D3D3D;
+    }
+
+    .see-all {
+      font-size: 13px;
+      color: #E07B5C;
+      font-weight: 600;
+    }
+
+    .upcoming-card {
+      background: linear-gradient(135deg, #E07B5C 0%, #D06A4C 100%);
+      border-radius: 22px;
+      padding: 18px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 12px 30px rgba(224, 123, 92, 0.3);
+      position: relative;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateX(-30px);
+      animation: cardSlideIn 0.6s ease-out 0.9s forwards;
+    }
+
+    .upcoming-card::before {
+      content: '';
+      position: absolute;
+      top: -30px;
+      right: -30px;
+      width: 100px;
+      height: 100px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 50%;
+    }
+
+    @keyframes cardSlideIn {
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .upcoming-icon {
+      width: 55px;
+      height: 55px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .upcoming-icon svg {
+      width: 28px;
+      height: 28px;
+      stroke: white;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .upcoming-info { flex: 1; }
+    .upcoming-name { color: white; font-weight: 600; font-size: 16px; }
+    .upcoming-date { color: rgba(255,255,255,0.8); font-size: 13px; margin-top: 4px; }
+    .upcoming-days {
+      background: white;
+      color: #E07B5C;
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .recent-card {
+      background: white;
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+      opacity: 0;
+      transform: scale(0.9);
+      animation: cardPop 0.5s ease-out 1.1s forwards;
+    }
+
+    @keyframes cardPop {
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .recent-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #6B7FD7, #5A6EC6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 18px;
+    }
+
+    .recent-info { flex: 1; }
+    .recent-name { font-size: 15px; font-weight: 600; color: #3D3D3D; }
+    .recent-event { font-size: 12px; color: #888; margin-top: 2px; }
+    .recent-badge {
+      background: linear-gradient(135deg, #4CAF78, #3D9E69);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    @keyframes fadeSlideDown {
+      from { opacity: 0; transform: translateY(-15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========== CALENDAR SCREEN ========== */
+    .calendar-screen {
+      padding: 55px 18px 85px;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .calendar-screen .screen-glow.glow-coral {
+      width: 200px;
+      height: 200px;
+      top: -80px;
+      left: 50%;
+      transform: translateX(-50%);
+      animation: glowPulse 4s ease-in-out infinite;
+    }
+
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: fadeSlideDown 0.5s ease-out 0.2s forwards;
+    }
+
+    .cal-month-nav {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .cal-arrow {
+      width: 36px;
+      height: 36px;
+      background: white;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .cal-arrow svg {
+      width: 18px;
+      height: 18px;
+      stroke: #E07B5C;
+      stroke-width: 2.5;
+      fill: none;
+    }
+
+    .cal-month {
+      font-size: 20px;
+      font-weight: 700;
+      color: #3D3D3D;
+    }
+
+    .cal-today-btn {
+      padding: 10px 16px;
+      background: linear-gradient(135deg, #E07B5C, #D06A4C);
+      border-radius: 12px;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 6px 18px rgba(224, 123, 92, 0.3);
+    }
+
+    .cal-grid {
+      background: white;
+      border-radius: 24px;
+      padding: 18px;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.06);
+      opacity: 0;
+      transform: scale(0.95);
+      animation: calendarPop 0.6s ease-out 0.4s forwards;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cal-grid::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #E07B5C, #C4956A, #F5A623, #4CAF78, #6B7FD7);
+    }
+
+    @keyframes calendarPop {
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .cal-weekday {
+      text-align: center;
+      font-size: 12px;
+      color: #888;
+      font-weight: 600;
+      padding: 8px 0;
+    }
+
+    .cal-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+
+    .cal-day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #3D3D3D;
+      font-weight: 500;
+      border-radius: 12px;
+      position: relative;
+      opacity: 0;
+      animation: dayFadeIn 0.3s ease-out forwards;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .cal-day:hover {
+      background: #F5E6DA;
+    }
+
+    .cal-day.today {
+      background: linear-gradient(135deg, #E07B5C, #D06A4C);
+      color: white;
+      font-weight: 700;
+      box-shadow: 0 6px 18px rgba(224, 123, 92, 0.4);
+    }
+
+    .cal-day.has-event::after {
+      content: '';
+      position: absolute;
+      bottom: 5px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #E07B5C;
+    }
+
+    .cal-day.today.has-event::after {
+      background: white;
+    }
+
+    .cal-day.has-event.green::after { background: #4CAF78; }
+    .cal-day.has-event.purple::after { background: #6B7FD7; }
+    .cal-day.has-event.gold::after { background: #F5A623; }
+
+    @keyframes dayFadeIn {
+      to { opacity: 1; }
+    }
+
+    .cal-legend {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #F5E6DA;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #888;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .cal-events {
+      margin-top: 18px;
+    }
+
+    .cal-events-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #3D3D3D;
+      margin-bottom: 12px;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 0.7s forwards;
+    }
+
+    .cal-event-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      background: white;
+      border-radius: 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+      opacity: 0;
+      transform: translateY(15px);
+      border-left: 4px solid;
+    }
+
+    .cal-event-item:nth-child(1) { animation: eventSlide 0.5s ease-out 0.8s forwards; border-color: #E07B5C; }
+    .cal-event-item:nth-child(2) { animation: eventSlide 0.5s ease-out 0.95s forwards; border-color: #6B7FD7; }
+
+    @keyframes eventSlide {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .cal-event-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cal-event-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .cal-event-info { flex: 1; }
+    .cal-event-name { font-size: 14px; font-weight: 600; color: #3D3D3D; }
+    .cal-event-date { font-size: 12px; color: #888; margin-top: 2px; }
+
+    .cal-event-days {
+      font-size: 11px;
+      font-weight: 600;
+      color: #E07B5C;
+      background: rgba(224, 123, 92, 0.1);
+      padding: 6px 10px;
+      border-radius: 8px;
+    }
+
+    /* ========== CIRCLES SCREEN ========== */
+    .circles-screen {
+      padding: 55px 18px 85px;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .circles-screen .screen-glow.glow-coral {
+      width: 160px;
+      height: 160px;
+      top: -50px;
+      right: -50px;
+      animation: glowPulse 4s ease-in-out infinite;
+    }
+
+    .circles-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+      opacity: 0;
+      animation: fadeSlideDown 0.5s ease-out 0.2s forwards;
+    }
+
+    .circles-title { font-size: 22px; font-weight: 700; color: #3D3D3D; }
+
+    .add-circle-btn {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #E07B5C, #D06A4C);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 20px rgba(224, 123, 92, 0.35);
+    }
+
+    .add-circle-btn svg {
+      width: 22px;
+      height: 22px;
+      stroke: white;
+      stroke-width: 2.5;
+      fill: none;
+    }
+
+    .circle-card {
+      background: white;
+      border-radius: 22px;
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+      opacity: 0;
+      transform: translateY(20px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .circle-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(224, 123, 92, 0.1), transparent);
+    }
+
+    .circle-card:nth-child(1) { animation: circleSlide 0.5s ease-out 0.4s forwards; }
+    .circle-card:nth-child(2) { animation: circleSlide 0.5s ease-out 0.55s forwards; }
+    .circle-card:nth-child(3) { animation: circleSlide 0.5s ease-out 0.7s forwards; }
+
+    @keyframes circleSlide {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .circle-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .circle-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .circle-icon.family { background: rgba(224, 123, 92, 0.15); }
+    .circle-icon.work { background: rgba(107, 127, 215, 0.15); }
+    .circle-icon.friends { background: rgba(76, 175, 120, 0.15); }
+
+    .circle-name { font-size: 17px; font-weight: 700; color: #3D3D3D; flex: 1; margin-left: 12px; }
+
+    .circle-count {
+      background: #F5E6DA;
+      color: #E07B5C;
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .circle-avatars {
+      display: flex;
+    }
+
+    .circle-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      border: 3px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      margin-left: -12px;
+      opacity: 0;
+      transform: scale(0);
+    }
+
+    .circle-avatar:first-child { margin-left: 0; }
+
+    .circle-card:nth-child(1) .circle-avatar:nth-child(1) { animation: avatarPop 0.4s ease-out 0.7s forwards; background: linear-gradient(135deg, #E07B5C, #D06A4C); }
+    .circle-card:nth-child(1) .circle-avatar:nth-child(2) { animation: avatarPop 0.4s ease-out 0.8s forwards; background: linear-gradient(135deg, #6B7FD7, #5A6EC6); }
+    .circle-card:nth-child(1) .circle-avatar:nth-child(3) { animation: avatarPop 0.4s ease-out 0.9s forwards; background: linear-gradient(135deg, #4CAF78, #3D9E69); }
+    .circle-card:nth-child(1) .circle-avatar:nth-child(4) { animation: avatarPop 0.4s ease-out 1s forwards; background: #F5E6DA; color: #E07B5C; }
+
+    .circle-card:nth-child(2) .circle-avatar:nth-child(1) { animation: avatarPop 0.4s ease-out 0.85s forwards; background: linear-gradient(135deg, #C4956A, #A67B52); }
+    .circle-card:nth-child(2) .circle-avatar:nth-child(2) { animation: avatarPop 0.4s ease-out 0.95s forwards; background: linear-gradient(135deg, #F5A623, #E69612); }
+    .circle-card:nth-child(2) .circle-avatar:nth-child(3) { animation: avatarPop 0.4s ease-out 1.05s forwards; background: #F5E6DA; color: #E07B5C; }
+
+    .circle-card:nth-child(3) .circle-avatar:nth-child(1) { animation: avatarPop 0.4s ease-out 1s forwards; background: linear-gradient(135deg, #6B7FD7, #5A6EC6); }
+    .circle-card:nth-child(3) .circle-avatar:nth-child(2) { animation: avatarPop 0.4s ease-out 1.1s forwards; background: #F5E6DA; color: #E07B5C; }
+
+    @keyframes avatarPop {
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* ========== GIFTS SCREEN ========== */
+    .gifts-screen {
+      padding: 55px 18px 85px;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .gifts-screen .screen-glow.glow-gold {
+      width: 180px;
+      height: 180px;
+      bottom: 100px;
+      right: -60px;
+      animation: glowPulse 4s ease-in-out infinite;
+    }
+
+    .gifts-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      opacity: 0;
+      animation: fadeSlideDown 0.5s ease-out 0.2s forwards;
+    }
+
+    .gifts-title { font-size: 22px; font-weight: 700; color: #3D3D3D; }
+
+    .search-btn {
+      width: 44px;
+      height: 44px;
+      background: white;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+
+    .search-btn svg {
+      width: 22px;
+      height: 22px;
+      stroke: #888;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .gifts-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: fadeSlideDown 0.5s ease-out 0.35s forwards;
+    }
+
+    .gift-tab {
+      padding: 12px 20px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 600;
+      background: white;
+      color: #888;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+    .gift-tab.active {
+      background: linear-gradient(135deg, #E07B5C, #D06A4C);
+      color: white;
+      box-shadow: 0 8px 20px rgba(224, 123, 92, 0.3);
+    }
+
+    .gift-card {
+      background: white;
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 14px;
+      display: flex;
+      gap: 16px;
+      box-shadow: 0 6px 22px rgba(0,0,0,0.05);
+      opacity: 0;
+      transform: translateX(30px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .gift-card::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 100px;
+      height: 100px;
+      background: linear-gradient(135deg, transparent, rgba(224, 123, 92, 0.05));
+      border-radius: 50%;
+    }
+
+    .gift-card:nth-child(1) { animation: giftCardSlide 0.6s ease-out 0.5s forwards; }
+    .gift-card:nth-child(2) { animation: giftCardSlide 0.6s ease-out 0.65s forwards; }
+    .gift-card:nth-child(3) { animation: giftCardSlide 0.6s ease-out 0.8s forwards; }
+
+    @keyframes giftCardSlide {
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .gift-image {
+      width: 75px;
+      height: 75px;
+      background: linear-gradient(135deg, #F5E6DA, #FDF8F3);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+    }
+
+    .gift-info { flex: 1; }
+    .gift-name { font-size: 16px; font-weight: 600; color: #3D3D3D; margin-bottom: 4px; }
+    .gift-for { font-size: 13px; color: #888; margin-bottom: 10px; }
+
+    .gift-price {
+      display: inline-block;
+      background: linear-gradient(135deg, #E07B5C, #D06A4C);
+      color: white;
+      padding: 6px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .gift-action {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .gift-heart {
+      width: 36px;
+      height: 36px;
+      background: rgba(224, 123, 92, 0.1);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gift-heart svg {
+      width: 20px;
+      height: 20px;
+      fill: #E07B5C;
+      stroke: #E07B5C;
+    }
+
+    .gift-heart.empty svg {
+      fill: none;
+      stroke: #AAAAAA;
+    }
+
+    /* ========== PROFILE SCREEN ========== */
+    .profile-screen {
+      padding: 55px 18px 85px;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .profile-screen .screen-glow.glow-coral {
+      width: 200px;
+      height: 200px;
+      top: -80px;
+      left: 50%;
+      transform: translateX(-50%);
+      animation: glowPulse 4s ease-in-out infinite;
+    }
+
+    .profile-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .profile-avatar {
+      width: 95px;
+      height: 95px;
+      border-radius: 30px;
+      background: linear-gradient(135deg, #E07B5C, #C4956A);
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 38px;
+      color: white;
+      font-weight: 600;
+      position: relative;
+      box-shadow: 0 15px 40px rgba(224, 123, 92, 0.35);
+      opacity: 0;
+      transform: scale(0.5);
+      animation: profilePop 0.7s ease-out 0.3s forwards;
+    }
+
+    @keyframes profilePop {
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .profile-badge {
+      position: absolute;
+      bottom: -4px;
+      right: -4px;
+      width: 30px;
+      height: 30px;
+      background: linear-gradient(135deg, #4CAF78, #3D9E69);
+      border-radius: 10px;
+      border: 3px solid #FDF8F3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .profile-badge svg {
+      width: 14px;
+      height: 14px;
+      stroke: white;
+      stroke-width: 3;
+      fill: none;
+    }
+
+    .profile-name {
+      font-size: 24px;
+      font-weight: 700;
+      color: #3D3D3D;
+      opacity: 0;
+      animation: fadeUp 0.5s ease-out 0.5s forwards;
+    }
+
+    .profile-email {
+      font-size: 14px;
+      color: #888;
+      margin-top: 4px;
+      opacity: 0;
+      animation: fadeUp 0.5s ease-out 0.6s forwards;
+    }
+
+    .profile-stats {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 26px;
+    }
+
+    .profile-stat {
+      flex: 1;
+      background: white;
+      border-radius: 20px;
+      padding: 18px 12px;
+      text-align: center;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+      position: relative;
+      overflow: hidden;
+      opacity: 0;
+      transform: scale(0.8);
+    }
+
+    .profile-stat::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+    }
+
+    .profile-stat:nth-child(1)::before { background: #E07B5C; }
+    .profile-stat:nth-child(2)::before { background: #F5A623; }
+    .profile-stat:nth-child(3)::before { background: #6B7FD7; }
+
+    .profile-stat:nth-child(1) { animation: statPop 0.5s ease-out 0.65s forwards; }
+    .profile-stat:nth-child(2) { animation: statPop 0.5s ease-out 0.75s forwards; }
+    .profile-stat:nth-child(3) { animation: statPop 0.5s ease-out 0.85s forwards; }
+
+    @keyframes statPop {
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .profile-stat-num {
+      font-size: 28px;
+      font-weight: 700;
+      color: #3D3D3D;
+    }
+
+    .profile-stat-label {
+      font-size: 12px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .profile-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      background: white;
+      border-radius: 18px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+
+    .profile-menu-item:nth-child(1) { animation: menuSlide 0.4s ease-out 0.95s forwards; }
+    .profile-menu-item:nth-child(2) { animation: menuSlide 0.4s ease-out 1.05s forwards; }
+    .profile-menu-item:nth-child(3) { animation: menuSlide 0.4s ease-out 1.15s forwards; }
+
+    @keyframes menuSlide {
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .menu-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .menu-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .menu-icon.coral { background: rgba(224, 123, 92, 0.12); }
+    .menu-icon.coral svg { stroke: #E07B5C; }
+    .menu-icon.purple { background: rgba(107, 127, 215, 0.12); }
+    .menu-icon.purple svg { stroke: #6B7FD7; }
+    .menu-icon.green { background: rgba(76, 175, 120, 0.12); }
+    .menu-icon.green svg { stroke: #4CAF78; }
+
+    .menu-info { flex: 1; }
+    .menu-title { font-size: 15px; font-weight: 600; color: #3D3D3D; }
+    .menu-desc { font-size: 12px; color: #888; margin-top: 2px; }
+
+    .menu-arrow {
+      width: 32px;
+      height: 32px;
+      background: #F5E6DA;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .menu-arrow svg {
+      width: 16px;
+      height: 16px;
+      stroke: #E07B5C;
+      stroke-width: 2.5;
+      fill: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>App Screens Preview V2</h1>
+  <p class="subtitle">Warm Cream + Rich Coral | Splash-like feel with proper icons</p>
+
+  <div class="screens-grid">
+
+    <!-- LOGIN SCREEN -->
+    <div class="screen-wrapper">
+      <div class="screen-title">Login Screen</div>
+      <p class="screen-desc">Gradient header with animated form elements</p>
+      <div class="phone-frame">
+        <div class="notch"></div>
+        <div class="phone-screen" id="loginScreen">
+          <div class="login-screen">
+            <div class="login-header">
+              <div class="login-logo">
+                <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" stroke="#E07B5C" stroke-width="2" fill="none"/></svg>
+              </div>
+              <div class="login-welcome">Welcome Back!</div>
+              <div class="login-subtitle">Sign in to continue</div>
+            </div>
+
+            <div class="login-form">
+              <div class="input-group">
+                <span class="input-label">Email</span>
+                <div class="input-field">
+                  <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  <span class="input-placeholder">Enter your email</span>
+                </div>
+              </div>
+
+              <div class="input-group">
+                <span class="input-label">Password</span>
+                <div class="input-field">
+                  <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <span class="input-placeholder">Enter your password</span>
+                </div>
+              </div>
+
+              <div class="forgot-link">
+                <span>Forgot Password?</span>
+              </div>
+
+              <div class="login-btn">
+                <span class="login-btn-text">Sign In</span>
+                <div class="login-btn-icon">
+                  <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </div>
+              </div>
+
+              <div class="login-divider">
+                <div class="login-divider-line"></div>
+                <span class="login-divider-text">or continue with</span>
+                <div class="login-divider-line"></div>
+              </div>
+
+              <div class="social-btns">
+                <div class="social-btn">
+                  <span style="font-weight: 700; color: #4285F4;">G</span>
+                  <span class="social-btn-text">Google</span>
+                </div>
+                <div class="social-btn apple">
+                  <span style="font-size: 18px; color: white;"></span>
+                  <span class="social-btn-text">Apple</span>
+                </div>
+              </div>
+
+              <div class="signup-link">
+                <span>Don't have an account? </span>
+                <strong>Sign Up</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="replay-btn" onclick="replay('loginScreen')">Replay</button>
+    </div>
+
+    <!-- HOME SCREEN -->
+    <div class="screen-wrapper">
+      <div class="screen-title">Home Screen</div>
+      <p class="screen-desc">Dashboard with warm glows & animated stats</p>
+      <div class="phone-frame">
+        <div class="notch"></div>
+        <div class="phone-screen" id="homeScreen">
+          <div class="home-screen">
+            <div class="screen-glow glow-coral"></div>
+            <div class="screen-glow glow-gold"></div>
+
+            <div class="home-header">
+              <div>
+                <div class="greeting">Good Morning</div>
+                <div class="user-name">Sarah Johnson</div>
+              </div>
+              <div class="home-avatar">SJ</div>
+            </div>
+
+            <div class="quick-stats">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <div class="stat-number">12</div>
+                <div class="stat-label">Upcoming</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <div class="stat-number">48</div>
+                <div class="stat-label">Contacts</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+                </div>
+                <div class="stat-number">23</div>
+                <div class="stat-label">Gifts</div>
+              </div>
+            </div>
+
+            <div class="section-header">
+              <div class="section-title">Upcoming Events</div>
+              <div class="see-all">See All</div>
+            </div>
+
+            <div class="upcoming-card">
+              <div class="upcoming-icon">
+                <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="white" fill="none"/></svg>
+              </div>
+              <div class="upcoming-info">
+                <div class="upcoming-name">Mom's Birthday</div>
+                <div class="upcoming-date">Dec 15, 2024</div>
+              </div>
+              <div class="upcoming-days">3 days</div>
+            </div>
+
+            <div class="section-header">
+              <div class="section-title">Recent Activity</div>
+            </div>
+
+            <div class="recent-card">
+              <div class="recent-avatar">DW</div>
+              <div class="recent-info">
+                <div class="recent-name">David Wilson</div>
+                <div class="recent-event">Added to Family circle</div>
+              </div>
+              <div class="recent-badge">New</div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item active">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+                <div class="tab-label">Home</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                <div class="tab-label">Calendar</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                <div class="tab-label">Circles</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
+                <div class="tab-label">Gifts</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                <div class="tab-label">Profile</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="replay-btn" onclick="replay('homeScreen')">Replay</button>
+    </div>
+
+    <!-- CALENDAR SCREEN -->
+    <div class="screen-wrapper">
+      <div class="screen-title">Calendar Screen</div>
+      <p class="screen-desc">Colorful calendar with rainbow top border</p>
+      <div class="phone-frame">
+        <div class="notch"></div>
+        <div class="phone-screen" id="calendarScreen">
+          <div class="calendar-screen">
+            <div class="screen-glow glow-coral"></div>
+
+            <div class="cal-header">
+              <div class="cal-month-nav">
+                <div class="cal-arrow"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+                <div class="cal-month">December 2024</div>
+                <div class="cal-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+              </div>
+              <div class="cal-today-btn">Today</div>
+            </div>
+
+            <div class="cal-grid">
+              <div class="cal-weekdays">
+                <div class="cal-weekday">Sun</div>
+                <div class="cal-weekday">Mon</div>
+                <div class="cal-weekday">Tue</div>
+                <div class="cal-weekday">Wed</div>
+                <div class="cal-weekday">Thu</div>
+                <div class="cal-weekday">Fri</div>
+                <div class="cal-weekday">Sat</div>
+              </div>
+              <div class="cal-days">
+                <div class="cal-day" style="animation-delay: 0.5s">1</div>
+                <div class="cal-day" style="animation-delay: 0.52s">2</div>
+                <div class="cal-day" style="animation-delay: 0.54s">3</div>
+                <div class="cal-day" style="animation-delay: 0.56s">4</div>
+                <div class="cal-day has-event" style="animation-delay: 0.58s">5</div>
+                <div class="cal-day" style="animation-delay: 0.6s">6</div>
+                <div class="cal-day" style="animation-delay: 0.62s">7</div>
+                <div class="cal-day" style="animation-delay: 0.64s">8</div>
+                <div class="cal-day" style="animation-delay: 0.66s">9</div>
+                <div class="cal-day has-event green" style="animation-delay: 0.68s">10</div>
+                <div class="cal-day" style="animation-delay: 0.7s">11</div>
+                <div class="cal-day today has-event" style="animation-delay: 0.72s">12</div>
+                <div class="cal-day" style="animation-delay: 0.74s">13</div>
+                <div class="cal-day" style="animation-delay: 0.76s">14</div>
+                <div class="cal-day has-event" style="animation-delay: 0.78s">15</div>
+                <div class="cal-day" style="animation-delay: 0.8s">16</div>
+                <div class="cal-day" style="animation-delay: 0.82s">17</div>
+                <div class="cal-day" style="animation-delay: 0.84s">18</div>
+                <div class="cal-day" style="animation-delay: 0.86s">19</div>
+                <div class="cal-day has-event purple" style="animation-delay: 0.88s">20</div>
+                <div class="cal-day" style="animation-delay: 0.9s">21</div>
+              </div>
+
+              <div class="cal-legend">
+                <div class="legend-item"><div class="legend-dot" style="background: #E07B5C;"></div>Birthday</div>
+                <div class="legend-item"><div class="legend-dot" style="background: #6B7FD7;"></div>Anniversary</div>
+                <div class="legend-item"><div class="legend-dot" style="background: #4CAF78;"></div>Wedding</div>
+              </div>
+            </div>
+
+            <div class="cal-events">
+              <div class="cal-events-title">This Week</div>
+
+              <div class="cal-event-item">
+                <div class="cal-event-icon" style="background: rgba(224, 123, 92, 0.12);">
+                  <svg viewBox="0 0 24 24" stroke="#E07B5C"><path d="M20 12v10H4V12M2 7h20v5H2z"/></svg>
+                </div>
+                <div class="cal-event-info">
+                  <div class="cal-event-name">Mom's Birthday</div>
+                  <div class="cal-event-date">Dec 15, 2024</div>
+                </div>
+                <div class="cal-event-days">3 days</div>
+              </div>
+
+              <div class="cal-event-item">
+                <div class="cal-event-icon" style="background: rgba(107, 127, 215, 0.12);">
+                  <svg viewBox="0 0 24 24" stroke="#6B7FD7"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                </div>
+                <div class="cal-event-info">
+                  <div class="cal-event-name">Anniversary</div>
+                  <div class="cal-event-date">Dec 20, 2024</div>
+                </div>
+                <div class="cal-event-days" style="background: rgba(107, 127, 215, 0.1); color: #6B7FD7;">8 days</div>
+              </div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+                <div class="tab-label">Home</div>
+              </div>
+              <div class="tab-item active">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                <div class="tab-label">Calendar</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                <div class="tab-label">Circles</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
+                <div class="tab-label">Gifts</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                <div class="tab-label">Profile</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="replay-btn" onclick="replay('calendarScreen')">Replay</button>
+    </div>
+
+    <!-- CIRCLES SCREEN -->
+    <div class="screen-wrapper">
+      <div class="screen-title">Circles Screen</div>
+      <p class="screen-desc">Friend groups with gradient avatars</p>
+      <div class="phone-frame">
+        <div class="notch"></div>
+        <div class="phone-screen" id="circlesScreen">
+          <div class="circles-screen">
+            <div class="screen-glow glow-coral"></div>
+
+            <div class="circles-header">
+              <div class="circles-title">My Circles</div>
+              <div class="add-circle-btn">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </div>
+            </div>
+
+            <div class="circle-card">
+              <div class="circle-top">
+                <div class="circle-icon family">👨‍👩‍👧‍👦</div>
+                <div class="circle-name">Family</div>
+                <div class="circle-count">8 members</div>
+              </div>
+              <div class="circle-avatars">
+                <div class="circle-avatar">M</div>
+                <div class="circle-avatar">D</div>
+                <div class="circle-avatar">S</div>
+                <div class="circle-avatar">+5</div>
+              </div>
+            </div>
+
+            <div class="circle-card">
+              <div class="circle-top">
+                <div class="circle-icon work">💼</div>
+                <div class="circle-name">Work Friends</div>
+                <div class="circle-count">5 members</div>
+              </div>
+              <div class="circle-avatars">
+                <div class="circle-avatar">J</div>
+                <div class="circle-avatar">A</div>
+                <div class="circle-avatar">+3</div>
+              </div>
+            </div>
+
+            <div class="circle-card">
+              <div class="circle-top">
+                <div class="circle-icon friends">🎓</div>
+                <div class="circle-name">College</div>
+                <div class="circle-count">3 members</div>
+              </div>
+              <div class="circle-avatars">
+                <div class="circle-avatar">R</div>
+                <div class="circle-avatar">+2</div>
+              </div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+                <div class="tab-label">Home</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                <div class="tab-label">Calendar</div>
+              </div>
+              <div class="tab-item active">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                <div class="tab-label">Circles</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
+                <div class="tab-label">Gifts</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                <div class="tab-label">Profile</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="replay-btn" onclick="replay('circlesScreen')">Replay</button>
+    </div>
+
+    <!-- GIFTS SCREEN -->
+    <div class="screen-wrapper">
+      <div class="screen-title">Gifts Screen</div>
+      <p class="screen-desc">Gift ideas with heart animations</p>
+      <div class="phone-frame">
+        <div class="notch"></div>
+        <div class="phone-screen" id="giftsScreen">
+          <div class="gifts-screen">
+            <div class="screen-glow glow-gold"></div>
+
+            <div class="gifts-header">
+              <div class="gifts-title">Gift Ideas</div>
+              <div class="search-btn">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </div>
+            </div>
+
+            <div class="gifts-tabs">
+              <div class="gift-tab active">All</div>
+              <div class="gift-tab">Saved</div>
+              <div class="gift-tab">Purchased</div>
+            </div>
+
+            <div class="gift-card">
+              <div class="gift-image">📱</div>
+              <div class="gift-info">
+                <div class="gift-name">Wireless Earbuds</div>
+                <div class="gift-for">For: Mom's Birthday</div>
+                <div class="gift-price">$79.99</div>
+              </div>
+              <div class="gift-action">
+                <div class="gift-heart">
+                  <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="gift-card">
+              <div class="gift-image">📚</div>
+              <div class="gift-info">
+                <div class="gift-name">Bestseller Book Set</div>
+                <div class="gift-for">For: Dad's Birthday</div>
+                <div class="gift-price">$45.00</div>
+              </div>
+              <div class="gift-action">
+                <div class="gift-heart empty">
+                  <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="gift-card">
+              <div class="gift-image">🎨</div>
+              <div class="gift-info">
+                <div class="gift-name">Art Supply Kit</div>
+                <div class="gift-for">For: Sister's Graduation</div>
+                <div class="gift-price">$59.99</div>
+              </div>
+              <div class="gift-action">
+                <div class="gift-heart">
+                  <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+                <div class="tab-label">Home</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                <div class="tab-label">Calendar</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                <div class="tab-label">Circles</div>
+              </div>
+              <div class="tab-item active">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
+                <div class="tab-label">Gifts</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                <div class="tab-label">Profile</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="replay-btn" onclick="replay('giftsScreen')">Replay</button>
+    </div>
+
+    <!-- PROFILE SCREEN -->
+    <div class="screen-wrapper">
+      <div class="screen-title">Profile Screen</div>
+      <p class="screen-desc">User profile with stats & menu</p>
+      <div class="phone-frame">
+        <div class="notch"></div>
+        <div class="phone-screen" id="profileScreen">
+          <div class="profile-screen">
+            <div class="screen-glow glow-coral"></div>
+
+            <div class="profile-header">
+              <div class="profile-avatar">
+                SJ
+                <div class="profile-badge">
+                  <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </div>
+              <div class="profile-name">Sarah Johnson</div>
+              <div class="profile-email">sarah@example.com</div>
+            </div>
+
+            <div class="profile-stats">
+              <div class="profile-stat">
+                <div class="profile-stat-num">48</div>
+                <div class="profile-stat-label">Contacts</div>
+              </div>
+              <div class="profile-stat">
+                <div class="profile-stat-num">23</div>
+                <div class="profile-stat-label">Gifts</div>
+              </div>
+              <div class="profile-stat">
+                <div class="profile-stat-num">5</div>
+                <div class="profile-stat-label">Circles</div>
+              </div>
+            </div>
+
+            <div class="profile-menu-item">
+              <div class="menu-icon coral">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </div>
+              <div class="menu-info">
+                <div class="menu-title">Settings</div>
+                <div class="menu-desc">App preferences</div>
+              </div>
+              <div class="menu-arrow">
+                <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+
+            <div class="profile-menu-item">
+              <div class="menu-icon purple">
+                <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              </div>
+              <div class="menu-info">
+                <div class="menu-title">Notifications</div>
+                <div class="menu-desc">Manage alerts</div>
+              </div>
+              <div class="menu-arrow">
+                <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+
+            <div class="profile-menu-item">
+              <div class="menu-icon green">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <div class="menu-info">
+                <div class="menu-title">Help & Support</div>
+                <div class="menu-desc">Get assistance</div>
+              </div>
+              <div class="menu-arrow">
+                <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+                <div class="tab-label">Home</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                <div class="tab-label">Calendar</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                <div class="tab-label">Circles</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
+                <div class="tab-label">Gifts</div>
+              </div>
+              <div class="tab-item active">
+                <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                <div class="tab-label">Profile</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="replay-btn" onclick="replay('profileScreen')">Replay</button>
+    </div>
+
+  </div>
+
+  <script>
+    function replay(screenId) {
+      const screen = document.getElementById(screenId);
+      const content = screen.innerHTML;
+      screen.innerHTML = '';
+      setTimeout(() => {
+        screen.innerHTML = content;
+      }, 50);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GiftBox4you - Contrast Clean Version</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(180deg, #13131F 0%, #1C1C2E 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #FFFFFF;
+      margin-bottom: 12px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #7B7B99;
+      margin-bottom: 50px;
+      font-size: 15px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 40px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .phone-frame {
+      width: 300px;
+      height: 620px;
+      background: #1A1A28;
+      border-radius: 40px;
+      padding: 10px;
+      margin: 0 auto;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      background: #0E0E18;
+      border-radius: 32px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .screen-label {
+      text-align: center;
+      color: #FFFFFF;
+      font-size: 15px;
+      font-weight: 600;
+      margin-top: 24px;
+      margin-bottom: 8px;
+    }
+
+    .screen-desc {
+      text-align: center;
+      color: #7B7B99;
+      font-size: 12px;
+      margin-bottom: 20px;
+    }
+
+    /* ========== CLEAN TAB BAR ========== */
+    .tab-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      background: #15151F;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0 10px;
+    }
+
+    .tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+    }
+
+    .tab svg {
+      width: 22px;
+      height: 22px;
+      stroke: #5A5A70;
+      stroke-width: 1.8;
+      fill: none;
+    }
+
+    .tab.active svg {
+      stroke: #A78BFA;
+    }
+
+    .tab-label {
+      font-size: 10px;
+      color: #5A5A70;
+      font-weight: 500;
+    }
+
+    .tab.active .tab-label {
+      color: #A78BFA;
+    }
+
+    /* ========== SPLASH SCREEN ========== */
+    .splash {
+      height: 100%;
+      background: linear-gradient(180deg, #0E0E18 0%, #161625 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .splash-logo {
+      width: 100px;
+      height: 100px;
+      background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 20px 50px rgba(124, 58, 237, 0.4);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .splash-logo svg {
+      width: 50px;
+      height: 50px;
+      fill: #FFFFFF;
+    }
+
+    .splash h2 {
+      color: #FFFFFF;
+      font-size: 26px;
+      font-weight: 700;
+      margin-top: 28px;
+    }
+
+    .splash p {
+      color: #7B7B99;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    .splash-dots {
+      display: flex;
+      gap: 8px;
+      position: absolute;
+      bottom: 60px;
+    }
+
+    .splash-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #3A3A50;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .splash-dot:nth-child(1) { animation-delay: 0s; }
+    .splash-dot:nth-child(2) { animation-delay: 0.2s; }
+    .splash-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes pulse {
+      0%, 100% { background: #3A3A50; transform: scale(1); }
+      50% { background: #7C3AED; transform: scale(1.2); }
+    }
+
+    /* ========== LOGIN SCREEN ========== */
+    .login {
+      height: 100%;
+      background: #0E0E18;
+      padding: 60px 24px 40px;
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .login-icon {
+      width: 70px;
+      height: 70px;
+      background: linear-gradient(135deg, #7C3AED, #A78BFA);
+      border-radius: 22px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 12px 30px rgba(124, 58, 237, 0.35);
+    }
+
+    .login-icon svg {
+      width: 34px;
+      height: 34px;
+      fill: #FFFFFF;
+    }
+
+    .login-header h2 {
+      color: #FFFFFF;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .login-header p {
+      color: #7B7B99;
+      font-size: 14px;
+      margin-top: 6px;
+    }
+
+    .input-group {
+      margin-bottom: 16px;
+    }
+
+    .input-label {
+      color: #9090A7;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .input-field {
+      width: 100%;
+      background: #1A1A28;
+      border: 1px solid #2A2A3C;
+      border-radius: 12px;
+      padding: 16px;
+      color: #FFFFFF;
+      font-size: 15px;
+    }
+
+    .input-field::placeholder {
+      color: #5A5A70;
+    }
+
+    .login-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #7C3AED, #A78BFA);
+      border: none;
+      border-radius: 12px;
+      padding: 16px;
+      color: #FFFFFF;
+      font-size: 16px;
+      font-weight: 600;
+      margin-top: 8px;
+      box-shadow: 0 10px 25px rgba(124, 58, 237, 0.35);
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 28px 0;
+    }
+
+    .divider-line {
+      flex: 1;
+      height: 1px;
+      background: #2A2A3C;
+    }
+
+    .divider span {
+      color: #5A5A70;
+      font-size: 12px;
+      margin: 0 16px;
+    }
+
+    .social-btns {
+      display: flex;
+      gap: 12px;
+    }
+
+    .social-btn {
+      flex: 1;
+      background: #1A1A28;
+      border: 1px solid #2A2A3C;
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .social-btn span {
+      color: #FFFFFF;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    /* ========== HOME SCREEN ========== */
+    .home {
+      height: 100%;
+      background: #0E0E18;
+      padding: 50px 20px 80px;
+      overflow-y: auto;
+    }
+
+    .home-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    .home-header h1 {
+      color: #FFFFFF;
+      font-size: 24px;
+      font-weight: 700;
+      text-align: left;
+    }
+
+    .home-header p {
+      color: #7B7B99;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .avatar {
+      width: 46px;
+      height: 46px;
+      background: linear-gradient(135deg, #7C3AED, #A78BFA);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      flex: 1;
+      background: #1A1A28;
+      border-radius: 16px;
+      padding: 18px 14px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #A78BFA;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #7B7B99;
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      color: #FFFFFF;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .section-link {
+      color: #7C3AED;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .event-card {
+      background: #1A1A28;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .event-icon {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(167, 139, 250, 0.2));
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .event-info {
+      flex: 1;
+    }
+
+    .event-info h4 {
+      color: #FFFFFF;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .event-info p {
+      color: #7B7B99;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .event-badge {
+      background: linear-gradient(135deg, #7C3AED, #A78BFA);
+      border-radius: 10px;
+      padding: 8px 14px;
+      color: #FFFFFF;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* ========== CALENDAR SCREEN ========== */
+    .calendar {
+      height: 100%;
+      background: #0E0E18;
+      padding: 50px 20px 80px;
+      overflow-y: auto;
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .calendar-header h1 {
+      color: #FFFFFF;
+      font-size: 24px;
+      font-weight: 700;
+      text-align: left;
+    }
+
+    .today-btn {
+      background: linear-gradient(135deg, #7C3AED, #A78BFA);
+      border-radius: 10px;
+      padding: 10px 18px;
+      color: #FFFFFF;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .calendar-card {
+      background: #1A1A28;
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .calendar-month {
+      background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);
+      padding: 20px;
+    }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .month-nav span {
+      color: #FFFFFF;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .month-nav-btn {
+      width: 32px;
+      height: 32px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      font-size: 16px;
+    }
+
+    .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    .weekday {
+      text-align: center;
+      color: rgba(255,255,255,0.8);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 0;
+    }
+
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      padding: 16px;
+    }
+
+    .day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: #FFFFFF;
+      border-radius: 10px;
+      position: relative;
+    }
+
+    .day.muted {
+      color: #4A4A5A;
+    }
+
+    .day.today {
+      background: linear-gradient(135deg, #7C3AED, #A78BFA);
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+    }
+
+    .day.event::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      width: 4px;
+      height: 4px;
+      background: #A78BFA;
+      border-radius: 50%;
+    }
+
+    .day.today.event::after {
+      background: #FFFFFF;
+    }
+
+    .upcoming-section h3 {
+      color: #FFFFFF;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+
+    .upcoming-item {
+      background: #1A1A28;
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .upcoming-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #A78BFA;
+    }
+
+    .upcoming-item span {
+      flex: 1;
+      color: #FFFFFF;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .upcoming-item small {
+      color: #7B7B99;
+      font-size: 12px;
+    }
+
+    /* ========== CIRCLES SCREEN ========== */
+    .circles {
+      height: 100%;
+      background: #0E0E18;
+      padding: 50px 20px 80px;
+      overflow-y: auto;
+    }
+
+    .circles-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .circles-header h1 {
+      color: #FFFFFF;
+      font-size: 24px;
+      font-weight: 700;
+      text-align: left;
+    }
+
+    .add-btn {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #7C3AED, #A78BFA);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 20px rgba(124, 58, 237, 0.35);
+    }
+
+    .add-btn svg {
+      width: 22px;
+      height: 22px;
+      stroke: #FFFFFF;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .circle-card {
+      background: #1A1A28;
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 14px;
+    }
+
+    .circle-top {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .circle-emoji {
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(167, 139, 250, 0.2));
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+    }
+
+    .circle-emoji.green {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(52, 211, 153, 0.2));
+    }
+
+    .circle-emoji.pink {
+      background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(244, 114, 182, 0.2));
+    }
+
+    .circle-info h3 {
+      color: #FFFFFF;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .circle-info p {
+      color: #7B7B99;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .circle-members {
+      display: flex;
+      align-items: center;
+    }
+
+    .member-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      font-size: 13px;
+      font-weight: 600;
+      margin-left: -8px;
+      border: 2px solid #1A1A28;
+    }
+
+    .member-avatar:first-child {
+      margin-left: 0;
+    }
+
+    .member-avatar.purple { background: linear-gradient(135deg, #7C3AED, #A78BFA); }
+    .member-avatar.green { background: linear-gradient(135deg, #10B981, #34D399); }
+    .member-avatar.pink { background: linear-gradient(135deg, #EC4899, #F472B6); }
+    .member-avatar.blue { background: linear-gradient(135deg, #3B82F6, #60A5FA); }
+
+    .member-more {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #2A2A3C;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #7B7B99;
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: -8px;
+      border: 2px solid #1A1A28;
+    }
+
+    /* ========== GIFTS SCREEN ========== */
+    .gifts {
+      height: 100%;
+      background: #0E0E18;
+      padding: 50px 20px 80px;
+      overflow-y: auto;
+    }
+
+    .gifts-header {
+      margin-bottom: 20px;
+    }
+
+    .gifts-header h1 {
+      color: #FFFFFF;
+      font-size: 24px;
+      font-weight: 700;
+      text-align: left;
+      margin-bottom: 16px;
+    }
+
+    .search-bar {
+      background: #1A1A28;
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search-bar svg {
+      width: 18px;
+      height: 18px;
+      stroke: #5A5A70;
+      fill: none;
+    }
+
+    .search-bar span {
+      color: #5A5A70;
+      font-size: 14px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #7B7B99;
+      background: #1A1A28;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #7C3AED, #A78BFA);
+      color: #FFFFFF;
+    }
+
+    .gift-card {
+      background: #1A1A28;
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .gift-img {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(167, 139, 250, 0.15));
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+    }
+
+    .gift-details {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .gift-details h4 {
+      color: #FFFFFF;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .gift-details p {
+      color: #7B7B99;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .gift-price {
+      display: inline-block;
+      background: linear-gradient(135deg, #7C3AED, #A78BFA);
+      border-radius: 8px;
+      padding: 6px 14px;
+      color: #FFFFFF;
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 10px;
+      width: fit-content;
+    }
+
+    /* ========== PROFILE SCREEN ========== */
+    .profile {
+      height: 100%;
+      background: #0E0E18;
+      padding: 50px 20px 80px;
+      overflow-y: auto;
+    }
+
+    .profile-top {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .profile-avatar {
+      width: 90px;
+      height: 90px;
+      background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 50%, #EC4899 100%);
+      border-radius: 28px;
+      margin: 0 auto 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 38px;
+      color: #FFFFFF;
+      font-weight: 700;
+      box-shadow: 0 16px 40px rgba(124, 58, 237, 0.35);
+    }
+
+    .profile-top h2 {
+      color: #FFFFFF;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .profile-top p {
+      color: #7B7B99;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .profile-stats {
+      display: flex;
+      justify-content: space-around;
+      background: #1A1A28;
+      border-radius: 18px;
+      padding: 22px 16px;
+      margin-bottom: 24px;
+    }
+
+    .profile-stat {
+      text-align: center;
+    }
+
+    .profile-stat strong {
+      display: block;
+      color: #A78BFA;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .profile-stat span {
+      color: #7B7B99;
+      font-size: 12px;
+    }
+
+    .menu-item {
+      background: #1A1A28;
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 10px;
+    }
+
+    .menu-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(167, 139, 250, 0.15));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .menu-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: #A78BFA;
+      stroke-width: 1.8;
+      fill: none;
+    }
+
+    .menu-item span {
+      flex: 1;
+      color: #FFFFFF;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .menu-arrow {
+      color: #5A5A70;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <h1>GiftBox4you - Clean Dark Theme</h1>
+  <p class="subtitle">Clear layouts with proper spacing and hierarchy</p>
+
+  <div class="grid">
+    <!-- Splash Screen -->
+    <div>
+      <div class="screen-label">Splash Screen</div>
+      <div class="screen-desc">Simple logo animation</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="splash">
+            <div class="splash-logo">
+              <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+            </div>
+            <h2>GiftBox4you</h2>
+            <p>Never miss a moment</p>
+            <div class="splash-dots">
+              <div class="splash-dot"></div>
+              <div class="splash-dot"></div>
+              <div class="splash-dot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div>
+      <div class="screen-label">Login Screen</div>
+      <div class="screen-desc">Clean form with labels</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="login">
+            <div class="login-header">
+              <div class="login-icon">
+                <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7"/></svg>
+              </div>
+              <h2>Welcome Back</h2>
+              <p>Sign in to continue</p>
+            </div>
+            <div class="input-group">
+              <label class="input-label">Email</label>
+              <input type="text" class="input-field" placeholder="Enter your email">
+            </div>
+            <div class="input-group">
+              <label class="input-label">Password</label>
+              <input type="password" class="input-field" placeholder="Enter password">
+            </div>
+            <button class="login-btn">Sign In</button>
+            <div class="divider">
+              <div class="divider-line"></div>
+              <span>or</span>
+              <div class="divider-line"></div>
+            </div>
+            <div class="social-btns">
+              <div class="social-btn">
+                <span>Apple</span>
+              </div>
+              <div class="social-btn">
+                <span>Google</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Home Screen -->
+    <div>
+      <div class="screen-label">Home Screen</div>
+      <div class="screen-desc">Stats + Event cards</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="home">
+            <div class="home-header">
+              <div>
+                <h1>Hi, Sarah</h1>
+                <p>Good morning</p>
+              </div>
+              <div class="avatar">S</div>
+            </div>
+            <div class="stats-row">
+              <div class="stat-card">
+                <div class="stat-value">12</div>
+                <div class="stat-label">Events</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Circles</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">8</div>
+                <div class="stat-label">Gifts</div>
+              </div>
+            </div>
+            <div class="section-header">
+              <span class="section-title">Coming Up</span>
+              <span class="section-link">See all</span>
+            </div>
+            <div class="event-card">
+              <div class="event-icon">🎂</div>
+              <div class="event-info">
+                <h4>Mom's Birthday</h4>
+                <p>December 15</p>
+              </div>
+              <div class="event-badge">3 days</div>
+            </div>
+            <div class="event-card">
+              <div class="event-icon">💍</div>
+              <div class="event-info">
+                <h4>Anniversary</h4>
+                <p>December 20</p>
+              </div>
+              <div class="event-badge">8 days</div>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <div class="tab active">
+              <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <span class="tab-label">Home</span>
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span class="tab-label">Calendar</span>
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span class="tab-label">Circles</span>
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2z"/><path d="M12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7z"/></svg>
+              <span class="tab-label">Gifts</span>
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span class="tab-label">Profile</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calendar Screen -->
+    <div>
+      <div class="screen-label">Calendar Screen</div>
+      <div class="screen-desc">Gradient header calendar</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="calendar">
+            <div class="calendar-header">
+              <h1>Calendar</h1>
+              <div class="today-btn">Today</div>
+            </div>
+            <div class="calendar-card">
+              <div class="calendar-month">
+                <div class="month-nav">
+                  <div class="month-nav-btn">‹</div>
+                  <span>December 2024</span>
+                  <div class="month-nav-btn">›</div>
+                </div>
+                <div class="weekdays">
+                  <div class="weekday">S</div>
+                  <div class="weekday">M</div>
+                  <div class="weekday">T</div>
+                  <div class="weekday">W</div>
+                  <div class="weekday">T</div>
+                  <div class="weekday">F</div>
+                  <div class="weekday">S</div>
+                </div>
+              </div>
+              <div class="days-grid">
+                <div class="day muted">26</div>
+                <div class="day muted">27</div>
+                <div class="day muted">28</div>
+                <div class="day muted">29</div>
+                <div class="day muted">30</div>
+                <div class="day">1</div>
+                <div class="day">2</div>
+                <div class="day">3</div>
+                <div class="day">4</div>
+                <div class="day event">5</div>
+                <div class="day">6</div>
+                <div class="day">7</div>
+                <div class="day">8</div>
+                <div class="day">9</div>
+                <div class="day">10</div>
+                <div class="day">11</div>
+                <div class="day today event">12</div>
+                <div class="day">13</div>
+                <div class="day">14</div>
+                <div class="day event">15</div>
+                <div class="day">16</div>
+              </div>
+            </div>
+            <div class="upcoming-section">
+              <h3>Upcoming</h3>
+              <div class="upcoming-item">
+                <div class="upcoming-dot"></div>
+                <span>Mom's Birthday</span>
+                <small>Dec 15</small>
+              </div>
+              <div class="upcoming-item">
+                <div class="upcoming-dot"></div>
+                <span>Anniversary</span>
+                <small>Dec 20</small>
+              </div>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <span class="tab-label">Home</span>
+            </div>
+            <div class="tab active">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span class="tab-label">Calendar</span>
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span class="tab-label">Circles</span>
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2z"/><path d="M12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7z"/></svg>
+              <span class="tab-label">Gifts</span>
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span class="tab-label">Profile</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Circles Screen -->
+    <div>
+      <div class="screen-label">Circles Screen</div>
+      <div class="screen-desc">Circle cards with members</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="circles">
+            <div class="circles-header">
+              <h1>My Circles</h1>
+              <div class="add-btn">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </div>
+            </div>
+            <div class="circle-card">
+              <div class="circle-top">
+                <div class="circle-emoji">👨‍👩‍👧‍👦</div>
+                <div class="circle-info">
+                  <h3>Family</h3>
+                  <p>8 members</p>
+                </div>
+              </div>
+              <div class="circle-members">
+                <div class="member-avatar purple">M</div>
+                <div class="member-avatar blue">D</div>
+                <div class="member-avatar pink">S</div>
+                <div class="member-avatar green">B</div>
+                <div class="member-more">+4</div>
+              </div>
+            </div>
+            <div class="circle-card">
+              <div class="circle-top">
+                <div class="circle-emoji green">💼</div>
+                <div class="circle-info">
+                  <h3>Work Friends</h3>
+                  <p>5 members</p>
+                </div>
+              </div>
+              <div class="circle-members">
+                <div class="member-avatar green">J</div>
+                <div class="member-avatar purple">K</div>
+                <div class="member-avatar blue">L</div>
+                <div class="member-more">+2</div>
+              </div>
+            </div>
+            <div class="circle-card">
+              <div class="circle-top">
+                <div class="circle-emoji pink">🎓</div>
+                <div class="circle-info">
+                  <h3>College Buddies</h3>
+                  <p>6 members</p>
+                </div>
+              </div>
+              <div class="circle-members">
+                <div class="member-avatar pink">A</div>
+                <div class="member-avatar purple">B</div>
+                <div class="member-avatar green">C</div>
+                <div class="member-more">+3</div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <span class="tab-label">Home</span>
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span class="tab-label">Calendar</span>
+            </div>
+            <div class="tab active">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span class="tab-label">Circles</span>
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2z"/><path d="M12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7z"/></svg>
+              <span class="tab-label">Gifts</span>
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span class="tab-label">Profile</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gifts Screen -->
+    <div>
+      <div class="screen-label">Gifts Screen</div>
+      <div class="screen-desc">Search + Gift cards</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="gifts">
+            <div class="gifts-header">
+              <h1>Gift Ideas</h1>
+              <div class="search-bar">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span>Search gifts...</span>
+              </div>
+            </div>
+            <div class="tabs">
+              <div class="tab-btn active">All</div>
+              <div class="tab-btn">Saved</div>
+              <div class="tab-btn">Purchased</div>
+            </div>
+            <div class="gift-card">
+              <div class="gift-img">📱</div>
+              <div class="gift-details">
+                <h4>AirPods Pro</h4>
+                <p>For Dad</p>
+                <div class="gift-price">$249</div>
+              </div>
+            </div>
+            <div class="gift-card">
+              <div class="gift-img">📚</div>
+              <div class="gift-details">
+                <h4>Book Collection</h4>
+                <p>For Mom</p>
+                <div class="gift-price">$45</div>
+              </div>
+            </div>
+            <div class="gift-card">
+              <div class="gift-img">🎮</div>
+              <div class="gift-details">
+                <h4>Gaming Headset</h4>
+                <p>For Brother</p>
+                <div class="gift-price">$89</div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <span class="tab-label">Home</span>
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span class="tab-label">Calendar</span>
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span class="tab-label">Circles</span>
+            </div>
+            <div class="tab active">
+              <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2z"/><path d="M12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7z"/></svg>
+              <span class="tab-label">Gifts</span>
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span class="tab-label">Profile</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Screen -->
+    <div>
+      <div class="screen-label">Profile Screen</div>
+      <div class="screen-desc">Avatar + Stats + Menu</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="profile">
+            <div class="profile-top">
+              <div class="profile-avatar">S</div>
+              <h2>Sarah Johnson</h2>
+              <p>sarah@email.com</p>
+            </div>
+            <div class="profile-stats">
+              <div class="profile-stat">
+                <strong>24</strong>
+                <span>Events</span>
+              </div>
+              <div class="profile-stat">
+                <strong>4</strong>
+                <span>Circles</span>
+              </div>
+              <div class="profile-stat">
+                <strong>18</strong>
+                <span>Gifts</span>
+              </div>
+            </div>
+            <div class="menu-item">
+              <div class="menu-icon">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </div>
+              <span>Settings</span>
+              <div class="menu-arrow">›</div>
+            </div>
+            <div class="menu-item">
+              <div class="menu-icon">
+                <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              </div>
+              <span>Notifications</span>
+              <div class="menu-arrow">›</div>
+            </div>
+            <div class="menu-item">
+              <div class="menu-icon">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <span>Help & Support</span>
+              <div class="menu-arrow">›</div>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <span class="tab-label">Home</span>
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span class="tab-label">Calendar</span>
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span class="tab-label">Circles</span>
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2z"/><path d="M12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7z"/></svg>
+              <span class="tab-label">Gifts</span>
+            </div>
+            <div class="tab active">
+              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span class="tab-label">Profile</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

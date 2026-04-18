@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar - Gradient Header Variations</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #F5F0EB;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #2D2D2D;
+      margin-bottom: 40px;
+      font-size: 28px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 30px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .option {
+      background: #FDF8F3;
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    }
+
+    .option-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #E07B5C;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    /* Common styles */
+    .calendar-wrapper {
+      background: #FFFFFF;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      padding: 16px;
+      gap: 4px;
+    }
+
+    .day-cell {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: #2D2D2D;
+      border-radius: 10px;
+      position: relative;
+    }
+
+    .day-cell.muted {
+      color: #CCCCCC;
+    }
+
+    .day-cell.has-event::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #E07B5C;
+    }
+
+    .weekday {
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      padding: 12px 0;
+    }
+
+    /* ============ VARIATION 1: Classic Gradient Header ============ */
+    .v1 .header {
+      background: linear-gradient(135deg, #E07B5C 0%, #D06A4C 100%);
+      padding: 20px 16px 16px;
+    }
+
+    .v1 .weekdays-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+    }
+
+    .v1 .weekday {
+      color: rgba(255,255,255,0.85);
+    }
+
+    .v1 .day-cell.today {
+      background: #E07B5C;
+      color: #FFFFFF;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(224, 123, 92, 0.4);
+    }
+
+    .v1 .day-cell.today::after {
+      background: #FFFFFF;
+    }
+
+    /* ============ VARIATION 2: Tall Header with Month ============ */
+    .v2 .header {
+      background: linear-gradient(135deg, #E07B5C 0%, #C4956A 100%);
+      padding: 24px 16px 16px;
+      text-align: center;
+    }
+
+    .v2 .month-label {
+      color: #FFFFFF;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .v2 .weekdays-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+    }
+
+    .v2 .weekday {
+      color: rgba(255,255,255,0.9);
+      font-size: 12px;
+    }
+
+    .v2 .day-cell.today {
+      background: linear-gradient(135deg, #E07B5C, #D06A4C);
+      color: #FFFFFF;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(224, 123, 92, 0.4);
+    }
+
+    /* ============ VARIATION 3: Floating Header ============ */
+    .v3 .calendar-wrapper {
+      background: #FFFFFF;
+      padding-top: 12px;
+    }
+
+    .v3 .header {
+      background: linear-gradient(135deg, #E07B5C 0%, #D06A4C 100%);
+      margin: 0 12px;
+      padding: 16px;
+      border-radius: 14px;
+      box-shadow: 0 6px 20px rgba(224, 123, 92, 0.35);
+    }
+
+    .v3 .weekdays-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+    }
+
+    .v3 .weekday {
+      color: #FFFFFF;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .v3 .day-cell.today {
+      background: #FEF3F0;
+      color: #E07B5C;
+      font-weight: 700;
+    }
+
+    .v3 .day-cell.has-event:not(.today)::after {
+      background: #E07B5C;
+    }
+
+    /* ============ VARIATION 4: Header with Decorative Wave ============ */
+    .v4 .header {
+      background: linear-gradient(135deg, #E07B5C 0%, #D06A4C 100%);
+      padding: 20px 16px 30px;
+      position: relative;
+    }
+
+    .v4 .header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 20px;
+      background: #FFFFFF;
+      border-radius: 20px 20px 0 0;
+    }
+
+    .v4 .weekdays-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      position: relative;
+      z-index: 1;
+    }
+
+    .v4 .weekday {
+      color: rgba(255,255,255,0.9);
+    }
+
+    .v4 .day-cell.today {
+      background: linear-gradient(135deg, #E07B5C, #D06A4C);
+      color: #FFFFFF;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(224, 123, 92, 0.4);
+    }
+
+    /* ============ VARIATION 5: Two-Tone Header ============ */
+    .v5 .header {
+      background: linear-gradient(180deg, #E07B5C 0%, #E07B5C 50%, #FFFFFF 50%);
+      padding: 20px 16px 0;
+    }
+
+    .v5 .weekdays-container {
+      background: #FFFFFF;
+      border-radius: 14px 14px 0 0;
+      padding: 14px 8px;
+      box-shadow: 0 -4px 20px rgba(224, 123, 92, 0.15);
+    }
+
+    .v5 .weekdays-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+    }
+
+    .v5 .weekday {
+      color: #E07B5C;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .v5 .days-grid {
+      padding-top: 8px;
+    }
+
+    .v5 .day-cell.today {
+      background: #E07B5C;
+      color: #FFFFFF;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(224, 123, 92, 0.4);
+    }
+
+    /* ============ VARIATION 6: Gradient Header with Glow ============ */
+    .v6 .calendar-wrapper {
+      position: relative;
+    }
+
+    .v6 .header-glow {
+      position: absolute;
+      top: -10px;
+      left: 20px;
+      right: 20px;
+      height: 60px;
+      background: linear-gradient(135deg, #E07B5C 0%, #D06A4C 100%);
+      border-radius: 20px;
+      filter: blur(20px);
+      opacity: 0.4;
+    }
+
+    .v6 .header {
+      background: linear-gradient(135deg, #E07B5C 0%, #D06A4C 100%);
+      padding: 20px 16px 16px;
+      position: relative;
+    }
+
+    .v6 .weekdays-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+    }
+
+    .v6 .weekday {
+      color: #FFFFFF;
+      font-weight: 600;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .v6 .day-cell.today {
+      background: #FFFFFF;
+      color: #E07B5C;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .v6 .day-cell.has-event:not(.today)::after {
+      background: #E07B5C;
+    }
+  </style>
+</head>
+<body>
+  <h1>Gradient Header - Variations</h1>
+
+  <div class="grid">
+    <!-- VARIATION 1: Classic Gradient Header -->
+    <div class="option">
+      <div class="option-title">Variation 1: Classic Gradient Header</div>
+      <div class="calendar-wrapper v1">
+        <div class="header">
+          <div class="weekdays-row">
+            <div class="weekday">S</div>
+            <div class="weekday">M</div>
+            <div class="weekday">T</div>
+            <div class="weekday">W</div>
+            <div class="weekday">T</div>
+            <div class="weekday">F</div>
+            <div class="weekday">S</div>
+          </div>
+        </div>
+        <div class="days-grid">
+          <div class="day-cell muted">26</div>
+          <div class="day-cell muted">27</div>
+          <div class="day-cell muted">28</div>
+          <div class="day-cell muted">29</div>
+          <div class="day-cell muted">30</div>
+          <div class="day-cell">1</div>
+          <div class="day-cell">2</div>
+          <div class="day-cell">3</div>
+          <div class="day-cell">4</div>
+          <div class="day-cell has-event">5</div>
+          <div class="day-cell">6</div>
+          <div class="day-cell">7</div>
+          <div class="day-cell">8</div>
+          <div class="day-cell">9</div>
+          <div class="day-cell">10</div>
+          <div class="day-cell">11</div>
+          <div class="day-cell today has-event">12</div>
+          <div class="day-cell">13</div>
+          <div class="day-cell">14</div>
+          <div class="day-cell has-event">15</div>
+          <div class="day-cell">16</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VARIATION 2: Tall Header with Month -->
+    <div class="option">
+      <div class="option-title">Variation 2: Tall Header with Month</div>
+      <div class="calendar-wrapper v2">
+        <div class="header">
+          <div class="month-label">December 2024</div>
+          <div class="weekdays-row">
+            <div class="weekday">S</div>
+            <div class="weekday">M</div>
+            <div class="weekday">T</div>
+            <div class="weekday">W</div>
+            <div class="weekday">T</div>
+            <div class="weekday">F</div>
+            <div class="weekday">S</div>
+          </div>
+        </div>
+        <div class="days-grid">
+          <div class="day-cell muted">26</div>
+          <div class="day-cell muted">27</div>
+          <div class="day-cell muted">28</div>
+          <div class="day-cell muted">29</div>
+          <div class="day-cell muted">30</div>
+          <div class="day-cell">1</div>
+          <div class="day-cell">2</div>
+          <div class="day-cell">3</div>
+          <div class="day-cell">4</div>
+          <div class="day-cell has-event">5</div>
+          <div class="day-cell">6</div>
+          <div class="day-cell">7</div>
+          <div class="day-cell">8</div>
+          <div class="day-cell">9</div>
+          <div class="day-cell">10</div>
+          <div class="day-cell">11</div>
+          <div class="day-cell today has-event">12</div>
+          <div class="day-cell">13</div>
+          <div class="day-cell">14</div>
+          <div class="day-cell has-event">15</div>
+          <div class="day-cell">16</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VARIATION 3: Floating Header -->
+    <div class="option">
+      <div class="option-title">Variation 3: Floating Header</div>
+      <div class="calendar-wrapper v3">
+        <div class="header">
+          <div class="weekdays-row">
+            <div class="weekday">S</div>
+            <div class="weekday">M</div>
+            <div class="weekday">T</div>
+            <div class="weekday">W</div>
+            <div class="weekday">T</div>
+            <div class="weekday">F</div>
+            <div class="weekday">S</div>
+          </div>
+        </div>
+        <div class="days-grid">
+          <div class="day-cell muted">26</div>
+          <div class="day-cell muted">27</div>
+          <div class="day-cell muted">28</div>
+          <div class="day-cell muted">29</div>
+          <div class="day-cell muted">30</div>
+          <div class="day-cell">1</div>
+          <div class="day-cell">2</div>
+          <div class="day-cell">3</div>
+          <div class="day-cell">4</div>
+          <div class="day-cell has-event">5</div>
+          <div class="day-cell">6</div>
+          <div class="day-cell">7</div>
+          <div class="day-cell">8</div>
+          <div class="day-cell">9</div>
+          <div class="day-cell">10</div>
+          <div class="day-cell">11</div>
+          <div class="day-cell today has-event">12</div>
+          <div class="day-cell">13</div>
+          <div class="day-cell">14</div>
+          <div class="day-cell has-event">15</div>
+          <div class="day-cell">16</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VARIATION 4: Header with Decorative Wave -->
+    <div class="option">
+      <div class="option-title">Variation 4: Wave Transition</div>
+      <div class="calendar-wrapper v4">
+        <div class="header">
+          <div class="weekdays-row">
+            <div class="weekday">S</div>
+            <div class="weekday">M</div>
+            <div class="weekday">T</div>
+            <div class="weekday">W</div>
+            <div class="weekday">T</div>
+            <div class="weekday">F</div>
+            <div class="weekday">S</div>
+          </div>
+        </div>
+        <div class="days-grid">
+          <div class="day-cell muted">26</div>
+          <div class="day-cell muted">27</div>
+          <div class="day-cell muted">28</div>
+          <div class="day-cell muted">29</div>
+          <div class="day-cell muted">30</div>
+          <div class="day-cell">1</div>
+          <div class="day-cell">2</div>
+          <div class="day-cell">3</div>
+          <div class="day-cell">4</div>
+          <div class="day-cell has-event">5</div>
+          <div class="day-cell">6</div>
+          <div class="day-cell">7</div>
+          <div class="day-cell">8</div>
+          <div class="day-cell">9</div>
+          <div class="day-cell">10</div>
+          <div class="day-cell">11</div>
+          <div class="day-cell today has-event">12</div>
+          <div class="day-cell">13</div>
+          <div class="day-cell">14</div>
+          <div class="day-cell has-event">15</div>
+          <div class="day-cell">16</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VARIATION 5: Two-Tone Header -->
+    <div class="option">
+      <div class="option-title">Variation 5: Two-Tone Split</div>
+      <div class="calendar-wrapper v5">
+        <div class="header">
+          <div class="weekdays-container">
+            <div class="weekdays-row">
+              <div class="weekday">S</div>
+              <div class="weekday">M</div>
+              <div class="weekday">T</div>
+              <div class="weekday">W</div>
+              <div class="weekday">T</div>
+              <div class="weekday">F</div>
+              <div class="weekday">S</div>
+            </div>
+          </div>
+        </div>
+        <div class="days-grid">
+          <div class="day-cell muted">26</div>
+          <div class="day-cell muted">27</div>
+          <div class="day-cell muted">28</div>
+          <div class="day-cell muted">29</div>
+          <div class="day-cell muted">30</div>
+          <div class="day-cell">1</div>
+          <div class="day-cell">2</div>
+          <div class="day-cell">3</div>
+          <div class="day-cell">4</div>
+          <div class="day-cell has-event">5</div>
+          <div class="day-cell">6</div>
+          <div class="day-cell">7</div>
+          <div class="day-cell">8</div>
+          <div class="day-cell">9</div>
+          <div class="day-cell">10</div>
+          <div class="day-cell">11</div>
+          <div class="day-cell today has-event">12</div>
+          <div class="day-cell">13</div>
+          <div class="day-cell">14</div>
+          <div class="day-cell has-event">15</div>
+          <div class="day-cell">16</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VARIATION 6: Gradient Header with Glow -->
+    <div class="option">
+      <div class="option-title">Variation 6: Header with Glow</div>
+      <div class="calendar-wrapper v6">
+        <div class="header-glow"></div>
+        <div class="header">
+          <div class="weekdays-row">
+            <div class="weekday">S</div>
+            <div class="weekday">M</div>
+            <div class="weekday">T</div>
+            <div class="weekday">W</div>
+            <div class="weekday">T</div>
+            <div class="weekday">F</div>
+            <div class="weekday">S</div>
+          </div>
+        </div>
+        <div class="days-grid">
+          <div class="day-cell muted">26</div>
+          <div class="day-cell muted">27</div>
+          <div class="day-cell muted">28</div>
+          <div class="day-cell muted">29</div>
+          <div class="day-cell muted">30</div>
+          <div class="day-cell">1</div>
+          <div class="day-cell">2</div>
+          <div class="day-cell">3</div>
+          <div class="day-cell">4</div>
+          <div class="day-cell has-event">5</div>
+          <div class="day-cell">6</div>
+          <div class="day-cell">7</div>
+          <div class="day-cell">8</div>
+          <div class="day-cell">9</div>
+          <div class="day-cell">10</div>
+          <div class="day-cell">11</div>
+          <div class="day-cell today has-event">12</div>
+          <div class="day-cell">13</div>
+          <div class="day-cell">14</div>
+          <div class="day-cell has-event">15</div>
+          <div class="day-cell">16</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

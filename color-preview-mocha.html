@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GiftBox4you - Mocha Gift Variations</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 40px; }
+    h1 { text-align: center; margin-bottom: 10px; color: #333; }
+    .subtitle { text-align: center; margin-bottom: 40px; color: #666; font-size: 14px; }
+    .palette-container { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; }
+    .palette { background: white; border-radius: 20px; padding: 24px; width: 340px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); position: relative; }
+    .palette h2 { font-size: 15px; margin-bottom: 16px; color: #333; }
+    .colors { display: flex; gap: 8px; margin-bottom: 16px; }
+    .color { width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; }
+    .preview { height: 240px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    .preview .ribbon { position: absolute; top: 0; left: 50%; width: 3px; height: 100%; transform: translateX(-50%); }
+    .preview .ribbon-h { position: absolute; top: 50%; left: 0; width: 100%; height: 3px; transform: translateY(-50%); }
+    .preview .bow { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); font-size: 40px; z-index: 5; }
+    .preview .logo { width: 75px; height: 75px; background: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); z-index: 10; }
+    .preview .title { color: white; font-size: 26px; font-weight: 700; z-index: 10; }
+    .preview .accent { font-weight: 300; }
+    .preview .tagline { color: rgba(255,255,255,0.75); font-size: 12px; margin-top: 8px; z-index: 10; }
+    .hex-codes { display: flex; gap: 6px; flex-wrap: wrap; }
+    .hex { background: #f5f5f5; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-family: monospace; }
+    .badge { position: absolute; top: 12px; right: 12px; padding: 5px 12px; border-radius: 8px; font-size: 10px; font-weight: 700; color: white; }
+    .feel { font-size: 12px; color: #888; margin-top: 12px; font-style: italic; }
+  </style>
+</head>
+<body>
+  <h1>Mocha & Gift-Inspired Palettes</h1>
+  <p class="subtitle">Warm coffee tones + gift wrapping accents for a unique gift app feel</p>
+
+  <div class="palette-container">
+
+    <!-- Option 1: Mocha + Ribbon Red -->
+    <div class="palette">
+      <h2>1. Mocha + Gift Ribbon Red</h2>
+      <div class="colors">
+        <div class="color" style="background: #4A3728;">Base</div>
+        <div class="color" style="background: #6B5344;">Mid</div>
+        <div class="color" style="background: #C94C4C;">Ribbon</div>
+        <div class="color" style="background: #E8D5C4;">Cream</div>
+      </div>
+      <div class="preview" style="background: linear-gradient(135deg, #4A3728 0%, #5D4637 50%, #3A2B1F 100%);">
+        <div class="badge" style="background: #C94C4C;">GIFT WRAP</div>
+        <div class="ribbon" style="background: #C94C4C; opacity: 0.3;"></div>
+        <div class="ribbon-h" style="background: #C94C4C; opacity: 0.3;"></div>
+        <div class="logo" style="color: #4A3728;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #C94C4C;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#4A3728</span>
+        <span class="hex">#C94C4C</span>
+        <span class="hex">#E8D5C4</span>
+      </div>
+      <p class="feel">Classic gift wrapping paper feel</p>
+    </div>
+
+    <!-- Option 2: Mocha + Champagne Bow -->
+    <div class="palette">
+      <h2>2. Mocha + Champagne Gold</h2>
+      <div class="colors">
+        <div class="color" style="background: #3E2F23;">Base</div>
+        <div class="color" style="background: #5C4535;">Mid</div>
+        <div class="color" style="background: #D4B896;">Gold</div>
+        <div class="color" style="background: #F5EDE4;">Light</div>
+      </div>
+      <div class="preview" style="background: linear-gradient(145deg, #3E2F23 0%, #5C4535 40%, #4A3828 100%);">
+        <div class="badge" style="background: #D4B896; color: #3E2F23;">CELEBRATION</div>
+        <div class="ribbon" style="background: linear-gradient(to bottom, transparent, #D4B896, transparent); opacity: 0.4;"></div>
+        <div class="logo" style="color: #3E2F23;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #D4B896;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#3E2F23</span>
+        <span class="hex">#D4B896</span>
+        <span class="hex">#F5EDE4</span>
+      </div>
+      <p class="feel">Premium champagne celebration</p>
+    </div>
+
+    <!-- Option 3: Mocha + Rose Gold -->
+    <div class="palette">
+      <h2>3. Mocha + Rose Gold Ribbon</h2>
+      <div class="colors">
+        <div class="color" style="background: #45332A;">Base</div>
+        <div class="color" style="background: #5F483D;">Mid</div>
+        <div class="color" style="background: #C9A489;">Rose</div>
+        <div class="color" style="background: #F8F0EA;">Cream</div>
+      </div>
+      <div class="preview" style="background: linear-gradient(135deg, #45332A 0%, #5F483D 50%, #382921 100%);">
+        <div class="badge" style="background: #C9A489; color: #45332A;">ROMANTIC</div>
+        <div class="ribbon" style="background: #C9A489; opacity: 0.25;"></div>
+        <div class="ribbon-h" style="background: #C9A489; opacity: 0.25;"></div>
+        <div class="logo" style="color: #45332A;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #C9A489;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#45332A</span>
+        <span class="hex">#C9A489</span>
+        <span class="hex">#F8F0EA</span>
+      </div>
+      <p class="feel">Elegant romantic gifting</p>
+    </div>
+
+    <!-- Option 4: Mocha + Copper Metallic -->
+    <div class="palette">
+      <h2>4. Mocha + Copper Metallic</h2>
+      <div class="colors">
+        <div class="color" style="background: #3D2E24;">Base</div>
+        <div class="color" style="background: #5A4438;">Mid</div>
+        <div class="color" style="background: #B87333;">Copper</div>
+        <div class="color" style="background: #F5E8DC;">Warm</div>
+      </div>
+      <div class="preview" style="background: linear-gradient(160deg, #3D2E24 0%, #5A4438 50%, #2F231B 100%);">
+        <div class="badge" style="background: #B87333; color: white;">METALLIC</div>
+        <div class="logo" style="color: #3D2E24; border: 2px solid #B87333;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #B87333;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#3D2E24</span>
+        <span class="hex">#B87333</span>
+        <span class="hex">#F5E8DC</span>
+      </div>
+      <p class="feel">Premium metallic accent</p>
+    </div>
+
+    <!-- Option 5: Mocha + Sage Gift -->
+    <div class="palette">
+      <h2>5. Mocha + Sage Green (Nature Gift)</h2>
+      <div class="colors">
+        <div class="color" style="background: #4A3D32;">Base</div>
+        <div class="color" style="background: #655448;">Mid</div>
+        <div class="color" style="background: #8B9A7D;">Sage</div>
+        <div class="color" style="background: #F2EDE7;">Cream</div>
+      </div>
+      <div class="preview" style="background: linear-gradient(135deg, #4A3D32 0%, #655448 50%, #3A3027 100%);">
+        <div class="badge" style="background: #8B9A7D; color: white;">NATURAL</div>
+        <div class="ribbon" style="background: #8B9A7D; opacity: 0.3;"></div>
+        <div class="logo" style="color: #4A3D32;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #8B9A7D;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#4A3D32</span>
+        <span class="hex">#8B9A7D</span>
+        <span class="hex">#F2EDE7</span>
+      </div>
+      <p class="feel">Eco-friendly natural gifting</p>
+    </div>
+
+    <!-- Option 6: Mocha + Dusty Coral -->
+    <div class="palette">
+      <h2>6. Mocha + Dusty Coral</h2>
+      <div class="colors">
+        <div class="color" style="background: #483830;">Base</div>
+        <div class="color" style="background: #634E44;">Mid</div>
+        <div class="color" style="background: #D4927A;">Coral</div>
+        <div class="color" style="background: #FAF3EF;">Light</div>
+      </div>
+      <div class="preview" style="background: linear-gradient(140deg, #483830 0%, #634E44 50%, #3A2C25 100%);">
+        <div class="badge" style="background: #D4927A; color: white;">JOYFUL</div>
+        <div class="logo" style="color: #483830;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #D4927A;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#483830</span>
+        <span class="hex">#D4927A</span>
+        <span class="hex">#FAF3EF</span>
+      </div>
+      <p class="feel">Warm joyful celebration</p>
+    </div>
+
+  </div>
+
+  <p style="text-align: center; margin-top: 40px; color: #666; font-size: 14px;">
+    All palettes use warm mocha as base (gift box feel) + unique accent colors<br>
+    Tell me the number you like!
+  </p>
+</body>
+</html>

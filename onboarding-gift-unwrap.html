@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GiftBox4you - Gift Unwrap Onboarding</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px;
+    }
+
+    h1 { color: #fff; margin-bottom: 8px; }
+    .subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
+
+    .phone-frame {
+      width: 340px;
+      height: 700px;
+      background: #000;
+      border-radius: 50px;
+      padding: 14px;
+      box-shadow: 0 30px 100px rgba(0,0,0,0.6);
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      background: #FDF8F3;
+    }
+
+    .notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 110px;
+      height: 28px;
+      background: #000;
+      border-radius: 0 0 18px 18px;
+      z-index: 100;
+    }
+
+    /* Slides Container */
+    .slides-container {
+      display: flex;
+      width: 400%;
+      height: 100%;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .slide {
+      width: 25%;
+      height: 100%;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Skip Button */
+    .skip-btn {
+      position: absolute;
+      top: 55px;
+      right: 24px;
+      padding: 10px 20px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 25px;
+      font-size: 14px;
+      color: #888;
+      font-weight: 600;
+      z-index: 50;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    /* Slide Content */
+    .slide-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 28px 20px;
+    }
+
+    /* Gift Box Animation */
+    .gift-box-container {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      perspective: 1000px;
+    }
+
+    .gift-box {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+    }
+
+    .gift-box-body {
+      width: 100%;
+      height: 100%;
+      border-radius: 24px;
+      position: absolute;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+    }
+
+    .gift-ribbon-v {
+      position: absolute;
+      width: 22px;
+      height: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 4px;
+    }
+
+    .gift-ribbon-h {
+      position: absolute;
+      width: 100%;
+      height: 22px;
+      top: 50%;
+      transform: translateY(-50%);
+      border-radius: 4px;
+    }
+
+    .gift-lid {
+      position: absolute;
+      width: 160px;
+      height: 45px;
+      border-radius: 14px 14px 4px 4px;
+      top: -12px;
+      left: -5px;
+      transform-origin: bottom center;
+      box-shadow: 0 -8px 25px rgba(0,0,0,0.1);
+    }
+
+    .gift-bow {
+      position: absolute;
+      top: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 55px;
+      filter: drop-shadow(0 5px 10px rgba(0,0,0,0.2));
+    }
+
+    .gift-content {
+      position: absolute;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+    }
+
+    .gift-content-icon {
+      font-size: 70px;
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,0.15));
+    }
+
+    /* Sparkles */
+    .sparkle {
+      position: absolute;
+      font-size: 16px;
+      opacity: 0;
+    }
+
+    /* Slide Text */
+    .slide-title {
+      margin-top: 90px;
+      font-size: 28px;
+      font-weight: 700;
+      color: #3D3D3D;
+      text-align: center;
+      line-height: 1.3;
+      opacity: 0;
+    }
+
+    .slide-desc {
+      margin-top: 16px;
+      font-size: 15px;
+      color: #777;
+      text-align: center;
+      line-height: 1.6;
+      opacity: 0;
+      padding: 0 10px;
+    }
+
+    /* Bottom Section */
+    .slide-bottom {
+      padding: 25px 28px 45px;
+    }
+
+    .dots {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 25px;
+    }
+
+    .dot {
+      height: 8px;
+      border-radius: 4px;
+      background: #E07B5C;
+      transition: all 0.4s ease;
+      cursor: pointer;
+    }
+
+    .dot.active { width: 30px; opacity: 1; }
+    .dot.inactive { width: 8px; opacity: 0.3; }
+
+    .next-btn {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, #E07B5C, #D06A4C);
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 12px 35px rgba(224, 123, 92, 0.4);
+      cursor: pointer;
+      opacity: 0;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .next-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 40px rgba(224, 123, 92, 0.5);
+    }
+
+    .next-btn-text {
+      font-size: 17px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .next-btn-icon {
+      width: 34px;
+      height: 34px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #E07B5C;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    /* ===== ANIMATIONS ===== */
+    .slide.active .gift-lid {
+      animation: lidOpen 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    .slide.active .gift-bow {
+      animation: bowBounce 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    .slide.active .gift-content {
+      animation: contentReveal 1s ease-out 0.6s forwards;
+    }
+
+    .slide.active .gift-content-icon {
+      animation: iconFloat 3s ease-in-out 1.6s infinite;
+    }
+
+    .slide.active .slide-title {
+      animation: fadeSlideUp 0.7s ease-out 1s forwards;
+    }
+
+    .slide.active .slide-desc {
+      animation: fadeSlideUp 0.7s ease-out 1.3s forwards;
+    }
+
+    .slide.active .next-btn {
+      animation: fadeSlideUp 0.6s ease-out 1.5s forwards;
+    }
+
+    .slide.active .sparkle {
+      animation: sparkleShow 2s ease-in-out 0.8s infinite;
+    }
+
+    .slide.active .sparkle:nth-child(2) { animation-delay: 1s; }
+    .slide.active .sparkle:nth-child(3) { animation-delay: 1.2s; }
+    .slide.active .sparkle:nth-child(4) { animation-delay: 1.4s; }
+
+    @keyframes lidOpen {
+      0% { transform: rotateX(0deg); }
+      100% { transform: rotateX(-115deg) translateY(-5px); }
+    }
+
+    @keyframes bowBounce {
+      0% { transform: translateX(-50%) translateY(0) scale(1) rotate(0deg); }
+      40% { transform: translateX(-50%) translateY(-45px) scale(1.15) rotate(-10deg); }
+      70% { transform: translateX(-50%) translateY(-35px) scale(1.1) rotate(5deg); }
+      100% { transform: translateX(-50%) translateY(-40px) scale(1.12) rotate(0deg); }
+    }
+
+    @keyframes contentReveal {
+      0% { opacity: 0; top: 30px; transform: translateX(-50%) scale(0.5); }
+      60% { opacity: 1; top: -70px; transform: translateX(-50%) scale(1.1); }
+      100% { opacity: 1; top: -80px; transform: translateX(-50%) scale(1); }
+    }
+
+    @keyframes iconFloat {
+      0%, 100% { transform: translateX(-50%) translateY(0) rotate(0deg); }
+      50% { transform: translateX(-50%) translateY(-12px) rotate(5deg); }
+    }
+
+    @keyframes fadeSlideUp {
+      0% { opacity: 0; transform: translateY(25px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes sparkleShow {
+      0%, 100% { opacity: 0; transform: scale(0.5); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+
+    /* Slide Colors */
+    .slide-1 .gift-box-body { background: linear-gradient(145deg, #E07B5C, #D06A4C); }
+    .slide-1 .gift-lid { background: linear-gradient(145deg, #E8856A, #D57050); }
+    .slide-1 .gift-ribbon-v, .slide-1 .gift-ribbon-h { background: #C4956A; }
+
+    .slide-2 .gift-box-body { background: linear-gradient(145deg, #6B7FD7, #5A6EC6); }
+    .slide-2 .gift-lid { background: linear-gradient(145deg, #7589E1, #6478D0); }
+    .slide-2 .gift-ribbon-v, .slide-2 .gift-ribbon-h { background: #A8B4E8; }
+
+    .slide-3 .gift-box-body { background: linear-gradient(145deg, #4CAF78, #3D9E69); }
+    .slide-3 .gift-lid { background: linear-gradient(145deg, #5CBF88, #4DAE79); }
+    .slide-3 .gift-ribbon-v, .slide-3 .gift-ribbon-h { background: #8ED4A8; }
+
+    .slide-4 .gift-box-body { background: linear-gradient(145deg, #F5A623, #E69612); }
+    .slide-4 .gift-lid { background: linear-gradient(145deg, #FFB633, #F5A623); }
+    .slide-4 .gift-ribbon-v, .slide-4 .gift-ribbon-h { background: #FFD580; }
+
+    /* Controls */
+    .controls {
+      margin-top: 30px;
+      display: flex;
+      gap: 15px;
+    }
+
+    .control-btn {
+      padding: 12px 30px;
+      background: #E07B5C;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .control-btn:hover { background: #D06A4C; }
+    .control-btn.outline {
+      background: transparent;
+      border: 2px solid #E07B5C;
+      color: #E07B5C;
+    }
+
+    .info {
+      margin-top: 25px;
+      color: #666;
+      font-size: 13px;
+      text-align: center;
+      max-width: 400px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <h1>Gift Unwrap Onboarding</h1>
+  <p class="subtitle">Click slides or use buttons to navigate</p>
+
+  <div class="phone-frame">
+    <div class="notch"></div>
+    <div class="phone-screen">
+      <div class="slides-container" id="slidesContainer">
+
+        <!-- SLIDE 1 -->
+        <div class="slide slide-1 active" data-index="0">
+          <div class="skip-btn">Skip</div>
+
+          <div class="slide-content">
+            <div class="gift-box-container">
+              <span class="sparkle" style="top: -20px; left: -30px;">✨</span>
+              <span class="sparkle" style="top: 0; right: -35px;">✨</span>
+              <span class="sparkle" style="bottom: 40px; left: -25px;">✨</span>
+              <span class="sparkle" style="bottom: 20px; right: -30px;">✨</span>
+
+              <div class="gift-box">
+                <div class="gift-box-body">
+                  <div class="gift-ribbon-v"></div>
+                  <div class="gift-ribbon-h"></div>
+                </div>
+                <div class="gift-lid">
+                  <div class="gift-bow">🎀</div>
+                </div>
+                <div class="gift-content">
+                  <div class="gift-content-icon">📋</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-title">Know What They<br>Really Want</div>
+            <div class="slide-desc">Send questionnaires to friends and family to discover their true gift preferences.</div>
+          </div>
+
+          <div class="slide-bottom">
+            <div class="dots">
+              <div class="dot active"></div>
+              <div class="dot inactive"></div>
+              <div class="dot inactive"></div>
+              <div class="dot inactive"></div>
+            </div>
+            <div class="next-btn" onclick="nextSlide()">
+              <span class="next-btn-text">Next</span>
+              <div class="next-btn-icon">→</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SLIDE 2 -->
+        <div class="slide slide-2" data-index="1">
+          <div class="skip-btn">Skip</div>
+
+          <div class="slide-content">
+            <div class="gift-box-container">
+              <span class="sparkle" style="top: -20px; left: -30px;">✨</span>
+              <span class="sparkle" style="top: 0; right: -35px;">✨</span>
+              <span class="sparkle" style="bottom: 40px; left: -25px;">✨</span>
+              <span class="sparkle" style="bottom: 20px; right: -30px;">✨</span>
+
+              <div class="gift-box">
+                <div class="gift-box-body">
+                  <div class="gift-ribbon-v"></div>
+                  <div class="gift-ribbon-h"></div>
+                </div>
+                <div class="gift-lid">
+                  <div class="gift-bow">🎀</div>
+                </div>
+                <div class="gift-content">
+                  <div class="gift-content-icon">👥</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-title">Build Your<br>Gift Circle</div>
+            <div class="slide-desc">Organize your loved ones into circles and keep track of everyone's special moments.</div>
+          </div>
+
+          <div class="slide-bottom">
+            <div class="dots">
+              <div class="dot inactive"></div>
+              <div class="dot active"></div>
+              <div class="dot inactive"></div>
+              <div class="dot inactive"></div>
+            </div>
+            <div class="next-btn" onclick="nextSlide()">
+              <span class="next-btn-text">Next</span>
+              <div class="next-btn-icon">→</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SLIDE 3 -->
+        <div class="slide slide-3" data-index="2">
+          <div class="skip-btn">Skip</div>
+
+          <div class="slide-content">
+            <div class="gift-box-container">
+              <span class="sparkle" style="top: -20px; left: -30px;">✨</span>
+              <span class="sparkle" style="top: 0; right: -35px;">✨</span>
+              <span class="sparkle" style="bottom: 40px; left: -25px;">✨</span>
+              <span class="sparkle" style="bottom: 20px; right: -30px;">✨</span>
+
+              <div class="gift-box">
+                <div class="gift-box-body">
+                  <div class="gift-ribbon-v"></div>
+                  <div class="gift-ribbon-h"></div>
+                </div>
+                <div class="gift-lid">
+                  <div class="gift-bow">🎀</div>
+                </div>
+                <div class="gift-content">
+                  <div class="gift-content-icon">📅</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-title">Never Miss<br>A Moment</div>
+            <div class="slide-desc">Get smart reminders for birthdays, weddings, and all the important dates.</div>
+          </div>
+
+          <div class="slide-bottom">
+            <div class="dots">
+              <div class="dot inactive"></div>
+              <div class="dot inactive"></div>
+              <div class="dot active"></div>
+              <div class="dot inactive"></div>
+            </div>
+            <div class="next-btn" onclick="nextSlide()">
+              <span class="next-btn-text">Next</span>
+              <div class="next-btn-icon">→</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SLIDE 4 -->
+        <div class="slide slide-4" data-index="3">
+          <div class="skip-btn">Skip</div>
+
+          <div class="slide-content">
+            <div class="gift-box-container">
+              <span class="sparkle" style="top: -20px; left: -30px;">✨</span>
+              <span class="sparkle" style="top: 0; right: -35px;">✨</span>
+              <span class="sparkle" style="bottom: 40px; left: -25px;">✨</span>
+              <span class="sparkle" style="bottom: 20px; right: -30px;">✨</span>
+
+              <div class="gift-box">
+                <div class="gift-box-body">
+                  <div class="gift-ribbon-v"></div>
+                  <div class="gift-ribbon-h"></div>
+                </div>
+                <div class="gift-lid">
+                  <div class="gift-bow">🎀</div>
+                </div>
+                <div class="gift-content">
+                  <div class="gift-content-icon">🎁</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-title">Give Perfect<br>Gifts, Every Time</div>
+            <div class="slide-desc">Access wishlists, registries, and personalized gift ideas based on their preferences.</div>
+          </div>
+
+          <div class="slide-bottom">
+            <div class="dots">
+              <div class="dot inactive"></div>
+              <div class="dot inactive"></div>
+              <div class="dot inactive"></div>
+              <div class="dot active"></div>
+            </div>
+            <div class="next-btn" onclick="getStarted()">
+              <span class="next-btn-text">Get Started</span>
+              <div class="next-btn-icon">→</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="control-btn outline" onclick="prevSlide()">← Previous</button>
+    <button class="control-btn" onclick="nextSlide()">Next →</button>
+    <button class="control-btn outline" onclick="resetSlides()">Reset</button>
+  </div>
+
+  <p class="info">
+    <strong>Animation Flow:</strong><br>
+    1. Gift lid opens with bounce<br>
+    2. Bow floats up playfully<br>
+    3. Icon reveals from inside box<br>
+    4. Icon floats continuously<br>
+    5. Sparkles twinkle around<br>
+    6. Text & button slide up<br>
+    7. Each slide has unique color!
+  </p>
+
+  <script>
+    let currentSlide = 0;
+    const totalSlides = 4;
+    const container = document.getElementById('slidesContainer');
+    const slides = document.querySelectorAll('.slide');
+
+    function goToSlide(index) {
+      // Remove active from all
+      slides.forEach(s => s.classList.remove('active'));
+
+      // Move container
+      container.style.transform = `translateX(-${index * 25}%)`;
+      currentSlide = index;
+
+      // Add active to current slide after transition
+      setTimeout(() => {
+        slides[index].classList.add('active');
+      }, 100);
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides - 1) {
+        goToSlide(currentSlide + 1);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        goToSlide(currentSlide - 1);
+      }
+    }
+
+    function resetSlides() {
+      slides.forEach(s => s.classList.remove('active'));
+      container.style.transform = 'translateX(0)';
+      currentSlide = 0;
+
+      setTimeout(() => {
+        slides[0].classList.add('active');
+      }, 100);
+    }
+
+    function getStarted() {
+      alert('🎉 Onboarding Complete! Navigating to Login...');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GiftBox4you - App Screens Preview</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+    h1 { text-align: center; color: #fff; margin-bottom: 8px; }
+    .subtitle { text-align: center; color: #888; font-size: 14px; margin-bottom: 40px; }
+
+    .screens-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 40px;
+      justify-content: center;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .screen-wrapper { text-align: center; }
+    .screen-title { color: #E07B5C; font-size: 18px; margin-bottom: 6px; font-weight: 700; }
+    .screen-desc { color: #888; font-size: 12px; margin-bottom: 16px; max-width: 280px; }
+
+    .phone-frame {
+      width: 280px;
+      height: 580px;
+      background: #000;
+      border-radius: 40px;
+      padding: 10px;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      border-radius: 34px;
+      overflow: hidden;
+      position: relative;
+      background: #FDF8F3;
+    }
+
+    .notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90px;
+      height: 24px;
+      background: #000;
+      border-radius: 0 0 14px 14px;
+      z-index: 100;
+    }
+
+    .replay-btn {
+      margin-top: 16px;
+      padding: 10px 24px;
+      background: #E07B5C;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .replay-btn:hover { background: #D06A4C; }
+
+    /* ========== HOME SCREEN ========== */
+    .home-screen {
+      padding: 50px 16px 80px;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .home-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      opacity: 0;
+      animation: fadeSlideDown 0.6s ease-out 0.2s forwards;
+    }
+
+    .greeting { font-size: 13px; color: #888; }
+    .user-name { font-size: 22px; font-weight: 700; color: #3D3D3D; }
+
+    .home-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #E07B5C, #C4956A);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 18px;
+      animation: avatarPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes avatarPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(224, 123, 92, 0.4); }
+      50% { box-shadow: 0 0 0 10px rgba(224, 123, 92, 0); }
+    }
+
+    .quick-stats {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      flex: 1;
+      background: white;
+      border-radius: 16px;
+      padding: 14px 12px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .stat-card:nth-child(1) { animation: statSlideUp 0.5s ease-out 0.4s forwards; }
+    .stat-card:nth-child(2) { animation: statSlideUp 0.5s ease-out 0.5s forwards; }
+    .stat-card:nth-child(3) { animation: statSlideUp 0.5s ease-out 0.6s forwards; }
+
+    @keyframes statSlideUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .stat-number {
+      font-size: 24px;
+      font-weight: 700;
+      color: #E07B5C;
+      animation: numberCount 1s ease-out 0.8s forwards;
+    }
+
+    .stat-label { font-size: 10px; color: #888; margin-top: 4px; }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #3D3D3D;
+      margin-bottom: 14px;
+      opacity: 0;
+      animation: fadeSlideDown 0.5s ease-out 0.7s forwards;
+    }
+
+    .upcoming-card {
+      background: linear-gradient(135deg, #E07B5C, #D06A4C);
+      border-radius: 20px;
+      padding: 18px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      opacity: 0;
+      transform: translateX(-30px);
+      animation: cardSlideIn 0.6s ease-out 0.9s forwards;
+    }
+
+    @keyframes cardSlideIn {
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .upcoming-icon {
+      width: 50px;
+      height: 50px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      animation: iconBounce 2s ease-in-out infinite;
+    }
+
+    @keyframes iconBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    .upcoming-info { flex: 1; }
+    .upcoming-name { color: white; font-weight: 600; font-size: 15px; }
+    .upcoming-date { color: rgba(255,255,255,0.8); font-size: 12px; margin-top: 3px; }
+    .upcoming-days {
+      background: white;
+      color: #E07B5C;
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .recent-card {
+      background: white;
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      opacity: 0;
+      transform: scale(0.9);
+      animation: cardPop 0.5s ease-out 1.1s forwards;
+    }
+
+    @keyframes cardPop {
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .recent-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: #F5E6DA;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .recent-info { flex: 1; }
+    .recent-name { font-size: 14px; font-weight: 600; color: #3D3D3D; }
+    .recent-event { font-size: 11px; color: #888; }
+    .recent-badge {
+      background: #4CAF78;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    /* Tab Bar */
+    .tab-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      background: white;
+      border-radius: 24px 24px 0 0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0 10px;
+      box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      opacity: 0.4;
+    }
+
+    .tab-item.active {
+      opacity: 1;
+    }
+
+    .tab-icon { font-size: 22px; }
+    .tab-label { font-size: 10px; color: #3D3D3D; }
+    .tab-item.active .tab-label { color: #E07B5C; font-weight: 600; }
+
+    @keyframes fadeSlideDown {
+      from { opacity: 0; transform: translateY(-15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========== CALENDAR SCREEN ========== */
+    .calendar-screen {
+      padding: 50px 16px 80px;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .cal-header {
+      text-align: center;
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: fadeSlideDown 0.5s ease-out 0.2s forwards;
+    }
+
+    .cal-month {
+      font-size: 20px;
+      font-weight: 700;
+      color: #3D3D3D;
+    }
+
+    .cal-nav {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 8px;
+    }
+
+    .cal-arrow {
+      width: 32px;
+      height: 32px;
+      background: #F5E6DA;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #E07B5C;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .cal-grid {
+      background: white;
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+      opacity: 0;
+      transform: scale(0.95);
+      animation: calendarPop 0.6s ease-out 0.4s forwards;
+    }
+
+    @keyframes calendarPop {
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+
+    .cal-weekday {
+      text-align: center;
+      font-size: 11px;
+      color: #888;
+      font-weight: 600;
+    }
+
+    .cal-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    .cal-day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: #3D3D3D;
+      border-radius: 10px;
+      position: relative;
+      opacity: 0;
+      animation: dayFadeIn 0.3s ease-out forwards;
+    }
+
+    .cal-day.today {
+      background: linear-gradient(135deg, #E07B5C, #D06A4C);
+      color: white;
+      font-weight: 700;
+      animation: todayPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes todayPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(224, 123, 92, 0.4); }
+      50% { box-shadow: 0 0 0 6px rgba(224, 123, 92, 0); }
+    }
+
+    .cal-day.has-event::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #E07B5C;
+      animation: dotPulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes dotPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+    }
+
+    .cal-day.has-event.green::after { background: #4CAF78; }
+    .cal-day.has-event.purple::after { background: #6B7FD7; }
+    .cal-day.has-event.gold::after { background: #F5A623; }
+
+    @keyframes dayFadeIn {
+      to { opacity: 1; }
+    }
+
+    .cal-events {
+      margin-top: 18px;
+    }
+
+    .cal-event-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      background: white;
+      border-radius: 14px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+
+    .cal-event-item:nth-child(1) { animation: eventSlide 0.5s ease-out 0.8s forwards; }
+    .cal-event-item:nth-child(2) { animation: eventSlide 0.5s ease-out 0.95s forwards; }
+
+    @keyframes eventSlide {
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .cal-event-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #E07B5C;
+    }
+
+    .cal-event-info { flex: 1; }
+    .cal-event-name { font-size: 14px; font-weight: 600; color: #3D3D3D; }
+    .cal-event-date { font-size: 11px; color: #888; }
+
+    /* ========== CIRCLES SCREEN ========== */
+    .circles-screen {
+      padding: 50px 16px 80px;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .circles-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: fadeSlideDown 0.5s ease-out 0.2s forwards;
+    }
+
+    .circles-title { font-size: 22px; font-weight: 700; color: #3D3D3D; }
+
+    .add-btn {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #E07B5C, #D06A4C);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+      animation: addBtnPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes addBtnPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .circle-card {
+      background: white;
+      border-radius: 20px;
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .circle-card:nth-child(1) { animation: circleSlide 0.5s ease-out 0.4s forwards; }
+    .circle-card:nth-child(2) { animation: circleSlide 0.5s ease-out 0.55s forwards; }
+    .circle-card:nth-child(3) { animation: circleSlide 0.5s ease-out 0.7s forwards; }
+
+    @keyframes circleSlide {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .circle-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .circle-name { font-size: 16px; font-weight: 700; color: #3D3D3D; }
+    .circle-count {
+      background: #F5E6DA;
+      color: #E07B5C;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .circle-avatars {
+      display: flex;
+      gap: -8px;
+    }
+
+    .circle-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      border: 3px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      margin-left: -10px;
+      opacity: 0;
+      transform: scale(0);
+    }
+
+    .circle-avatar:first-child { margin-left: 0; }
+
+    .circle-card:nth-child(1) .circle-avatar:nth-child(1) { animation: avatarPop 0.4s ease-out 0.7s forwards; background: #E07B5C; }
+    .circle-card:nth-child(1) .circle-avatar:nth-child(2) { animation: avatarPop 0.4s ease-out 0.8s forwards; background: #6B7FD7; }
+    .circle-card:nth-child(1) .circle-avatar:nth-child(3) { animation: avatarPop 0.4s ease-out 0.9s forwards; background: #4CAF78; }
+    .circle-card:nth-child(1) .circle-avatar:nth-child(4) { animation: avatarPop 0.4s ease-out 1s forwards; background: #F5A623; }
+
+    .circle-card:nth-child(2) .circle-avatar:nth-child(1) { animation: avatarPop 0.4s ease-out 0.85s forwards; background: #D4A088; }
+    .circle-card:nth-child(2) .circle-avatar:nth-child(2) { animation: avatarPop 0.4s ease-out 0.95s forwards; background: #C4956A; }
+    .circle-card:nth-child(2) .circle-avatar:nth-child(3) { animation: avatarPop 0.4s ease-out 1.05s forwards; background: #E07B5C; }
+
+    .circle-card:nth-child(3) .circle-avatar:nth-child(1) { animation: avatarPop 0.4s ease-out 1s forwards; background: #6B7FD7; }
+    .circle-card:nth-child(3) .circle-avatar:nth-child(2) { animation: avatarPop 0.4s ease-out 1.1s forwards; background: #4CAF78; }
+
+    @keyframes avatarPop {
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .circle-avatar.more {
+      background: #F5E6DA !important;
+      color: #E07B5C;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* ========== GIFTS SCREEN ========== */
+    .gifts-screen {
+      padding: 50px 16px 80px;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .gifts-header {
+      margin-bottom: 18px;
+      opacity: 0;
+      animation: fadeSlideDown 0.5s ease-out 0.2s forwards;
+    }
+
+    .gifts-title { font-size: 22px; font-weight: 700; color: #3D3D3D; }
+
+    .gifts-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+      opacity: 0;
+      animation: fadeSlideDown 0.5s ease-out 0.35s forwards;
+    }
+
+    .gift-tab {
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      background: #F5E6DA;
+      color: #888;
+    }
+
+    .gift-tab.active {
+      background: linear-gradient(135deg, #E07B5C, #D06A4C);
+      color: white;
+    }
+
+    .gift-card {
+      background: white;
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      gap: 14px;
+      box-shadow: 0 5px 18px rgba(0,0,0,0.05);
+      opacity: 0;
+      transform: translateX(30px) rotateY(10deg);
+    }
+
+    .gift-card:nth-child(1) { animation: giftCardSlide 0.6s ease-out 0.5s forwards; }
+    .gift-card:nth-child(2) { animation: giftCardSlide 0.6s ease-out 0.65s forwards; }
+    .gift-card:nth-child(3) { animation: giftCardSlide 0.6s ease-out 0.8s forwards; }
+
+    @keyframes giftCardSlide {
+      to { opacity: 1; transform: translateX(0) rotateY(0); }
+    }
+
+    .gift-image {
+      width: 70px;
+      height: 70px;
+      background: #F5E6DA;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+    }
+
+    .gift-info { flex: 1; }
+    .gift-name { font-size: 15px; font-weight: 600; color: #3D3D3D; margin-bottom: 4px; }
+    .gift-for { font-size: 12px; color: #888; margin-bottom: 8px; }
+
+    .gift-price {
+      display: inline-block;
+      background: linear-gradient(135deg, #E07B5C, #D06A4C);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .gift-action {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gift-heart {
+      font-size: 22px;
+      color: #E07B5C;
+      animation: heartBeat 1.5s ease-in-out infinite;
+    }
+
+    @keyframes heartBeat {
+      0%, 100% { transform: scale(1); }
+      15% { transform: scale(1.15); }
+      30% { transform: scale(1); }
+      45% { transform: scale(1.1); }
+    }
+
+    /* ========== PROFILE SCREEN ========== */
+    .profile-screen {
+      padding: 50px 16px 80px;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .profile-header {
+      text-align: center;
+      margin-bottom: 24px;
+      opacity: 0;
+      animation: fadeSlideDown 0.6s ease-out 0.2s forwards;
+    }
+
+    .profile-avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 28px;
+      background: linear-gradient(135deg, #E07B5C, #C4956A);
+      margin: 0 auto 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      color: white;
+      position: relative;
+      animation: profilePop 0.8s ease-out 0.3s forwards;
+      transform: scale(0);
+      opacity: 0;
+    }
+
+    @keyframes profilePop {
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .profile-badge {
+      position: absolute;
+      bottom: -5px;
+      right: -5px;
+      width: 28px;
+      height: 28px;
+      background: #4CAF78;
+      border-radius: 10px;
+      border: 3px solid #FDF8F3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+
+    .profile-name { font-size: 22px; font-weight: 700; color: #3D3D3D; }
+    .profile-email { font-size: 13px; color: #888; margin-top: 4px; }
+
+    .profile-stats {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .profile-stat {
+      flex: 1;
+      background: white;
+      border-radius: 16px;
+      padding: 16px 10px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+      opacity: 0;
+      transform: scale(0.8);
+    }
+
+    .profile-stat:nth-child(1) { animation: statPop 0.5s ease-out 0.5s forwards; }
+    .profile-stat:nth-child(2) { animation: statPop 0.5s ease-out 0.6s forwards; }
+    .profile-stat:nth-child(3) { animation: statPop 0.5s ease-out 0.7s forwards; }
+
+    @keyframes statPop {
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .profile-stat-num {
+      font-size: 26px;
+      font-weight: 700;
+      color: #E07B5C;
+    }
+
+    .profile-stat-label {
+      font-size: 11px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .profile-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      background: white;
+      border-radius: 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.03);
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+
+    .profile-menu-item:nth-child(1) { animation: menuSlide 0.4s ease-out 0.8s forwards; }
+    .profile-menu-item:nth-child(2) { animation: menuSlide 0.4s ease-out 0.9s forwards; }
+    .profile-menu-item:nth-child(3) { animation: menuSlide 0.4s ease-out 1s forwards; }
+
+    @keyframes menuSlide {
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .menu-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .menu-icon.coral { background: rgba(224, 123, 92, 0.15); }
+    .menu-icon.purple { background: rgba(107, 127, 215, 0.15); }
+    .menu-icon.green { background: rgba(76, 175, 120, 0.15); }
+
+    .menu-info { flex: 1; }
+    .menu-title { font-size: 15px; font-weight: 600; color: #3D3D3D; }
+    .menu-desc { font-size: 11px; color: #888; }
+
+    .menu-arrow { color: #CCC; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1>App Screens Preview</h1>
+  <p class="subtitle">Warm Cream + Rich Coral Theme | All screens with unique animations</p>
+
+  <div class="screens-grid">
+
+    <!-- HOME SCREEN -->
+    <div class="screen-wrapper">
+      <div class="screen-title">Home Screen</div>
+      <p class="screen-desc">Dashboard with stats, upcoming events & recent activity</p>
+      <div class="phone-frame">
+        <div class="notch"></div>
+        <div class="phone-screen" id="homeScreen">
+          <div class="home-screen">
+            <div class="home-header">
+              <div>
+                <div class="greeting">Good Morning</div>
+                <div class="user-name">Sarah Johnson</div>
+              </div>
+              <div class="home-avatar">SJ</div>
+            </div>
+
+            <div class="quick-stats">
+              <div class="stat-card">
+                <div class="stat-number">12</div>
+                <div class="stat-label">Upcoming</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number">48</div>
+                <div class="stat-label">Contacts</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number">23</div>
+                <div class="stat-label">Gifts Given</div>
+              </div>
+            </div>
+
+            <div class="section-title">Upcoming Events</div>
+
+            <div class="upcoming-card">
+              <div class="upcoming-icon">🎂</div>
+              <div class="upcoming-info">
+                <div class="upcoming-name">Mom's Birthday</div>
+                <div class="upcoming-date">Dec 15, 2024</div>
+              </div>
+              <div class="upcoming-days">3 days</div>
+            </div>
+
+            <div class="section-title">Recent Activity</div>
+
+            <div class="recent-card">
+              <div class="recent-avatar">👨</div>
+              <div class="recent-info">
+                <div class="recent-name">David Wilson</div>
+                <div class="recent-event">Added to Family circle</div>
+              </div>
+              <div class="recent-badge">New</div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item active">
+                <div class="tab-icon">🏠</div>
+                <div class="tab-label">Home</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon">📅</div>
+                <div class="tab-label">Calendar</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon">👥</div>
+                <div class="tab-label">Circles</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon">🎁</div>
+                <div class="tab-label">Gifts</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon">👤</div>
+                <div class="tab-label">Profile</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="replay-btn" onclick="replay('homeScreen')">Replay</button>
+    </div>
+
+    <!-- CALENDAR SCREEN -->
+    <div class="screen-wrapper">
+      <div class="screen-title">Calendar Screen</div>
+      <p class="screen-desc">Monthly view with event dots & quick event list</p>
+      <div class="phone-frame">
+        <div class="notch"></div>
+        <div class="phone-screen" id="calendarScreen">
+          <div class="calendar-screen">
+            <div class="cal-header">
+              <div class="cal-month">December 2024</div>
+              <div class="cal-nav">
+                <div class="cal-arrow">←</div>
+                <div class="cal-arrow">→</div>
+              </div>
+            </div>
+
+            <div class="cal-grid">
+              <div class="cal-weekdays">
+                <div class="cal-weekday">Sun</div>
+                <div class="cal-weekday">Mon</div>
+                <div class="cal-weekday">Tue</div>
+                <div class="cal-weekday">Wed</div>
+                <div class="cal-weekday">Thu</div>
+                <div class="cal-weekday">Fri</div>
+                <div class="cal-weekday">Sat</div>
+              </div>
+              <div class="cal-days">
+                <div class="cal-day" style="animation-delay: 0.5s">1</div>
+                <div class="cal-day" style="animation-delay: 0.52s">2</div>
+                <div class="cal-day" style="animation-delay: 0.54s">3</div>
+                <div class="cal-day" style="animation-delay: 0.56s">4</div>
+                <div class="cal-day has-event" style="animation-delay: 0.58s">5</div>
+                <div class="cal-day" style="animation-delay: 0.6s">6</div>
+                <div class="cal-day" style="animation-delay: 0.62s">7</div>
+                <div class="cal-day" style="animation-delay: 0.64s">8</div>
+                <div class="cal-day" style="animation-delay: 0.66s">9</div>
+                <div class="cal-day has-event green" style="animation-delay: 0.68s">10</div>
+                <div class="cal-day" style="animation-delay: 0.7s">11</div>
+                <div class="cal-day today" style="animation-delay: 0.72s">12</div>
+                <div class="cal-day" style="animation-delay: 0.74s">13</div>
+                <div class="cal-day" style="animation-delay: 0.76s">14</div>
+                <div class="cal-day has-event" style="animation-delay: 0.78s">15</div>
+                <div class="cal-day" style="animation-delay: 0.8s">16</div>
+                <div class="cal-day" style="animation-delay: 0.82s">17</div>
+                <div class="cal-day" style="animation-delay: 0.84s">18</div>
+                <div class="cal-day" style="animation-delay: 0.86s">19</div>
+                <div class="cal-day has-event purple" style="animation-delay: 0.88s">20</div>
+                <div class="cal-day" style="animation-delay: 0.9s">21</div>
+                <div class="cal-day" style="animation-delay: 0.92s">22</div>
+                <div class="cal-day" style="animation-delay: 0.94s">23</div>
+                <div class="cal-day has-event gold" style="animation-delay: 0.96s">24</div>
+                <div class="cal-day has-event" style="animation-delay: 0.98s">25</div>
+                <div class="cal-day" style="animation-delay: 1s">26</div>
+                <div class="cal-day" style="animation-delay: 1.02s">27</div>
+                <div class="cal-day" style="animation-delay: 1.04s">28</div>
+              </div>
+            </div>
+
+            <div class="cal-events">
+              <div class="cal-event-item">
+                <div class="cal-event-dot"></div>
+                <div class="cal-event-info">
+                  <div class="cal-event-name">Mom's Birthday</div>
+                  <div class="cal-event-date">Dec 15, 2024</div>
+                </div>
+              </div>
+              <div class="cal-event-item">
+                <div class="cal-event-dot" style="background: #6B7FD7;"></div>
+                <div class="cal-event-info">
+                  <div class="cal-event-name">Anniversary</div>
+                  <div class="cal-event-date">Dec 20, 2024</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item">
+                <div class="tab-icon">🏠</div>
+                <div class="tab-label">Home</div>
+              </div>
+              <div class="tab-item active">
+                <div class="tab-icon">📅</div>
+                <div class="tab-label">Calendar</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon">👥</div>
+                <div class="tab-label">Circles</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon">🎁</div>
+                <div class="tab-label">Gifts</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon">👤</div>
+                <div class="tab-label">Profile</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="replay-btn" onclick="replay('calendarScreen')">Replay</button>
+    </div>
+
+    <!-- CIRCLES SCREEN -->
+    <div class="screen-wrapper">
+      <div class="screen-title">Circles Screen</div>
+      <p class="screen-desc">Friend groups with member avatars</p>
+      <div class="phone-frame">
+        <div class="notch"></div>
+        <div class="phone-screen" id="circlesScreen">
+          <div class="circles-screen">
+            <div class="circles-header">
+              <div class="circles-title">My Circles</div>
+              <div class="add-btn">+</div>
+            </div>
+
+            <div class="circle-card">
+              <div class="circle-header">
+                <div class="circle-name">👨‍👩‍👧‍👦 Family</div>
+                <div class="circle-count">8 members</div>
+              </div>
+              <div class="circle-avatars">
+                <div class="circle-avatar">M</div>
+                <div class="circle-avatar">D</div>
+                <div class="circle-avatar">S</div>
+                <div class="circle-avatar more">+5</div>
+              </div>
+            </div>
+
+            <div class="circle-card">
+              <div class="circle-header">
+                <div class="circle-name">💼 Work Friends</div>
+                <div class="circle-count">5 members</div>
+              </div>
+              <div class="circle-avatars">
+                <div class="circle-avatar">J</div>
+                <div class="circle-avatar">A</div>
+                <div class="circle-avatar more">+3</div>
+              </div>
+            </div>
+
+            <div class="circle-card">
+              <div class="circle-header">
+                <div class="circle-name">🎓 College Friends</div>
+                <div class="circle-count">3 members</div>
+              </div>
+              <div class="circle-avatars">
+                <div class="circle-avatar">R</div>
+                <div class="circle-avatar more">+2</div>
+              </div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item">
+                <div class="tab-icon">🏠</div>
+                <div class="tab-label">Home</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon">📅</div>
+                <div class="tab-label">Calendar</div>
+              </div>
+              <div class="tab-item active">
+                <div class="tab-icon">👥</div>
+                <div class="tab-label">Circles</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon">🎁</div>
+                <div class="tab-label">Gifts</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon">👤</div>
+                <div class="tab-label">Profile</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="replay-btn" onclick="replay('circlesScreen')">Replay</button>
+    </div>
+
+    <!-- GIFTS SCREEN -->
+    <div class="screen-wrapper">
+      <div class="screen-title">Gifts Screen</div>
+      <p class="screen-desc">Gift ideas with 3D card animations</p>
+      <div class="phone-frame">
+        <div class="notch"></div>
+        <div class="phone-screen" id="giftsScreen">
+          <div class="gifts-screen">
+            <div class="gifts-header">
+              <div class="gifts-title">Gift Ideas</div>
+            </div>
+
+            <div class="gifts-tabs">
+              <div class="gift-tab active">All</div>
+              <div class="gift-tab">Saved</div>
+              <div class="gift-tab">Purchased</div>
+            </div>
+
+            <div class="gift-card">
+              <div class="gift-image">📱</div>
+              <div class="gift-info">
+                <div class="gift-name">Wireless Earbuds</div>
+                <div class="gift-for">For: Mom's Birthday</div>
+                <div class="gift-price">$79.99</div>
+              </div>
+              <div class="gift-action">
+                <div class="gift-heart">❤️</div>
+              </div>
+            </div>
+
+            <div class="gift-card">
+              <div class="gift-image">📚</div>
+              <div class="gift-info">
+                <div class="gift-name">Bestseller Book Set</div>
+                <div class="gift-for">For: Dad's Birthday</div>
+                <div class="gift-price">$45.00</div>
+              </div>
+              <div class="gift-action">
+                <div class="gift-heart">🤍</div>
+              </div>
+            </div>
+
+            <div class="gift-card">
+              <div class="gift-image">🎨</div>
+              <div class="gift-info">
+                <div class="gift-name">Art Supply Kit</div>
+                <div class="gift-for">For: Sister's Graduation</div>
+                <div class="gift-price">$59.99</div>
+              </div>
+              <div class="gift-action">
+                <div class="gift-heart">❤️</div>
+              </div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item">
+                <div class="tab-icon">🏠</div>
+                <div class="tab-label">Home</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon">📅</div>
+                <div class="tab-label">Calendar</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon">👥</div>
+                <div class="tab-label">Circles</div>
+              </div>
+              <div class="tab-item active">
+                <div class="tab-icon">🎁</div>
+                <div class="tab-label">Gifts</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon">👤</div>
+                <div class="tab-label">Profile</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="replay-btn" onclick="replay('giftsScreen')">Replay</button>
+    </div>
+
+    <!-- PROFILE SCREEN -->
+    <div class="screen-wrapper">
+      <div class="screen-title">Profile Screen</div>
+      <p class="screen-desc">User profile with stats & settings</p>
+      <div class="phone-frame">
+        <div class="notch"></div>
+        <div class="phone-screen" id="profileScreen">
+          <div class="profile-screen">
+            <div class="profile-header">
+              <div class="profile-avatar">
+                SJ
+                <div class="profile-badge">✓</div>
+              </div>
+              <div class="profile-name">Sarah Johnson</div>
+              <div class="profile-email">sarah@example.com</div>
+            </div>
+
+            <div class="profile-stats">
+              <div class="profile-stat">
+                <div class="profile-stat-num">48</div>
+                <div class="profile-stat-label">Contacts</div>
+              </div>
+              <div class="profile-stat">
+                <div class="profile-stat-num">23</div>
+                <div class="profile-stat-label">Gifts</div>
+              </div>
+              <div class="profile-stat">
+                <div class="profile-stat-num">5</div>
+                <div class="profile-stat-label">Circles</div>
+              </div>
+            </div>
+
+            <div class="profile-menu-item">
+              <div class="menu-icon coral">⚙️</div>
+              <div class="menu-info">
+                <div class="menu-title">Settings</div>
+                <div class="menu-desc">App preferences</div>
+              </div>
+              <div class="menu-arrow">→</div>
+            </div>
+
+            <div class="profile-menu-item">
+              <div class="menu-icon purple">🔔</div>
+              <div class="menu-info">
+                <div class="menu-title">Notifications</div>
+                <div class="menu-desc">Manage alerts</div>
+              </div>
+              <div class="menu-arrow">→</div>
+            </div>
+
+            <div class="profile-menu-item">
+              <div class="menu-icon green">❓</div>
+              <div class="menu-info">
+                <div class="menu-title">Help & Support</div>
+                <div class="menu-desc">Get assistance</div>
+              </div>
+              <div class="menu-arrow">→</div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item">
+                <div class="tab-icon">🏠</div>
+                <div class="tab-label">Home</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon">📅</div>
+                <div class="tab-label">Calendar</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon">👥</div>
+                <div class="tab-label">Circles</div>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon">🎁</div>
+                <div class="tab-label">Gifts</div>
+              </div>
+              <div class="tab-item active">
+                <div class="tab-icon">👤</div>
+                <div class="tab-label">Profile</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="replay-btn" onclick="replay('profileScreen')">Replay</button>
+    </div>
+
+  </div>
+
+  <script>
+    function replay(screenId) {
+      const screen = document.getElementById(screenId);
+      const content = screen.innerHTML;
+      screen.innerHTML = '';
+      setTimeout(() => {
+        screen.innerHTML = content;
+      }, 50);
+    }
+  </script>
+</body>
+</html>

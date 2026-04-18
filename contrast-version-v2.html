@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GiftBox4you - Contrast Version V2</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0F0F1A 0%, #1A1A2E 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #FFFFFF;
+      margin-bottom: 10px;
+      font-size: 32px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #8B8BA7;
+      margin-bottom: 50px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 30px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .phone-frame {
+      width: 320px;
+      height: 660px;
+      background: #16162A;
+      border-radius: 44px;
+      padding: 12px;
+      margin: 0 auto;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08);
+      position: relative;
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      background: #0A0A14;
+      border-radius: 36px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .screen-label {
+      text-align: center;
+      color: #FFFFFF;
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+
+    /* ========== NEW TAB BAR DESIGN ========== */
+    .tab-bar-new {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      background: rgba(22, 22, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 12px 8px;
+      display: flex;
+      justify-content: space-around;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .tab-item-new {
+      width: 52px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 16px;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .tab-item-new.active {
+      background: linear-gradient(135deg, #6366F1, #A855F7);
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+    }
+
+    .tab-item-new svg {
+      width: 22px;
+      height: 22px;
+      stroke: #6B6B80;
+      stroke-width: 1.8;
+      fill: none;
+    }
+
+    .tab-item-new.active svg {
+      stroke: #FFFFFF;
+    }
+
+    /* ========== SPLASH SCREEN - MORPHING DESIGN ========== */
+    .splash-v2 {
+      background: #0A0A14;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .splash-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      animation: ringExpand 3s ease-in-out infinite;
+    }
+
+    .splash-ring:nth-child(1) { width: 100px; height: 100px; animation-delay: 0s; }
+    .splash-ring:nth-child(2) { width: 180px; height: 180px; animation-delay: 0.5s; }
+    .splash-ring:nth-child(3) { width: 260px; height: 260px; animation-delay: 1s; }
+    .splash-ring:nth-child(4) { width: 340px; height: 340px; animation-delay: 1.5s; }
+
+    @keyframes ringExpand {
+      0%, 100% { transform: scale(0.9); opacity: 0.3; }
+      50% { transform: scale(1.1); opacity: 0.6; }
+    }
+
+    .splash-logo-v2 {
+      width: 90px;
+      height: 90px;
+      background: linear-gradient(135deg, #6366F1 0%, #A855F7 50%, #EC4899 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 10;
+      box-shadow: 0 0 60px rgba(99, 102, 241, 0.5);
+    }
+
+    .splash-logo-v2 svg {
+      width: 44px;
+      height: 44px;
+      fill: #FFFFFF;
+    }
+
+    .splash-text-v2 {
+      margin-top: 32px;
+      text-align: center;
+      position: relative;
+      z-index: 10;
+    }
+
+    .splash-text-v2 h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #FFFFFF;
+      letter-spacing: -0.5px;
+    }
+
+    .splash-text-v2 p {
+      color: #8B8BA7;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .splash-progress {
+      position: absolute;
+      bottom: 80px;
+      width: 120px;
+      height: 3px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .splash-progress-bar {
+      height: 100%;
+      width: 60%;
+      background: linear-gradient(90deg, #6366F1, #A855F7);
+      border-radius: 2px;
+      animation: progressMove 2s ease-in-out infinite;
+    }
+
+    @keyframes progressMove {
+      0% { width: 20%; }
+      50% { width: 80%; }
+      100% { width: 20%; }
+    }
+
+    /* ========== LOGIN SCREEN - CARD STYLE ========== */
+    .login-v2 {
+      background: #0A0A14;
+      height: 100%;
+      padding: 60px 20px 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .login-top-v2 {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .login-icon-v2 {
+      width: 70px;
+      height: 70px;
+      background: linear-gradient(135deg, #6366F1, #A855F7);
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 16px 48px rgba(99, 102, 241, 0.4);
+    }
+
+    .login-icon-v2 svg {
+      width: 32px;
+      height: 32px;
+      fill: #FFFFFF;
+    }
+
+    .login-top-v2 h2 {
+      color: #FFFFFF;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .login-top-v2 p {
+      color: #6B6B80;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .login-card-v2 {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 24px;
+      padding: 24px;
+      flex: 1;
+    }
+
+    .input-v2 {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .input-v2 svg {
+      width: 20px;
+      height: 20px;
+      stroke: #6B6B80;
+      fill: none;
+    }
+
+    .input-v2 span {
+      color: #6B6B80;
+      font-size: 14px;
+    }
+
+    .login-btn-v2 {
+      background: linear-gradient(135deg, #6366F1, #A855F7);
+      border-radius: 14px;
+      padding: 16px;
+      text-align: center;
+      color: #FFFFFF;
+      font-weight: 600;
+      font-size: 15px;
+      margin-top: 8px;
+      box-shadow: 0 12px 32px rgba(99, 102, 241, 0.4);
+    }
+
+    .login-or-v2 {
+      text-align: center;
+      color: #4A4A5A;
+      font-size: 12px;
+      margin: 20px 0;
+    }
+
+    .social-row-v2 {
+      display: flex;
+      gap: 12px;
+    }
+
+    .social-btn-v2 {
+      flex: 1;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .social-btn-v2 svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .social-btn-v2 span {
+      color: #FFFFFF;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* ========== HOME SCREEN - BENTO GRID ========== */
+    .home-v2 {
+      background: #0A0A14;
+      height: 100%;
+      padding: 50px 16px 90px;
+      overflow-y: auto;
+    }
+
+    .home-top-v2 {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+    }
+
+    .home-greeting-v2 h1 {
+      color: #FFFFFF;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .home-greeting-v2 p {
+      color: #6B6B80;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .home-notif-v2 {
+      width: 44px;
+      height: 44px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .home-notif-v2 svg {
+      width: 20px;
+      height: 20px;
+      stroke: #FFFFFF;
+      fill: none;
+    }
+
+    .home-notif-v2::after {
+      content: '';
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 8px;
+      height: 8px;
+      background: #EC4899;
+      border-radius: 50%;
+      border: 2px solid #0A0A14;
+    }
+
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .bento-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bento-card.wide {
+      grid-column: span 2;
+    }
+
+    .bento-card.highlight {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15));
+      border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    .bento-label {
+      color: #6B6B80;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .bento-value {
+      color: #FFFFFF;
+      font-size: 32px;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+
+    .bento-value.gradient {
+      background: linear-gradient(135deg, #6366F1, #A855F7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .bento-icon {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 36px;
+      height: 36px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .bento-icon svg {
+      width: 18px;
+      height: 18px;
+      stroke: #A855F7;
+      fill: none;
+    }
+
+    .upcoming-card-v2 {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .upcoming-avatar-v2 {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #EC4899, #F472B6);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .upcoming-info-v2 h4 {
+      color: #FFFFFF;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .upcoming-info-v2 p {
+      color: #6B6B80;
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .upcoming-badge-v2 {
+      margin-left: auto;
+      background: linear-gradient(135deg, #6366F1, #A855F7);
+      border-radius: 20px;
+      padding: 6px 14px;
+      color: #FFFFFF;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* ========== CALENDAR - HORIZONTAL WEEK VIEW ========== */
+    .calendar-v2 {
+      background: #0A0A14;
+      height: 100%;
+      padding: 50px 0 90px;
+      overflow-y: auto;
+    }
+
+    .calendar-header-v2 {
+      padding: 0 20px 20px;
+    }
+
+    .calendar-header-v2 h1 {
+      color: #FFFFFF;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .calendar-month-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 20px;
+      padding: 0 20px;
+    }
+
+    .calendar-month-v2 {
+      color: #FFFFFF;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .calendar-nav-v2 {
+      display: flex;
+      gap: 8px;
+    }
+
+    .calendar-nav-btn {
+      width: 36px;
+      height: 36px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .calendar-nav-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: #FFFFFF;
+      fill: none;
+    }
+
+    .week-scroll {
+      display: flex;
+      gap: 10px;
+      padding: 20px;
+      overflow-x: auto;
+    }
+
+    .week-day-card {
+      min-width: 52px;
+      padding: 14px 8px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      text-align: center;
+    }
+
+    .week-day-card.today {
+      background: linear-gradient(135deg, #6366F1, #A855F7);
+      border: none;
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+    }
+
+    .week-day-name {
+      color: #6B6B80;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .week-day-card.today .week-day-name {
+      color: rgba(255,255,255,0.8);
+    }
+
+    .week-day-num {
+      color: #FFFFFF;
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    .week-day-dot {
+      width: 5px;
+      height: 5px;
+      background: #A855F7;
+      border-radius: 50%;
+      margin: 8px auto 0;
+    }
+
+    .week-day-card.today .week-day-dot {
+      background: #FFFFFF;
+    }
+
+    .calendar-section-v2 {
+      padding: 0 20px;
+      margin-top: 8px;
+    }
+
+    .calendar-section-title {
+      color: #6B6B80;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+    }
+
+    .event-card-v2 {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .event-time-v2 {
+      text-align: center;
+      min-width: 50px;
+    }
+
+    .event-time-v2 span {
+      color: #A855F7;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .event-time-v2 small {
+      color: #6B6B80;
+      font-size: 10px;
+      display: block;
+    }
+
+    .event-divider {
+      width: 3px;
+      height: 40px;
+      background: linear-gradient(180deg, #6366F1, #A855F7);
+      border-radius: 2px;
+    }
+
+    .event-details-v2 h4 {
+      color: #FFFFFF;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .event-details-v2 p {
+      color: #6B6B80;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    /* ========== CIRCLES - CHIP STYLE ========== */
+    .circles-v2 {
+      background: #0A0A14;
+      height: 100%;
+      padding: 50px 20px 90px;
+      overflow-y: auto;
+    }
+
+    .circles-header-v2 {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .circles-header-v2 h1 {
+      color: #FFFFFF;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .add-btn-v2 {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #6366F1, #A855F7);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+    }
+
+    .add-btn-v2 svg {
+      width: 22px;
+      height: 22px;
+      stroke: #FFFFFF;
+      fill: none;
+    }
+
+    .circle-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .circle-chip {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 10px 18px;
+      color: #8B8BA7;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .circle-chip.active {
+      background: linear-gradient(135deg, #6366F1, #A855F7);
+      border: none;
+      color: #FFFFFF;
+    }
+
+    .member-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .member-card-v2 {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      padding: 20px 12px;
+      text-align: center;
+    }
+
+    .member-avatar-v2 {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      margin: 0 auto 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: #FFFFFF;
+    }
+
+    .member-avatar-v2.purple { background: linear-gradient(135deg, #6366F1, #A855F7); }
+    .member-avatar-v2.pink { background: linear-gradient(135deg, #EC4899, #F472B6); }
+    .member-avatar-v2.green { background: linear-gradient(135deg, #10B981, #34D399); }
+    .member-avatar-v2.orange { background: linear-gradient(135deg, #F59E0B, #FBBF24); }
+    .member-avatar-v2.blue { background: linear-gradient(135deg, #3B82F6, #60A5FA); }
+    .member-avatar-v2.red { background: linear-gradient(135deg, #EF4444, #F87171); }
+
+    .member-name-v2 {
+      color: #FFFFFF;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .member-date-v2 {
+      color: #6B6B80;
+      font-size: 10px;
+      margin-top: 4px;
+    }
+
+    /* ========== GIFTS - MASONRY STYLE ========== */
+    .gifts-v2 {
+      background: #0A0A14;
+      height: 100%;
+      padding: 50px 16px 90px;
+      overflow-y: auto;
+    }
+
+    .gifts-header-v2 {
+      padding: 0 4px;
+      margin-bottom: 20px;
+    }
+
+    .gifts-header-v2 h1 {
+      color: #FFFFFF;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .gifts-search-v2 {
+      margin-top: 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .gifts-search-v2 svg {
+      width: 18px;
+      height: 18px;
+      stroke: #6B6B80;
+      fill: none;
+    }
+
+    .gifts-search-v2 span {
+      color: #6B6B80;
+      font-size: 14px;
+    }
+
+    .gifts-masonry {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .gift-item-v2 {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      padding: 16px;
+      break-inside: avoid;
+    }
+
+    .gift-item-v2:nth-child(odd) {
+      padding-bottom: 24px;
+    }
+
+    .gift-item-v2:nth-child(even) {
+      margin-top: -20px;
+    }
+
+    .gift-item-v2:nth-child(2) {
+      margin-top: 30px;
+    }
+
+    .gift-img-v2 {
+      width: 100%;
+      aspect-ratio: 1;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      margin-bottom: 14px;
+    }
+
+    .gift-name-v2 {
+      color: #FFFFFF;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .gift-for-v2 {
+      color: #6B6B80;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .gift-price-v2 {
+      display: inline-block;
+      background: linear-gradient(135deg, #6366F1, #A855F7);
+      border-radius: 8px;
+      padding: 6px 12px;
+      color: #FFFFFF;
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 12px;
+    }
+
+    /* ========== PROFILE - CENTERED CARD ========== */
+    .profile-v2 {
+      background: #0A0A14;
+      height: 100%;
+      padding: 50px 20px 90px;
+      overflow-y: auto;
+    }
+
+    .profile-card-v2 {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: 28px;
+      padding: 32px 24px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .profile-avatar-v2 {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #6366F1, #A855F7, #EC4899);
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      box-shadow: 0 12px 40px rgba(99, 102, 241, 0.4);
+    }
+
+    .profile-name-v2 {
+      color: #FFFFFF;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .profile-email-v2 {
+      color: #8B8BA7;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .profile-stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .profile-stat-v2 {
+      text-align: center;
+    }
+
+    .profile-stat-v2 strong {
+      color: #FFFFFF;
+      font-size: 22px;
+      font-weight: 700;
+      display: block;
+    }
+
+    .profile-stat-v2 span {
+      color: #6B6B80;
+      font-size: 11px;
+    }
+
+    .profile-menu-v2 {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .profile-menu-item-v2 {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 18px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .profile-menu-icon-v2 {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .profile-menu-icon-v2 svg {
+      width: 20px;
+      height: 20px;
+      stroke: #A855F7;
+      fill: none;
+    }
+
+    .profile-menu-label-v2 {
+      flex: 1;
+      color: #FFFFFF;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .profile-menu-arrow-v2 {
+      color: #4A4A5A;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <h1>GiftBox4you - Contrast Version V2</h1>
+  <p class="subtitle">Completely Redesigned with New Layouts, Icons & Patterns</p>
+
+  <div class="grid">
+    <!-- Splash Screen -->
+    <div>
+      <div class="screen-label">Splash Screen - Expanding Rings</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="splash-v2">
+            <div class="splash-ring"></div>
+            <div class="splash-ring"></div>
+            <div class="splash-ring"></div>
+            <div class="splash-ring"></div>
+            <div class="splash-logo-v2">
+              <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" stroke="#FFF" stroke-width="1.5" fill="none"/></svg>
+            </div>
+            <div class="splash-text-v2">
+              <h1>GiftBox4you</h1>
+              <p>Never forget special moments</p>
+            </div>
+            <div class="splash-progress">
+              <div class="splash-progress-bar"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div>
+      <div class="screen-label">Login Screen - Card Style</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="login-v2">
+            <div class="login-top-v2">
+              <div class="login-icon-v2">
+                <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7z" stroke="#FFF" stroke-width="1.5" fill="none"/></svg>
+              </div>
+              <h2>Welcome Back</h2>
+              <p>Sign in to continue</p>
+            </div>
+            <div class="login-card-v2">
+              <div class="input-v2">
+                <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                <span>Email address</span>
+              </div>
+              <div class="input-v2">
+                <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <span>Password</span>
+              </div>
+              <div class="login-btn-v2">Sign In</div>
+              <div class="login-or-v2">or continue with</div>
+              <div class="social-row-v2">
+                <div class="social-btn-v2">
+                  <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z" fill="#FFFFFF"/></svg>
+                  <span>Apple</span>
+                </div>
+                <div class="social-btn-v2">
+                  <svg viewBox="0 0 24 24" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                  <span>Google</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Home Screen -->
+    <div>
+      <div class="screen-label">Home Screen - Bento Grid</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="home-v2">
+            <div class="home-top-v2">
+              <div class="home-greeting-v2">
+                <h1>Hi, Sarah</h1>
+                <p>3 events this week</p>
+              </div>
+              <div class="home-notif-v2">
+                <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              </div>
+            </div>
+            <div class="bento-grid">
+              <div class="bento-card">
+                <div class="bento-label">Upcoming</div>
+                <div class="bento-value gradient">12</div>
+                <div class="bento-icon">
+                  <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+              </div>
+              <div class="bento-card">
+                <div class="bento-label">Circles</div>
+                <div class="bento-value gradient">3</div>
+                <div class="bento-icon">
+                  <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+              </div>
+              <div class="bento-card wide highlight">
+                <div class="upcoming-card-v2">
+                  <div class="upcoming-avatar-v2">🎂</div>
+                  <div class="upcoming-info-v2">
+                    <h4>Mom's Birthday</h4>
+                    <p>December 15, 2024</p>
+                  </div>
+                  <div class="upcoming-badge-v2">3 days</div>
+                </div>
+              </div>
+              <div class="bento-card">
+                <div class="bento-label">Gifts Saved</div>
+                <div class="bento-value gradient">8</div>
+                <div class="bento-icon">
+                  <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7"/></svg>
+                </div>
+              </div>
+              <div class="bento-card">
+                <div class="bento-label">This Month</div>
+                <div class="bento-value gradient">5</div>
+                <div class="bento-icon">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-bar-new">
+            <div class="tab-item-new active">
+              <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+            </div>
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calendar Screen -->
+    <div>
+      <div class="screen-label">Calendar - Horizontal Week View</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="calendar-v2">
+            <div class="calendar-header-v2">
+              <h1>Calendar</h1>
+            </div>
+            <div class="calendar-month-row">
+              <span class="calendar-month-v2">December 2024</span>
+              <div class="calendar-nav-v2">
+                <div class="calendar-nav-btn">
+                  <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                </div>
+                <div class="calendar-nav-btn">
+                  <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+              </div>
+            </div>
+            <div class="week-scroll">
+              <div class="week-day-card">
+                <div class="week-day-name">Mon</div>
+                <div class="week-day-num">9</div>
+              </div>
+              <div class="week-day-card">
+                <div class="week-day-name">Tue</div>
+                <div class="week-day-num">10</div>
+              </div>
+              <div class="week-day-card">
+                <div class="week-day-name">Wed</div>
+                <div class="week-day-num">11</div>
+              </div>
+              <div class="week-day-card today">
+                <div class="week-day-name">Thu</div>
+                <div class="week-day-num">12</div>
+                <div class="week-day-dot"></div>
+              </div>
+              <div class="week-day-card">
+                <div class="week-day-name">Fri</div>
+                <div class="week-day-num">13</div>
+              </div>
+              <div class="week-day-card">
+                <div class="week-day-name">Sat</div>
+                <div class="week-day-num">14</div>
+              </div>
+              <div class="week-day-card">
+                <div class="week-day-name">Sun</div>
+                <div class="week-day-num">15</div>
+                <div class="week-day-dot"></div>
+              </div>
+            </div>
+            <div class="calendar-section-v2">
+              <div class="calendar-section-title">Today's Events</div>
+              <div class="event-card-v2">
+                <div class="event-time-v2">
+                  <span>10:00</span>
+                  <small>AM</small>
+                </div>
+                <div class="event-divider"></div>
+                <div class="event-details-v2">
+                  <h4>Team Meeting</h4>
+                  <p>Conference Room A</p>
+                </div>
+              </div>
+              <div class="event-card-v2">
+                <div class="event-time-v2">
+                  <span>2:30</span>
+                  <small>PM</small>
+                </div>
+                <div class="event-divider"></div>
+                <div class="event-details-v2">
+                  <h4>Gift Shopping</h4>
+                  <p>Mom's birthday gift</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-bar-new">
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div class="tab-item-new active">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+            </div>
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Circles Screen -->
+    <div>
+      <div class="screen-label">Circles - Chip Filter + Member Grid</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="circles-v2">
+            <div class="circles-header-v2">
+              <h1>Circles</h1>
+              <div class="add-btn-v2">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </div>
+            </div>
+            <div class="circle-chip-row">
+              <div class="circle-chip active">Family</div>
+              <div class="circle-chip">Work</div>
+              <div class="circle-chip">Friends</div>
+              <div class="circle-chip">College</div>
+            </div>
+            <div class="member-grid">
+              <div class="member-card-v2">
+                <div class="member-avatar-v2 purple">M</div>
+                <div class="member-name-v2">Mom</div>
+                <div class="member-date-v2">Dec 15</div>
+              </div>
+              <div class="member-card-v2">
+                <div class="member-avatar-v2 blue">D</div>
+                <div class="member-name-v2">Dad</div>
+                <div class="member-date-v2">Jan 22</div>
+              </div>
+              <div class="member-card-v2">
+                <div class="member-avatar-v2 pink">S</div>
+                <div class="member-name-v2">Sister</div>
+                <div class="member-date-v2">Mar 8</div>
+              </div>
+              <div class="member-card-v2">
+                <div class="member-avatar-v2 green">B</div>
+                <div class="member-name-v2">Brother</div>
+                <div class="member-date-v2">Jul 14</div>
+              </div>
+              <div class="member-card-v2">
+                <div class="member-avatar-v2 orange">G</div>
+                <div class="member-name-v2">Grandma</div>
+                <div class="member-date-v2">Sep 3</div>
+              </div>
+              <div class="member-card-v2">
+                <div class="member-avatar-v2 red">U</div>
+                <div class="member-name-v2">Uncle</div>
+                <div class="member-date-v2">Nov 28</div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-bar-new">
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="tab-item-new active">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+            </div>
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gifts Screen -->
+    <div>
+      <div class="screen-label">Gifts - Masonry Grid</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="gifts-v2">
+            <div class="gifts-header-v2">
+              <h1>Gift Ideas</h1>
+              <div class="gifts-search-v2">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span>Search gifts...</span>
+              </div>
+            </div>
+            <div class="gifts-masonry">
+              <div class="gift-item-v2">
+                <div class="gift-img-v2">📱</div>
+                <div class="gift-name-v2">AirPods Pro</div>
+                <div class="gift-for-v2">For Dad</div>
+                <div class="gift-price-v2">$249</div>
+              </div>
+              <div class="gift-item-v2">
+                <div class="gift-img-v2">📚</div>
+                <div class="gift-name-v2">Book Set</div>
+                <div class="gift-for-v2">For Mom</div>
+                <div class="gift-price-v2">$45</div>
+              </div>
+              <div class="gift-item-v2">
+                <div class="gift-img-v2">🎮</div>
+                <div class="gift-name-v2">Controller</div>
+                <div class="gift-for-v2">For Brother</div>
+                <div class="gift-price-v2">$69</div>
+              </div>
+              <div class="gift-item-v2">
+                <div class="gift-img-v2">💄</div>
+                <div class="gift-name-v2">Makeup Kit</div>
+                <div class="gift-for-v2">For Sister</div>
+                <div class="gift-price-v2">$89</div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-bar-new">
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="tab-item-new active">
+              <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+            </div>
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Screen -->
+    <div>
+      <div class="screen-label">Profile - Centered Card</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="profile-v2">
+            <div class="profile-card-v2">
+              <div class="profile-avatar-v2">S</div>
+              <div class="profile-name-v2">Sarah Johnson</div>
+              <div class="profile-email-v2">sarah@email.com</div>
+              <div class="profile-stats-row">
+                <div class="profile-stat-v2">
+                  <strong>24</strong>
+                  <span>Events</span>
+                </div>
+                <div class="profile-stat-v2">
+                  <strong>4</strong>
+                  <span>Circles</span>
+                </div>
+                <div class="profile-stat-v2">
+                  <strong>18</strong>
+                  <span>Gifts</span>
+                </div>
+              </div>
+            </div>
+            <div class="profile-menu-v2">
+              <div class="profile-menu-item-v2">
+                <div class="profile-menu-icon-v2">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </div>
+                <div class="profile-menu-label-v2">Settings</div>
+                <div class="profile-menu-arrow-v2">›</div>
+              </div>
+              <div class="profile-menu-item-v2">
+                <div class="profile-menu-icon-v2">
+                  <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                </div>
+                <div class="profile-menu-label-v2">Notifications</div>
+                <div class="profile-menu-arrow-v2">›</div>
+              </div>
+              <div class="profile-menu-item-v2">
+                <div class="profile-menu-icon-v2">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div class="profile-menu-label-v2">Help & Support</div>
+                <div class="profile-menu-arrow-v2">›</div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-bar-new">
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="tab-item-new">
+              <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+            </div>
+            <div class="tab-item-new active">
+              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

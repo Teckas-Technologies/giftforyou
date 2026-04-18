@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "GiftBox4you",
+    "slug": "GiftBox4you",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF5F8"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.giftbox4you.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFF5F8"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.giftbox4you.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

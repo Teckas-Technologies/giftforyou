@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GiftBox4you - Light Celebration Palettes</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f8f8; padding: 40px; }
+    h1 { text-align: center; margin-bottom: 10px; color: #333; }
+    .subtitle { text-align: center; margin-bottom: 40px; color: #666; font-size: 14px; }
+    .palette-container { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; }
+    .palette { background: white; border-radius: 24px; padding: 28px; width: 360px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); position: relative; }
+    .palette h2 { font-size: 15px; margin-bottom: 18px; color: #333; }
+    .colors { display: flex; gap: 10px; margin-bottom: 18px; }
+    .color { width: 50px; height: 50px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .preview {
+      height: 280px;
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .preview .pattern {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    .preview .glow {
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.5;
+    }
+    .preview .logo {
+      width: 85px;
+      height: 85px;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 38px;
+      margin-bottom: 16px;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+      z-index: 10;
+    }
+    .preview .title { font-size: 28px; font-weight: 800; z-index: 10; }
+    .preview .accent { font-weight: 300; }
+    .preview .tagline { font-size: 12px; margin-top: 10px; z-index: 10; letter-spacing: 1px; opacity: 0.7; }
+    .hex-codes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    .hex { background: #f5f5f5; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-family: monospace; color: #555; }
+    .badge { position: absolute; top: 14px; right: 14px; padding: 6px 14px; border-radius: 10px; font-size: 11px; font-weight: 700; z-index: 20; }
+    .feel { font-size: 13px; color: #888; margin-top: 14px; }
+    .sparkle { position: absolute; opacity: 0.5; z-index: 5; }
+    .confetti { position: absolute; width: 8px; height: 8px; border-radius: 2px; opacity: 0.6; }
+  </style>
+</head>
+<body>
+  <h1>Light Celebration Palettes</h1>
+  <p class="subtitle">Soft warm backgrounds + rich accent colors = joyful gift vibes</p>
+
+  <div class="palette-container">
+
+    <!-- Option 1: Warm Cream + Rich Coral -->
+    <div class="palette">
+      <h2>1. Warm Cream + Rich Coral</h2>
+      <div class="colors">
+        <div class="color" style="background: #FDF8F3;"></div>
+        <div class="color" style="background: #F5E6DA;"></div>
+        <div class="color" style="background: #E07B5C;"></div>
+        <div class="color" style="background: #C4956A;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(145deg, #FDF8F3 0%, #F8EEE4 50%, #FDF8F3 100%);">
+        <div class="badge" style="background: #E07B5C; color: white;">JOYFUL</div>
+        <div class="glow" style="background: #E07B5C; top: -80px; right: -80px; opacity: 0.3;"></div>
+        <div class="glow" style="background: #C4956A; bottom: -100px; left: -80px; opacity: 0.25;"></div>
+        <div class="confetti" style="background: #E07B5C; top: 15%; left: 12%; transform: rotate(15deg);"></div>
+        <div class="confetti" style="background: #C4956A; top: 20%; right: 18%; transform: rotate(-20deg);"></div>
+        <div class="confetti" style="background: #E07B5C; bottom: 25%; left: 20%; transform: rotate(45deg);"></div>
+        <div class="confetti" style="background: #C4956A; bottom: 30%; right: 15%; transform: rotate(-10deg);"></div>
+        <div class="logo" style="background: linear-gradient(135deg, #E07B5C, #D06A4C); color: white;">🎁</div>
+        <div class="title" style="color: #3D3D3D;">GiftBox<span class="accent" style="color: #E07B5C;">4you</span></div>
+        <div class="tagline" style="color: #666;">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#FDF8F3</span>
+        <span class="hex">#E07B5C</span>
+        <span class="hex">#C4956A</span>
+      </div>
+      <p class="feel">Warm, cheerful celebration</p>
+    </div>
+
+    <!-- Option 2: Soft Blush + Rose Gold -->
+    <div class="palette">
+      <h2>2. Soft Blush + Rose Gold Accent</h2>
+      <div class="colors">
+        <div class="color" style="background: #FFF9F7;"></div>
+        <div class="color" style="background: #FFE8E2;"></div>
+        <div class="color" style="background: #D4A088;"></div>
+        <div class="color" style="background: #8B6B5C;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(150deg, #FFF9F7 0%, #FFF0EC 40%, #FFF5F2 100%);">
+        <div class="badge" style="background: #D4A088; color: white;">ELEGANT</div>
+        <div class="glow" style="background: #D4A088; top: -60px; right: -60px; opacity: 0.35;"></div>
+        <div class="glow" style="background: #FFE8E2; bottom: -80px; left: -60px; opacity: 0.5;"></div>
+        <div class="confetti" style="background: #D4A088; top: 18%; left: 15%; transform: rotate(25deg);"></div>
+        <div class="confetti" style="background: #8B6B5C; top: 25%; right: 20%; transform: rotate(-15deg);"></div>
+        <div class="confetti" style="background: #D4A088; bottom: 22%; right: 18%; transform: rotate(35deg);"></div>
+        <div class="logo" style="background: linear-gradient(135deg, #D4A088, #C49078); color: white;">🎁</div>
+        <div class="title" style="color: #4A3D38;">GiftBox<span class="accent" style="color: #D4A088;">4you</span></div>
+        <div class="tagline" style="color: #8B7B75;">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#FFF9F7</span>
+        <span class="hex">#D4A088</span>
+        <span class="hex">#8B6B5C</span>
+      </div>
+      <p class="feel">Soft romantic celebration</p>
+    </div>
+
+    <!-- Option 3: Ivory + Honey Gold -->
+    <div class="palette">
+      <h2>3. Ivory + Honey Gold Festive</h2>
+      <div class="colors">
+        <div class="color" style="background: #FFFCF5;"></div>
+        <div class="color" style="background: #F8EED8;"></div>
+        <div class="color" style="background: #DDA855;"></div>
+        <div class="color" style="background: #B8860B;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(140deg, #FFFCF5 0%, #FDF6E8 50%, #FFFCF5 100%);">
+        <div class="badge" style="background: #DDA855; color: white;">FESTIVE</div>
+        <div class="glow" style="background: #DDA855; top: -70px; right: -70px; opacity: 0.3;"></div>
+        <div class="glow" style="background: #F8EED8; bottom: -90px; left: -70px; opacity: 0.6;"></div>
+        <div class="confetti" style="background: #DDA855; top: 12%; left: 18%; transform: rotate(20deg);"></div>
+        <div class="confetti" style="background: #B8860B; top: 28%; right: 15%; transform: rotate(-25deg);"></div>
+        <div class="confetti" style="background: #DDA855; bottom: 20%; left: 15%; transform: rotate(40deg);"></div>
+        <div class="confetti" style="background: #B8860B; bottom: 28%; right: 22%; transform: rotate(-5deg);"></div>
+        <div class="logo" style="background: linear-gradient(135deg, #DDA855, #CD9845); color: white;">🎁</div>
+        <div class="title" style="color: #4A4035;">GiftBox<span class="accent" style="color: #DDA855;">4you</span></div>
+        <div class="tagline" style="color: #8A7A65;">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#FFFCF5</span>
+        <span class="hex">#DDA855</span>
+        <span class="hex">#B8860B</span>
+      </div>
+      <p class="feel">Golden festive celebration</p>
+    </div>
+
+    <!-- Option 4: Soft Lavender + Purple -->
+    <div class="palette">
+      <h2>4. Soft Lavender + Rich Purple</h2>
+      <div class="colors">
+        <div class="color" style="background: #FAF8FF;"></div>
+        <div class="color" style="background: #EDE5F5;"></div>
+        <div class="color" style="background: #8B6BAE;"></div>
+        <div class="color" style="background: #D4A574;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(145deg, #FAF8FF 0%, #F2EDFA 50%, #FAF8FF 100%);">
+        <div class="badge" style="background: #8B6BAE; color: white;">MAGICAL</div>
+        <div class="glow" style="background: #8B6BAE; top: -60px; right: -60px; opacity: 0.25;"></div>
+        <div class="glow" style="background: #D4A574; bottom: -80px; left: -60px; opacity: 0.2;"></div>
+        <div class="confetti" style="background: #8B6BAE; top: 15%; left: 12%; transform: rotate(30deg);"></div>
+        <div class="confetti" style="background: #D4A574; top: 22%; right: 18%; transform: rotate(-20deg);"></div>
+        <div class="confetti" style="background: #8B6BAE; bottom: 25%; right: 15%; transform: rotate(15deg);"></div>
+        <div class="logo" style="background: linear-gradient(135deg, #8B6BAE, #7B5B9E); color: white;">🎁</div>
+        <div class="title" style="color: #3D3545;">GiftBox<span class="accent" style="color: #8B6BAE;">4you</span></div>
+        <div class="tagline" style="color: #7A7085;">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#FAF8FF</span>
+        <span class="hex">#8B6BAE</span>
+        <span class="hex">#D4A574</span>
+      </div>
+      <p class="feel">Magical celebration moments</p>
+    </div>
+
+    <!-- Option 5: Warm White + Terracotta -->
+    <div class="palette">
+      <h2>5. Warm White + Terracotta Joy</h2>
+      <div class="colors">
+        <div class="color" style="background: #FFFAF6;"></div>
+        <div class="color" style="background: #F5E8DE;"></div>
+        <div class="color" style="background: #C75B39;"></div>
+        <div class="color" style="background: #8B5A3C;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(150deg, #FFFAF6 0%, #FBF2EA 50%, #FFFAF6 100%);">
+        <div class="badge" style="background: #C75B39; color: white;">WARM</div>
+        <div class="glow" style="background: #C75B39; top: -70px; right: -70px; opacity: 0.25;"></div>
+        <div class="glow" style="background: #F5E8DE; bottom: -80px; left: -60px; opacity: 0.5;"></div>
+        <div class="confetti" style="background: #C75B39; top: 18%; left: 15%; transform: rotate(10deg);"></div>
+        <div class="confetti" style="background: #8B5A3C; top: 25%; right: 20%; transform: rotate(-30deg);"></div>
+        <div class="confetti" style="background: #C75B39; bottom: 22%; left: 22%; transform: rotate(50deg);"></div>
+        <div class="logo" style="background: linear-gradient(135deg, #C75B39, #B74B29); color: white;">🎁</div>
+        <div class="title" style="color: #3D3530;">GiftBox<span class="accent" style="color: #C75B39;">4you</span></div>
+        <div class="tagline" style="color: #7A6A60;">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#FFFAF6</span>
+        <span class="hex">#C75B39</span>
+        <span class="hex">#8B5A3C</span>
+      </div>
+      <p class="feel">Earthy warm celebration</p>
+    </div>
+
+    <!-- Option 6: Cream + Deep Plum -->
+    <div class="palette">
+      <h2>6. Cream + Deep Plum Luxe</h2>
+      <div class="colors">
+        <div class="color" style="background: #FDF9F6;"></div>
+        <div class="color" style="background: #F5E8E0;"></div>
+        <div class="color" style="background: #6B3058;"></div>
+        <div class="color" style="background: #D4A853;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(145deg, #FDF9F6 0%, #FAF0E8 50%, #FDF9F6 100%);">
+        <div class="badge" style="background: #6B3058; color: white;">LUXE</div>
+        <div class="glow" style="background: #6B3058; top: -60px; right: -60px; opacity: 0.2;"></div>
+        <div class="glow" style="background: #D4A853; bottom: -70px; left: -50px; opacity: 0.25;"></div>
+        <div class="confetti" style="background: #6B3058; top: 15%; left: 18%; transform: rotate(25deg);"></div>
+        <div class="confetti" style="background: #D4A853; top: 28%; right: 15%; transform: rotate(-15deg);"></div>
+        <div class="confetti" style="background: #6B3058; bottom: 25%; right: 20%; transform: rotate(35deg);"></div>
+        <div class="confetti" style="background: #D4A853; bottom: 18%; left: 15%; transform: rotate(-25deg);"></div>
+        <div class="logo" style="background: linear-gradient(135deg, #6B3058, #5B2048); color: white;">🎁</div>
+        <div class="title" style="color: #3D3035;">GiftBox<span class="accent" style="color: #6B3058;">4you</span></div>
+        <div class="tagline" style="color: #7A6A70;">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#FDF9F6</span>
+        <span class="hex">#6B3058</span>
+        <span class="hex">#D4A853</span>
+      </div>
+      <p class="feel">Luxurious plum celebration</p>
+    </div>
+
+  </div>
+
+  <p style="text-align: center; margin-top: 50px; color: #666; font-size: 14px;">
+    Light warm backgrounds with rich celebration accents<br>
+    Tell me the number you like!
+  </p>
+</body>
+</html>

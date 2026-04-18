@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GiftBox4you - Screen Previews</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      padding: 40px;
+      min-height: 100vh;
+    }
+    h1 { text-align: center; margin-bottom: 10px; color: #fff; }
+    .subtitle { text-align: center; margin-bottom: 40px; color: #888; font-size: 14px; }
+
+    .preview-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 40px;
+      justify-content: center;
+    }
+
+    .screen-wrapper {
+      text-align: center;
+    }
+
+    .screen-title {
+      color: #fff;
+      font-size: 18px;
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+
+    .screen-desc {
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 20px;
+      max-width: 320px;
+    }
+
+    .phone-frame {
+      width: 320px;
+      height: 640px;
+      background: #000;
+      border-radius: 40px;
+      padding: 12px;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+      position: relative;
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      border-radius: 32px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 28px;
+      background: #000;
+      border-radius: 0 0 20px 20px;
+      z-index: 100;
+    }
+
+    /* ========== SPLASH SCREEN ========== */
+    .splash-screen {
+      background: linear-gradient(155deg, #FDF8F3 0%, #F8EEE4 40%, #FDF8F3 100%);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .splash-glow {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(60px);
+    }
+
+    .splash-glow-1 {
+      width: 200px;
+      height: 200px;
+      background: #E07B5C;
+      top: -50px;
+      right: -50px;
+      opacity: 0.3;
+      animation: pulseGlow 3s ease-in-out infinite;
+    }
+
+    .splash-glow-2 {
+      width: 180px;
+      height: 180px;
+      background: #C4956A;
+      bottom: -40px;
+      left: -40px;
+      opacity: 0.25;
+      animation: pulseGlow 3s ease-in-out infinite 1.5s;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); opacity: 0.25; }
+      50% { transform: scale(1.1); opacity: 0.35; }
+    }
+
+    .splash-confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      opacity: 0;
+      animation: confettiFall 4s ease-in-out infinite;
+    }
+
+    .confetti-1 { background: #E07B5C; top: 10%; left: 15%; animation-delay: 0s; }
+    .confetti-2 { background: #C4956A; top: 15%; right: 20%; animation-delay: 0.5s; }
+    .confetti-3 { background: #E07B5C; top: 25%; left: 25%; animation-delay: 1s; }
+    .confetti-4 { background: #C4956A; top: 20%; right: 30%; animation-delay: 1.5s; }
+    .confetti-5 { background: #E07B5C; bottom: 30%; left: 18%; animation-delay: 0.8s; }
+    .confetti-6 { background: #C4956A; bottom: 25%; right: 15%; animation-delay: 1.2s; }
+
+    @keyframes confettiFall {
+      0% { opacity: 0; transform: translateY(-20px) rotate(0deg); }
+      20% { opacity: 0.6; }
+      80% { opacity: 0.6; }
+      100% { opacity: 0; transform: translateY(30px) rotate(180deg); }
+    }
+
+    .splash-ring {
+      position: absolute;
+      border: 2px solid #E07B5C;
+      border-radius: 50%;
+      opacity: 0;
+      animation: ringExpand 3s ease-out infinite;
+    }
+
+    .ring-1 { width: 100px; height: 100px; animation-delay: 0s; }
+    .ring-2 { width: 100px; height: 100px; animation-delay: 1s; }
+    .ring-3 { width: 100px; height: 100px; animation-delay: 2s; }
+
+    @keyframes ringExpand {
+      0% { transform: scale(0.8); opacity: 0.4; }
+      100% { transform: scale(2.5); opacity: 0; }
+    }
+
+    .splash-logo {
+      width: 100px;
+      height: 100px;
+      background: linear-gradient(145deg, #E07B5C, #D06A4C);
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      box-shadow: 0 20px 50px rgba(224, 123, 92, 0.4);
+      z-index: 10;
+      animation: logoBounce 2s ease-out forwards, logoFloat 3s ease-in-out infinite 2s;
+    }
+
+    @keyframes logoBounce {
+      0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+      50% { transform: scale(1.1) rotate(5deg); }
+      70% { transform: scale(0.95) rotate(-2deg); }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .splash-title {
+      margin-top: 28px;
+      font-size: 32px;
+      font-weight: 800;
+      color: #3D3D3D;
+      z-index: 10;
+      opacity: 0;
+      animation: fadeSlideUp 0.8s ease-out 0.8s forwards;
+    }
+
+    .splash-title span {
+      color: #E07B5C;
+      font-weight: 300;
+    }
+
+    .splash-tagline {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #888;
+      letter-spacing: 1px;
+      z-index: 10;
+      opacity: 0;
+      animation: fadeSlideUp 0.8s ease-out 1.2s forwards;
+    }
+
+    @keyframes fadeSlideUp {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .splash-loader {
+      position: absolute;
+      bottom: 80px;
+      z-index: 10;
+      opacity: 0;
+      animation: fadeIn 0.5s ease-out 1.8s forwards;
+    }
+
+    .loader-bar {
+      width: 120px;
+      height: 4px;
+      background: rgba(224, 123, 92, 0.2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .loader-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #E07B5C, #C4956A);
+      border-radius: 2px;
+      animation: loadingBar 2.5s ease-in-out 2s forwards;
+    }
+
+    @keyframes loadingBar {
+      0% { width: 0%; }
+      100% { width: 100%; }
+    }
+
+    .loader-text {
+      margin-top: 12px;
+      font-size: 11px;
+      color: #999;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    /* ========== ONBOARDING SCREEN ========== */
+    .onboarding-screen {
+      background: #FDF8F3;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .onboard-skip {
+      position: absolute;
+      top: 50px;
+      right: 20px;
+      padding: 8px 16px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 20px;
+      font-size: 14px;
+      color: #888;
+      font-weight: 600;
+      z-index: 50;
+    }
+
+    .onboard-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 30px 30px;
+    }
+
+    .onboard-icon-wrapper {
+      animation: iconBounce 2s ease-out forwards, iconFloat 4s ease-in-out infinite 2s;
+    }
+
+    @keyframes iconBounce {
+      0% { transform: scale(0) rotate(-15deg); opacity: 0; }
+      60% { transform: scale(1.1) rotate(5deg); }
+      80% { transform: scale(0.95); }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    @keyframes iconFloat {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-10px) rotate(3deg); }
+    }
+
+    .onboard-icon {
+      width: 130px;
+      height: 130px;
+      background: linear-gradient(145deg, #E07B5C, #D06A4C);
+      border-radius: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 56px;
+      box-shadow: 0 20px 50px rgba(224, 123, 92, 0.35);
+    }
+
+    .onboard-title {
+      margin-top: 40px;
+      font-size: 28px;
+      font-weight: 700;
+      color: #3D3D3D;
+      text-align: center;
+      line-height: 1.3;
+      opacity: 0;
+      animation: fadeSlideUp 0.7s ease-out 0.5s forwards;
+    }
+
+    .onboard-desc {
+      margin-top: 16px;
+      font-size: 15px;
+      color: #777;
+      text-align: center;
+      line-height: 1.6;
+      opacity: 0;
+      animation: fadeSlideUp 0.7s ease-out 0.8s forwards;
+    }
+
+    .onboard-bottom {
+      padding: 30px;
+      padding-bottom: 40px;
+    }
+
+    .onboard-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .dot {
+      height: 8px;
+      border-radius: 4px;
+      background: #E07B5C;
+      transition: all 0.3s ease;
+    }
+
+    .dot.active { width: 28px; opacity: 1; }
+    .dot.inactive { width: 8px; opacity: 0.3; }
+
+    .onboard-button {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, #E07B5C, #D06A4C);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 10px 30px rgba(224, 123, 92, 0.35);
+      opacity: 0;
+      animation: fadeSlideUp 0.6s ease-out 1s forwards;
+    }
+
+    .onboard-button-text {
+      font-size: 17px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .onboard-button-icon {
+      width: 32px;
+      height: 32px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #E07B5C;
+      font-size: 18px;
+    }
+
+    /* Replay button */
+    .replay-btn {
+      margin-top: 20px;
+      padding: 10px 24px;
+      background: #E07B5C;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .replay-btn:hover {
+      background: #D06A4C;
+    }
+
+    .animation-list {
+      color: #aaa;
+      font-size: 12px;
+      text-align: left;
+      margin-top: 20px;
+      line-height: 1.8;
+    }
+
+    .animation-list li {
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Screen Animation Previews</h1>
+  <p class="subtitle">Warm Cream + Rich Coral | Click "Replay" to see animations again</p>
+
+  <div class="preview-container">
+
+    <!-- SPLASH SCREEN -->
+    <div class="screen-wrapper">
+      <div class="screen-title">Splash Screen</div>
+      <p class="screen-desc">4-second animated splash with warm celebration vibes</p>
+
+      <div class="phone-frame">
+        <div class="notch"></div>
+        <div class="phone-screen">
+          <div class="splash-screen" id="splashScreen">
+            <!-- Glows -->
+            <div class="splash-glow splash-glow-1"></div>
+            <div class="splash-glow splash-glow-2"></div>
+
+            <!-- Confetti -->
+            <div class="splash-confetti confetti-1"></div>
+            <div class="splash-confetti confetti-2"></div>
+            <div class="splash-confetti confetti-3"></div>
+            <div class="splash-confetti confetti-4"></div>
+            <div class="splash-confetti confetti-5"></div>
+            <div class="splash-confetti confetti-6"></div>
+
+            <!-- Rings -->
+            <div class="splash-ring ring-1"></div>
+            <div class="splash-ring ring-2"></div>
+            <div class="splash-ring ring-3"></div>
+
+            <!-- Logo -->
+            <div class="splash-logo">🎁</div>
+
+            <!-- Text -->
+            <div class="splash-title">GiftBox<span>4you</span></div>
+            <div class="splash-tagline">Perfect gifts, every time</div>
+
+            <!-- Loader -->
+            <div class="splash-loader">
+              <div class="loader-bar">
+                <div class="loader-fill"></div>
+              </div>
+              <div class="loader-text">Loading...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="replay-btn" onclick="replaySplash()">Replay Animation</button>
+
+      <ul class="animation-list">
+        <li>1. Soft glows pulse in background</li>
+        <li>2. Logo bounces in with rotation</li>
+        <li>3. Expanding rings ripple out</li>
+        <li>4. Title slides up with fade</li>
+        <li>5. Tagline follows</li>
+        <li>6. Loading bar fills smoothly</li>
+        <li>7. Confetti particles float</li>
+      </ul>
+    </div>
+
+    <!-- ONBOARDING SCREEN -->
+    <div class="screen-wrapper">
+      <div class="screen-title">Onboarding Screen</div>
+      <p class="screen-desc">Swipeable intro slides with bouncy icons</p>
+
+      <div class="phone-frame">
+        <div class="notch"></div>
+        <div class="phone-screen">
+          <div class="onboarding-screen" id="onboardScreen">
+            <div class="onboard-skip">Skip</div>
+
+            <div class="onboard-content">
+              <div class="onboard-icon-wrapper">
+                <div class="onboard-icon">📋</div>
+              </div>
+
+              <div class="onboard-title">Know What They<br>Really Want</div>
+              <div class="onboard-desc">Send questionnaires to friends and family to discover their true gift preferences.</div>
+            </div>
+
+            <div class="onboard-bottom">
+              <div class="onboard-dots">
+                <div class="dot active"></div>
+                <div class="dot inactive"></div>
+                <div class="dot inactive"></div>
+                <div class="dot inactive"></div>
+              </div>
+
+              <div class="onboard-button">
+                <span class="onboard-button-text">Next</span>
+                <div class="onboard-button-icon">→</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="replay-btn" onclick="replayOnboard()">Replay Animation</button>
+
+      <ul class="animation-list">
+        <li>1. Icon bounces in with rotation</li>
+        <li>2. Icon floats gently (continuous)</li>
+        <li>3. Title slides up with fade</li>
+        <li>4. Description follows</li>
+        <li>5. Button slides up last</li>
+        <li>6. Dots animate on swipe</li>
+        <li>7. Gradient icon per slide</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <script>
+    function replaySplash() {
+      const splash = document.getElementById('splashScreen');
+      splash.style.display = 'none';
+      setTimeout(() => {
+        splash.style.display = 'flex';
+        // Force reflow to restart animations
+        splash.offsetHeight;
+      }, 50);
+    }
+
+    function replayOnboard() {
+      const onboard = document.getElementById('onboardScreen');
+      onboard.style.display = 'none';
+      setTimeout(() => {
+        onboard.style.display = 'flex';
+        onboard.offsetHeight;
+      }, 50);
+    }
+  </script>
+</body>
+</html>

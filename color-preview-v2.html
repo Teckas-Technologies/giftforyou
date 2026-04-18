@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GiftBox4you - Fresh Color Palettes V2</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 40px; }
+    h1 { text-align: center; margin-bottom: 40px; color: #333; }
+    .palette-container { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; }
+    .palette { background: white; border-radius: 20px; padding: 24px; width: 320px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); position: relative; }
+    .palette h2 { font-size: 16px; margin-bottom: 16px; color: #333; }
+    .colors { display: flex; gap: 8px; margin-bottom: 16px; }
+    .color { width: 50px; height: 50px; border-radius: 12px; }
+    .preview { height: 220px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    .preview .logo { width: 70px; height: 70px; background: white; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+    .preview .title { color: white; font-size: 24px; font-weight: 700; }
+    .preview .accent { font-weight: 300; }
+    .preview .tagline { color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 6px; }
+    .hex-codes { display: flex; gap: 8px; flex-wrap: wrap; }
+    .hex { background: #f5f5f5; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-family: monospace; }
+    .badge { position: absolute; top: 10px; right: 10px; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 600; color: white; }
+  </style>
+</head>
+<body>
+  <h1>GiftBox4you - Fresh Color Palettes V2</h1>
+
+  <div class="palette-container">
+
+    <!-- Option 1: Midnight Emerald -->
+    <div class="palette">
+      <h2>1. Midnight Emerald (Teal + Champagne)</h2>
+      <div class="colors">
+        <div class="color" style="background: #0D5C5C;"></div>
+        <div class="color" style="background: #1A7575;"></div>
+        <div class="color" style="background: #D4C5A9;"></div>
+        <div class="color" style="background: #F7F5F0;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(135deg, #0D5C5C 0%, #1A7575 50%, #094848 100%);">
+        <div class="badge" style="background: #D4C5A9; color: #0D5C5C;">ELEGANT</div>
+        <div class="logo" style="color: #0D5C5C;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #D4C5A9;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#0D5C5C</span>
+        <span class="hex">#D4C5A9</span>
+        <span class="hex">#F7F5F0</span>
+      </div>
+    </div>
+
+    <!-- Option 2: Aubergine & Honey -->
+    <div class="palette">
+      <h2>2. Aubergine & Honey (Purple + Warm Gold)</h2>
+      <div class="colors">
+        <div class="color" style="background: #3D2C40;"></div>
+        <div class="color" style="background: #5A4260;"></div>
+        <div class="color" style="background: #E6A756;"></div>
+        <div class="color" style="background: #F8F4EF;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(135deg, #3D2C40 0%, #5A4260 50%, #2E2132 100%);">
+        <div class="badge" style="background: #E6A756; color: #3D2C40;">LUXURIOUS</div>
+        <div class="logo" style="color: #3D2C40;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #E6A756;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#3D2C40</span>
+        <span class="hex">#E6A756</span>
+        <span class="hex">#F8F4EF</span>
+      </div>
+    </div>
+
+    <!-- Option 3: Copper & Midnight -->
+    <div class="palette">
+      <h2>3. Copper & Midnight (Blue + Metallic)</h2>
+      <div class="colors">
+        <div class="color" style="background: #1C2A3A;"></div>
+        <div class="color" style="background: #2C4158;"></div>
+        <div class="color" style="background: #B87333;"></div>
+        <div class="color" style="background: #FAF8F5;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(135deg, #1C2A3A 0%, #2C4158 50%, #162230 100%);">
+        <div class="badge" style="background: #B87333; color: white;">PREMIUM</div>
+        <div class="logo" style="color: #1C2A3A;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #B87333;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#1C2A3A</span>
+        <span class="hex">#B87333</span>
+        <span class="hex">#FAF8F5</span>
+      </div>
+    </div>
+
+    <!-- Option 4: Mocha & Cream -->
+    <div class="palette">
+      <h2>4. Mocha & Cream (Coffee Tones)</h2>
+      <div class="colors">
+        <div class="color" style="background: #4A3728;"></div>
+        <div class="color" style="background: #6B5344;"></div>
+        <div class="color" style="background: #C9A66B;"></div>
+        <div class="color" style="background: #FBF8F4;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(135deg, #4A3728 0%, #6B5344 50%, #3A2B1F 100%);">
+        <div class="badge" style="background: #C9A66B; color: #4A3728;">WARM</div>
+        <div class="logo" style="color: #4A3728;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #C9A66B;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#4A3728</span>
+        <span class="hex">#C9A66B</span>
+        <span class="hex">#FBF8F4</span>
+      </div>
+    </div>
+
+    <!-- Option 5: Slate & Coral -->
+    <div class="palette">
+      <h2>5. Slate & Soft Coral (Modern)</h2>
+      <div class="colors">
+        <div class="color" style="background: #3D4F5F;"></div>
+        <div class="color" style="background: #54687A;"></div>
+        <div class="color" style="background: #E07B54;"></div>
+        <div class="color" style="background: #FDFBF9;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(135deg, #3D4F5F 0%, #54687A 50%, #2E3D4A 100%);">
+        <div class="badge" style="background: #E07B54; color: white;">MODERN</div>
+        <div class="logo" style="color: #3D4F5F;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #E07B54;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#3D4F5F</span>
+        <span class="hex">#E07B54</span>
+        <span class="hex">#FDFBF9</span>
+      </div>
+    </div>
+
+    <!-- Option 6: Deep Ocean -->
+    <div class="palette">
+      <h2>6. Deep Ocean (Teal + Rose Gold)</h2>
+      <div class="colors">
+        <div class="color" style="background: #1A3A3A;"></div>
+        <div class="color" style="background: #2D5555;"></div>
+        <div class="color" style="background: #C9A489;"></div>
+        <div class="color" style="background: #F5F0EB;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(135deg, #1A3A3A 0%, #2D5555 50%, #142E2E 100%);">
+        <div class="badge" style="background: #C9A489; color: #1A3A3A;">UNIQUE</div>
+        <div class="logo" style="color: #1A3A3A;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #C9A489;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#1A3A3A</span>
+        <span class="hex">#C9A489</span>
+        <span class="hex">#F5F0EB</span>
+      </div>
+    </div>
+
+    <!-- Option 7: Dusty Violet -->
+    <div class="palette">
+      <h2>7. Dusty Violet (Muted Purple + Peach)</h2>
+      <div class="colors">
+        <div class="color" style="background: #5D4E6D;"></div>
+        <div class="color" style="background: #7A6B8A;"></div>
+        <div class="color" style="background: #E8C4A2;"></div>
+        <div class="color" style="background: #FAF7F5;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(135deg, #5D4E6D 0%, #7A6B8A 50%, #4A3D58 100%);">
+        <div class="badge" style="background: #E8C4A2; color: #5D4E6D;">SOFT</div>
+        <div class="logo" style="color: #5D4E6D;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #E8C4A2;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#5D4E6D</span>
+        <span class="hex">#E8C4A2</span>
+        <span class="hex">#FAF7F5</span>
+      </div>
+    </div>
+
+    <!-- Option 8: Charcoal & Gold -->
+    <div class="palette">
+      <h2>8. Charcoal & Gold (Sophisticated)</h2>
+      <div class="colors">
+        <div class="color" style="background: #2D2D2D;"></div>
+        <div class="color" style="background: #4A4A4A;"></div>
+        <div class="color" style="background: #D4A574;"></div>
+        <div class="color" style="background: #F8F6F3;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(135deg, #2D2D2D 0%, #4A4A4A 50%, #1F1F1F 100%);">
+        <div class="badge" style="background: #D4A574; color: #2D2D2D;">CLASSY</div>
+        <div class="logo" style="color: #2D2D2D;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #D4A574;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#2D2D2D</span>
+        <span class="hex">#D4A574</span>
+        <span class="hex">#F8F6F3</span>
+      </div>
+    </div>
+
+  </div>
+
+  <p style="text-align: center; margin-top: 40px; color: #666;">Open in browser to see colors. Tell me the number you like!</p>
+</body>
+</html>

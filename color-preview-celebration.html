@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GiftBox4you - Rich Oil Paint Celebration</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a1a; padding: 40px; }
+    h1 { text-align: center; margin-bottom: 10px; color: #fff; }
+    .subtitle { text-align: center; margin-bottom: 40px; color: #888; font-size: 14px; }
+    .palette-container { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; }
+    .palette { background: #2a2a2a; border-radius: 24px; padding: 28px; width: 360px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); position: relative; }
+    .palette h2 { font-size: 16px; margin-bottom: 18px; color: #fff; }
+    .colors { display: flex; gap: 10px; margin-bottom: 18px; }
+    .color { width: 50px; height: 50px; border-radius: 14px; box-shadow: inset 0 -4px 8px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.2); }
+    .preview {
+      height: 280px;
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 0 60px rgba(0,0,0,0.3);
+    }
+    .preview::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+    .preview .glow {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.4;
+    }
+    .preview .logo {
+      width: 85px;
+      height: 85px;
+      background: white;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 38px;
+      margin-bottom: 16px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.4), 0 0 0 3px rgba(255,255,255,0.1);
+      z-index: 10;
+    }
+    .preview .title { color: white; font-size: 30px; font-weight: 800; z-index: 10; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+    .preview .accent { font-weight: 300; }
+    .preview .tagline { color: rgba(255,255,255,0.8); font-size: 13px; margin-top: 10px; z-index: 10; letter-spacing: 1px; }
+    .hex-codes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    .hex { background: #3a3a3a; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-family: monospace; color: #ccc; }
+    .badge { position: absolute; top: 14px; right: 14px; padding: 6px 14px; border-radius: 10px; font-size: 11px; font-weight: 700; z-index: 20; }
+    .feel { font-size: 13px; color: #777; margin-top: 14px; }
+    .sparkle { position: absolute; font-size: 14px; opacity: 0.6; }
+  </style>
+</head>
+<body>
+  <h1>Rich Oil Paint - Celebration Palettes</h1>
+  <p class="subtitle">Deep saturated colors with thick paint texture + festive celebration feel</p>
+
+  <div class="palette-container">
+
+    <!-- Option 1: Velvet Plum + Rich Gold -->
+    <div class="palette">
+      <h2>1. Velvet Plum + Rich Gold</h2>
+      <div class="colors">
+        <div class="color" style="background: linear-gradient(145deg, #4A2040 0%, #3A1830 100%);"></div>
+        <div class="color" style="background: linear-gradient(145deg, #6B3058 0%, #5A2848 100%);"></div>
+        <div class="color" style="background: linear-gradient(145deg, #D4A853 0%, #C49843 100%);"></div>
+        <div class="color" style="background: linear-gradient(145deg, #F5E6D0 0%, #E8D9C3 100%);"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(150deg, #4A2040 0%, #6B3058 35%, #5A2848 65%, #3A1830 100%);">
+        <div class="badge" style="background: #D4A853; color: #4A2040;">FESTIVE</div>
+        <div class="glow" style="background: #D4A853; top: -50px; right: -50px;"></div>
+        <div class="glow" style="background: #6B3058; bottom: -50px; left: -50px;"></div>
+        <span class="sparkle" style="top: 20%; left: 15%;">✦</span>
+        <span class="sparkle" style="top: 30%; right: 20%;">✧</span>
+        <span class="sparkle" style="bottom: 25%; left: 25%;">✦</span>
+        <div class="logo" style="color: #4A2040;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #D4A853;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#4A2040</span>
+        <span class="hex">#6B3058</span>
+        <span class="hex">#D4A853</span>
+      </div>
+      <p class="feel">Royal celebration, luxurious gifting</p>
+    </div>
+
+    <!-- Option 2: Deep Aubergine + Amber Glow -->
+    <div class="palette">
+      <h2>2. Deep Aubergine + Amber Glow</h2>
+      <div class="colors">
+        <div class="color" style="background: linear-gradient(145deg, #3D1F35 0%, #2D1525 100%);"></div>
+        <div class="color" style="background: linear-gradient(145deg, #5C3050 0%, #4C2540 100%);"></div>
+        <div class="color" style="background: linear-gradient(145deg, #E8A845 0%, #D89835 100%);"></div>
+        <div class="color" style="background: linear-gradient(145deg, #FFF4E0 0%, #F2E7D3 100%);"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(140deg, #3D1F35 0%, #5C3050 40%, #4A2842 70%, #2D1525 100%);">
+        <div class="badge" style="background: #E8A845; color: #3D1F35;">WARM GLOW</div>
+        <div class="glow" style="background: #E8A845; top: -30px; right: -30px;"></div>
+        <span class="sparkle" style="top: 25%; left: 20%;">✦</span>
+        <span class="sparkle" style="top: 15%; right: 25%;">✧</span>
+        <span class="sparkle" style="bottom: 30%; right: 15%;">✦</span>
+        <div class="logo" style="color: #3D1F35;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #E8A845;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#3D1F35</span>
+        <span class="hex">#5C3050</span>
+        <span class="hex">#E8A845</span>
+      </div>
+      <p class="feel">Warm amber celebration glow</p>
+    </div>
+
+    <!-- Option 3: Royal Wine + Champagne -->
+    <div class="palette">
+      <h2>3. Royal Wine + Champagne Sparkle</h2>
+      <div class="colors">
+        <div class="color" style="background: linear-gradient(145deg, #4D1A3A 0%, #3D102A 100%);"></div>
+        <div class="color" style="background: linear-gradient(145deg, #722850 0%, #622040 100%);"></div>
+        <div class="color" style="background: linear-gradient(145deg, #D4C4A0 0%, #C4B490 100%);"></div>
+        <div class="color" style="background: linear-gradient(145deg, #FAF6EE 0%, #EDE9E1 100%);"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(135deg, #4D1A3A 0%, #722850 30%, #5D2245 60%, #3D102A 100%);">
+        <div class="badge" style="background: #D4C4A0; color: #4D1A3A;">ELEGANT</div>
+        <div class="glow" style="background: #D4C4A0; top: -40px; left: 50%; transform: translateX(-50%);"></div>
+        <span class="sparkle" style="top: 18%; left: 18%;">✧</span>
+        <span class="sparkle" style="top: 22%; right: 22%;">✦</span>
+        <span class="sparkle" style="bottom: 28%; left: 30%;">✧</span>
+        <span class="sparkle" style="bottom: 20%; right: 18%;">✦</span>
+        <div class="logo" style="color: #4D1A3A;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #D4C4A0;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#4D1A3A</span>
+        <span class="hex">#722850</span>
+        <span class="hex">#D4C4A0</span>
+      </div>
+      <p class="feel">Champagne toast celebration</p>
+    </div>
+
+    <!-- Option 4: Midnight Purple + Sunset Gold -->
+    <div class="palette">
+      <h2>4. Midnight Purple + Sunset Gold</h2>
+      <div class="colors">
+        <div class="color" style="background: linear-gradient(145deg, #2D1B4E 0%, #1D0B3E 100%);"></div>
+        <div class="color" style="background: linear-gradient(145deg, #4A2D6E 0%, #3A1D5E 100%);"></div>
+        <div class="color" style="background: linear-gradient(145deg, #E8B84A 0%, #D8A83A 100%);"></div>
+        <div class="color" style="background: linear-gradient(145deg, #FDF5E6 0%, #F0E8D9 100%);"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(155deg, #2D1B4E 0%, #4A2D6E 40%, #3D2360 70%, #1D0B3E 100%);">
+        <div class="badge" style="background: #E8B84A; color: #2D1B4E;">MAGICAL</div>
+        <div class="glow" style="background: #E8B84A; top: 0; right: -20px;"></div>
+        <div class="glow" style="background: #4A2D6E; bottom: -30px; left: -30px; opacity: 0.6;"></div>
+        <span class="sparkle" style="top: 15%; left: 12%;">✦</span>
+        <span class="sparkle" style="top: 25%; right: 15%;">✧</span>
+        <span class="sparkle" style="bottom: 22%; left: 20%;">✧</span>
+        <span class="sparkle" style="top: 40%; right: 25%;">✦</span>
+        <div class="logo" style="color: #2D1B4E;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #E8B84A;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#2D1B4E</span>
+        <span class="hex">#4A2D6E</span>
+        <span class="hex">#E8B84A</span>
+      </div>
+      <p class="feel">Magical celebration moments</p>
+    </div>
+
+    <!-- Option 5: Deep Violet + Rose Gold -->
+    <div class="palette">
+      <h2>5. Deep Violet + Rose Gold Party</h2>
+      <div class="colors">
+        <div class="color" style="background: linear-gradient(145deg, #3E2558 0%, #2E1548 100%);"></div>
+        <div class="color" style="background: linear-gradient(145deg, #5A3878 0%, #4A2868 100%);"></div>
+        <div class="color" style="background: linear-gradient(145deg, #D4A088 0%, #C49078 100%);"></div>
+        <div class="color" style="background: linear-gradient(145deg, #FBF2EE 0%, #EEE5E1 100%);"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(145deg, #3E2558 0%, #5A3878 35%, #4D3068 65%, #2E1548 100%);">
+        <div class="badge" style="background: #D4A088; color: #3E2558;">PARTY</div>
+        <div class="glow" style="background: #D4A088; top: -40px; right: -40px;"></div>
+        <span class="sparkle" style="top: 20%; left: 15%;">✧</span>
+        <span class="sparkle" style="top: 30%; right: 18%;">✦</span>
+        <span class="sparkle" style="bottom: 25%; right: 25%;">✧</span>
+        <div class="logo" style="color: #3E2558;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #D4A088;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#3E2558</span>
+        <span class="hex">#5A3878</span>
+        <span class="hex">#D4A088</span>
+      </div>
+      <p class="feel">Rose gold party vibes</p>
+    </div>
+
+    <!-- Option 6: Rich Burgundy + Honey Gold -->
+    <div class="palette">
+      <h2>6. Rich Burgundy + Honey Gold</h2>
+      <div class="colors">
+        <div class="color" style="background: linear-gradient(145deg, #5C1A2A 0%, #4C0A1A 100%);"></div>
+        <div class="color" style="background: linear-gradient(145deg, #7D2840 0%, #6D1830 100%);"></div>
+        <div class="color" style="background: linear-gradient(145deg, #DDA855 0%, #CD9845 100%);"></div>
+        <div class="color" style="background: linear-gradient(145deg, #FFF8E8 0%, #F2EBDB 100%);"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(140deg, #5C1A2A 0%, #7D2840 35%, #6D2035 65%, #4C0A1A 100%);">
+        <div class="badge" style="background: #DDA855; color: #5C1A2A;">CLASSIC</div>
+        <div class="glow" style="background: #DDA855; top: -50px; right: -30px;"></div>
+        <div class="glow" style="background: #7D2840; bottom: -40px; left: -40px; opacity: 0.5;"></div>
+        <span class="sparkle" style="top: 18%; left: 20%;">✦</span>
+        <span class="sparkle" style="top: 28%; right: 15%;">✧</span>
+        <span class="sparkle" style="bottom: 30%; left: 15%;">✧</span>
+        <span class="sparkle" style="bottom: 20%; right: 22%;">✦</span>
+        <div class="logo" style="color: #5C1A2A;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #DDA855;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#5C1A2A</span>
+        <span class="hex">#7D2840</span>
+        <span class="hex">#DDA855</span>
+      </div>
+      <p class="feel">Classic festive celebration</p>
+    </div>
+
+  </div>
+
+  <p style="text-align: center; margin-top: 50px; color: #666; font-size: 14px;">
+    Rich oil-paint texture with deep saturated colors + celebration sparkle<br>
+    Tell me the number!
+  </p>
+</body>
+</html>

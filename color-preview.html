@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GiftBox4you - Color Palette Preview</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 40px; }
+    h1 { text-align: center; margin-bottom: 40px; color: #333; }
+    .palette-container { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; }
+    .palette { background: white; border-radius: 20px; padding: 24px; width: 320px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+    .palette h2 { font-size: 18px; margin-bottom: 16px; color: #333; }
+    .colors { display: flex; gap: 8px; margin-bottom: 16px; }
+    .color { width: 50px; height: 50px; border-radius: 12px; }
+    .preview { height: 200px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    .preview .logo { width: 70px; height: 70px; background: white; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+    .preview .title { color: white; font-size: 24px; font-weight: 700; }
+    .preview .accent { font-weight: 300; }
+    .preview .tagline { color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 6px; }
+    .hex-codes { display: flex; gap: 8px; flex-wrap: wrap; }
+    .hex { background: #f5f5f5; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-family: monospace; }
+    .recommended { border: 3px solid #10B981; }
+    .recommended::after { content: "RECOMMENDED"; position: absolute; top: 10px; right: 10px; background: #10B981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+    .palette { position: relative; }
+  </style>
+</head>
+<body>
+  <h1>GiftBox4you - Color Palette Options</h1>
+
+  <div class="palette-container">
+
+    <!-- Option 1: Classic Warm -->
+    <div class="palette recommended">
+      <h2>1. Classic Warm (Burgundy + Gold)</h2>
+      <div class="colors">
+        <div class="color" style="background: #722F37;"></div>
+        <div class="color" style="background: #8B3A42;"></div>
+        <div class="color" style="background: #C9A227;"></div>
+        <div class="color" style="background: #F5E6D3;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(135deg, #722F37 0%, #8B3A42 50%, #5C252C 100%);">
+        <div class="logo" style="color: #722F37;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #C9A227;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#722F37</span>
+        <span class="hex">#C9A227</span>
+        <span class="hex">#F5E6D3</span>
+      </div>
+    </div>
+
+    <!-- Option 2: Royal Elegance -->
+    <div class="palette">
+      <h2>2. Royal Elegance (Plum + Rose Gold)</h2>
+      <div class="colors">
+        <div class="color" style="background: #4A1942;"></div>
+        <div class="color" style="background: #6B2D5B;"></div>
+        <div class="color" style="background: #B76E79;"></div>
+        <div class="color" style="background: #F8E8E8;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(135deg, #4A1942 0%, #6B2D5B 50%, #3D1536 100%);">
+        <div class="logo" style="color: #4A1942;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #B76E79;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#4A1942</span>
+        <span class="hex">#B76E79</span>
+        <span class="hex">#F8E8E8</span>
+      </div>
+    </div>
+
+    <!-- Option 3: Nature Inspired -->
+    <div class="palette">
+      <h2>3. Nature Inspired (Forest + Amber)</h2>
+      <div class="colors">
+        <div class="color" style="background: #1B4332;"></div>
+        <div class="color" style="background: #2D6A4F;"></div>
+        <div class="color" style="background: #D4A373;"></div>
+        <div class="color" style="background: #FEFAE0;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(135deg, #1B4332 0%, #2D6A4F 50%, #163728 100%);">
+        <div class="logo" style="color: #1B4332;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #D4A373;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#1B4332</span>
+        <span class="hex">#D4A373</span>
+        <span class="hex">#FEFAE0</span>
+      </div>
+    </div>
+
+    <!-- Option 4: Sunset Warm -->
+    <div class="palette">
+      <h2>4. Sunset Warm (Terracotta + Cream)</h2>
+      <div class="colors">
+        <div class="color" style="background: #C75B39;"></div>
+        <div class="color" style="background: #E07B5C;"></div>
+        <div class="color" style="background: #8B4513;"></div>
+        <div class="color" style="background: #F5E6D3;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(135deg, #C75B39 0%, #E07B5C 50%, #A34D30 100%);">
+        <div class="logo" style="color: #C75B39;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #F5E6D3;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#C75B39</span>
+        <span class="hex">#F5E6D3</span>
+        <span class="hex">#8B4513</span>
+      </div>
+    </div>
+
+    <!-- Option 5: Navy Gold (Current) -->
+    <div class="palette">
+      <h2>5. Navy + Gold (Current)</h2>
+      <div class="colors">
+        <div class="color" style="background: #1E3A5F;"></div>
+        <div class="color" style="background: #2D5A87;"></div>
+        <div class="color" style="background: #D4AF37;"></div>
+        <div class="color" style="background: #F8F6F0;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(135deg, #1E3A5F 0%, #2D5A87 50%, #1E3A5F 100%);">
+        <div class="logo" style="color: #1E3A5F;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #D4AF37;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#1E3A5F</span>
+        <span class="hex">#D4AF37</span>
+        <span class="hex">#F8F6F0</span>
+      </div>
+    </div>
+
+    <!-- Option 6: Oil Paint Warm -->
+    <div class="palette">
+      <h2>6. Oil Paint Style (Rich & Warm)</h2>
+      <div class="colors">
+        <div class="color" style="background: #5D3A3A;"></div>
+        <div class="color" style="background: #8B5A5A;"></div>
+        <div class="color" style="background: #C4956A;"></div>
+        <div class="color" style="background: #E8DDD4;"></div>
+      </div>
+      <div class="preview" style="background: linear-gradient(135deg, #5D3A3A 0%, #7A4A4A 30%, #8B5A5A 60%, #6B4545 100%);">
+        <div class="logo" style="color: #5D3A3A;">🎁</div>
+        <div class="title">GiftBox<span class="accent" style="color: #C4956A;">4you</span></div>
+        <div class="tagline">Perfect gifts, every time</div>
+      </div>
+      <div class="hex-codes">
+        <span class="hex">#5D3A3A</span>
+        <span class="hex">#C4956A</span>
+        <span class="hex">#E8DDD4</span>
+      </div>
+    </div>
+
+  </div>
+
+  <p style="text-align: center; margin-top: 40px; color: #666;">Open this file in browser to see actual colors. Tell me which one you prefer!</p>
+</body>
+</html>
