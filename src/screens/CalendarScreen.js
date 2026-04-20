@@ -6,238 +6,184 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
+  Dimensions,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
 
-const DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
+const { width } = Dimensions.get('window');
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+// Timeline events
+const timelineEvents = [
+  { id: '1', time: '10:00', title: 'Buy flowers for Mom 💐', subtitle: 'Birthday prep' },
+  { id: '2', time: '14:30', title: 'Pick up cake 🎂', subtitle: 'From Sweet Bakery' },
+  { id: '3', time: '18:00', title: 'Family dinner 🍽️', subtitle: 'At home' },
 ];
 
-// Mock events
-const eventsData = {
-  5: { name: "Dad's Birthday", type: 'birthday' },
-  12: { name: 'Today', type: 'today' },
-  15: { name: "Mom's Birthday", type: 'birthday' },
-  20: { name: 'Anniversary', type: 'anniversary' },
-};
-
 const CalendarScreen = ({ navigation }) => {
-  const [currentMonth, setCurrentMonth] = useState(11); // December
-  const [currentYear, setCurrentYear] = useState(2024);
+  const [selectedDate, setSelectedDate] = useState(22);
+  const [currentMonth, setCurrentMonth] = useState(3); // April
+  const [currentYear, setCurrentYear] = useState(2026);
 
-  // Animations
-  const headerAnim = useRef(new Animated.Value(0)).current;
-  const calendarAnim = useRef(new Animated.Value(0)).current;
-  const upcomingAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+  const timelineAnims = useRef(timelineEvents.map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
-    Animated.sequence([
-      Animated.timing(headerAnim, {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 400,
+        duration: 500,
         useNativeDriver: true,
       }),
-      Animated.spring(calendarAnim, {
-        toValue: 1,
-        friction: 8,
-        tension: 40,
-        useNativeDriver: true,
-      }),
-      Animated.timing(upcomingAnim, {
-        toValue: 1,
+      Animated.timing(slideAnim, {
+        toValue: 0,
         duration: 400,
         useNativeDriver: true,
       }),
     ]).start();
+
+    Animated.stagger(100, timelineAnims.map(anim =>
+      Animated.spring(anim, {
+        toValue: 1,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      })
+    )).start();
   }, []);
 
-  const createFadeStyle = (anim) => ({
-    opacity: anim,
-    transform: [{
-      translateY: anim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [15, 0],
-      }),
-    }],
-  });
-
-  const getDaysInMonth = () => {
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const prevMonthDays = new Date(currentYear, currentMonth, 0).getDate();
-
+  // Generate week days around selected date
+  const getWeekDays = () => {
     const days = [];
-
-    // Previous month days
-    for (let i = firstDay - 1; i >= 0; i--) {
-      days.push({ day: prevMonthDays - i, muted: true });
-    }
-
-    // Current month days
-    for (let i = 1; i <= daysInMonth; i++) {
+    const startDate = selectedDate - 2;
+    for (let i = 0; i < 6; i++) {
+      const date = startDate + i;
+      const dayOfWeek = new Date(currentYear, currentMonth, date).getDay();
+      const adjustedDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
       days.push({
-        day: i,
-        muted: false,
-        isToday: i === 12 && currentMonth === 11,
-        hasEvent: eventsData[i] !== undefined,
+        date: date,
+        day: WEEK_DAYS[adjustedDayIndex],
+        isSelected: date === selectedDate,
+        hasEvent: [21, 22, 24].includes(date),
       });
     }
-
-    // Fill remaining cells
-    const remaining = 35 - days.length;
-    for (let i = 1; i <= remaining; i++) {
-      days.push({ day: i, muted: true });
-    }
-
-    return days.slice(0, 35); // Show 5 weeks
+    return days;
   };
-
-  const goToPrevMonth = () => {
-    if (currentMonth === 0) {
-      setCurrentMonth(11);
-      setCurrentYear(currentYear - 1);
-    } else {
-      setCurrentMonth(currentMonth - 1);
-    }
-  };
-
-  const goToNextMonth = () => {
-    if (currentMonth === 11) {
-      setCurrentMonth(0);
-      setCurrentYear(currentYear + 1);
-    } else {
-      setCurrentMonth(currentMonth + 1);
-    }
-  };
-
-  const upcomingEvents = [
-    { id: '1', name: "Mom's Birthday", date: 'Dec 15', days: 3, color: '#E07B5C' },
-    { id: '2', name: 'Anniversary', date: 'Dec 20', days: 8, color: '#5B7FD7' },
-  ];
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <Animated.View style={[styles.header, createFadeStyle(headerAnim)]}>
-        <Text style={styles.headerTitle}>Calendar</Text>
-        <TouchableOpacity style={styles.todayBtn} activeOpacity={0.8}>
-          <Text style={styles.todayBtnText}>Today</Text>
-        </TouchableOpacity>
-      </Animated.View>
-
       <ScrollView
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Calendar Box */}
-        <Animated.View style={[
-          styles.calendarBox,
-          {
-            opacity: calendarAnim,
-            transform: [{
-              scale: calendarAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.95, 1],
-              }),
-            }],
-          },
-        ]}>
-          {/* Gradient Header with Month */}
-          <LinearGradient
-            colors={['#E07B5C', '#C4956A']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.calendarHeader}
-          >
-            {/* Month Navigation */}
-            <View style={styles.monthRow}>
-              <TouchableOpacity onPress={goToPrevMonth} style={styles.monthNavBtn}>
-                <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
-              </TouchableOpacity>
-              <Text style={styles.monthLabel}>{MONTHS[currentMonth]} {currentYear}</Text>
-              <TouchableOpacity onPress={goToNextMonth} style={styles.monthNavBtn}>
-                <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Weekday Headers */}
-            <View style={styles.weekdaysRow}>
-              {DAYS.map((day, index) => (
-                <View key={index} style={styles.weekdayCell}>
-                  <Text style={styles.weekdayText}>{day}</Text>
-                </View>
-              ))}
-            </View>
-          </LinearGradient>
-
-          {/* Days Grid */}
-          <View style={styles.daysGrid}>
-            {getDaysInMonth().map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.dayCell}
-                activeOpacity={0.7}
-              >
-                {item.isToday ? (
-                  <LinearGradient
-                    colors={['#E07B5C', '#D06A4C']}
-                    style={styles.todayCell}
-                  >
-                    <Text style={styles.todayText}>{item.day}</Text>
-                    {item.hasEvent && <View style={styles.eventDotWhite} />}
-                  </LinearGradient>
-                ) : (
-                  <View style={styles.dayCellInner}>
-                    <Text style={[
-                      styles.dayText,
-                      item.muted && styles.mutedDay,
-                    ]}>
-                      {item.day}
-                    </Text>
-                    {item.hasEvent && !item.muted && <View style={styles.eventDot} />}
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))}
+        {/* Header */}
+        <Animated.View
+          style={[
+            styles.header,
+            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+          ]}
+        >
+          <Text style={styles.monthTitle}>{MONTHS[currentMonth]}</Text>
+          <Text style={styles.yearText}>{currentYear}</Text>
+          <View style={styles.navButtons}>
+            <TouchableOpacity
+              style={styles.navBtn}
+              onPress={() => setCurrentMonth(m => m > 0 ? m - 1 : 11)}
+            >
+              <Ionicons name="chevron-back" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.navBtn}
+              onPress={() => setCurrentMonth(m => m < 11 ? m + 1 : 0)}
+            >
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
           </View>
         </Animated.View>
 
-        {/* Upcoming Section */}
-        <Animated.View style={[styles.upcomingSection, createFadeStyle(upcomingAnim)]}>
-          <Text style={styles.sectionTitle}>Upcoming Events</Text>
-
-          {upcomingEvents.map((event) => (
-            <TouchableOpacity key={event.id} style={styles.upcomingItem} activeOpacity={0.8}>
-              <View style={[styles.upcomingDot, { backgroundColor: event.color }]} />
-              <View style={styles.upcomingInfo}>
-                <Text style={styles.upcomingName}>{event.name}</Text>
-                <Text style={styles.upcomingDate}>{event.date}</Text>
-              </View>
-              <View style={[styles.daysTag, { backgroundColor: `${event.color}15` }]}>
-                <Text style={[styles.upcomingDays, { color: event.color }]}>
-                  {event.days} days
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+        {/* Week Strip */}
+        <Animated.View style={[styles.weekStrip, { opacity: fadeAnim }]}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.weekScrollContent}
+          >
+            {getWeekDays().map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.dayPill,
+                  item.isSelected && styles.dayPillActive
+                ]}
+                onPress={() => setSelectedDate(item.date)}
+                activeOpacity={0.8}
+              >
+                <Text style={[
+                  styles.dayName,
+                  item.isSelected && styles.dayNameActive
+                ]}>{item.day}</Text>
+                <Text style={[
+                  styles.dayNum,
+                  item.isSelected && styles.dayNumActive
+                ]}>{item.date}</Text>
+                {item.hasEvent && (
+                  <View style={[
+                    styles.eventDot,
+                    item.isSelected && styles.eventDotActive
+                  ]} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </Animated.View>
 
-        <View style={{ height: 100 }} />
-      </ScrollView>
+        {/* Timeline Section */}
+        <View style={styles.timelineSection}>
+          <Text style={styles.timelineTitle}>Today's Events</Text>
 
-      {/* FAB */}
-      <TouchableOpacity style={styles.fab} activeOpacity={0.9}>
-        <LinearGradient
-          colors={['#E07B5C', '#D06A4C']}
-          style={styles.fabGradient}
-        >
-          <Ionicons name="add" size={28} color="#FFFFFF" />
-        </LinearGradient>
-      </TouchableOpacity>
+          {timelineEvents.map((event, index) => (
+            <Animated.View
+              key={event.id}
+              style={[
+                styles.timelineItem,
+                {
+                  opacity: timelineAnims[index],
+                  transform: [{
+                    translateY: timelineAnims[index].interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    })
+                  }]
+                }
+              ]}
+            >
+              {/* Time */}
+              <Text style={styles.timelineTime}>{event.time}</Text>
+
+              {/* Line with dot */}
+              <View style={styles.timelineLine}>
+                <View style={styles.timelineDot} />
+                {index < timelineEvents.length - 1 && (
+                  <View style={styles.timelineConnector} />
+                )}
+              </View>
+
+              {/* Content Card */}
+              <TouchableOpacity style={styles.timelineCard} activeOpacity={0.8}>
+                <Text style={styles.timelineCardTitle}>{event.title}</Text>
+                <Text style={styles.timelineCardSubtitle}>{event.subtitle}</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          ))}
+        </View>
+
+        {/* Bottom spacing */}
+        <View style={{ height: 120 }} />
+      </ScrollView>
     </View>
   );
 };
@@ -247,213 +193,165 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  todayBtn: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  todayBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#E07B5C',
+  scrollView: {
+    flex: 1,
   },
   scrollContent: {
+    paddingTop: 60,
+  },
+  header: {
     paddingHorizontal: 20,
-  },
-  calendarBox: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    overflow: 'hidden',
     marginBottom: 24,
+    alignItems: 'center',
+  },
+  monthTitle: {
+    fontFamily: 'Caveat-SemiBold',
+    fontSize: 32,
+    color: colors.primary,
+    marginBottom: 4,
+  },
+  yearText: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 14,
+    color: colors.textLight,
+    marginBottom: 16,
+  },
+  navButtons: {
+    flexDirection: 'row',
+    gap: 20,
+  },
+  navBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: colors.backgroundCard,
+    alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  calendarHeader: {
-    paddingTop: 20,
-    paddingBottom: 16,
+  weekStrip: {
+    marginBottom: 32,
+  },
+  weekScrollContent: {
     paddingHorizontal: 16,
+    gap: 10,
   },
-  monthRow: {
-    flexDirection: 'row',
+  dayPill: {
+    width: 52,
+    paddingVertical: 14,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: 22,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  monthNavBtn: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
+  dayPillActive: {
+    backgroundColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
   },
-  monthLabel: {
+  dayName: {
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 11,
+    color: colors.textLight,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  dayNameActive: {
+    color: 'rgba(255,255,255,0.8)',
+  },
+  dayNum: {
+    fontFamily: 'Nunito-ExtraBold',
     fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginHorizontal: 16,
-    textShadowColor: 'rgba(0,0,0,0.1)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  weekdaysRow: {
-    flexDirection: 'row',
-  },
-  weekdayCell: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  weekdayText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.9)',
-  },
-  daysGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 12,
-  },
-  dayCell: {
-    width: `${100 / 7}%`,
-    aspectRatio: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dayCellInner: {
-    width: '85%',
-    height: '85%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-  },
-  dayText: {
-    fontSize: 15,
-    fontWeight: '500',
     color: colors.textPrimary,
   },
-  mutedDay: {
-    color: '#CCCCCC',
-  },
-  todayCell: {
-    width: '85%',
-    height: '85%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    shadowColor: '#E07B5C',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  todayText: {
-    fontSize: 15,
-    fontWeight: '600',
+  dayNumActive: {
     color: '#FFFFFF',
   },
   eventDot: {
-    position: 'absolute',
-    bottom: 4,
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: '#E07B5C',
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.primary,
+    marginTop: 8,
   },
-  eventDotWhite: {
-    position: 'absolute',
-    bottom: 4,
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+  eventDotActive: {
     backgroundColor: '#FFFFFF',
   },
-  upcomingSection: {
+  timelineSection: {
+    paddingHorizontal: 20,
+  },
+  timelineTitle: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 18,
+    color: colors.textPrimary,
     marginBottom: 20,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 14,
-  },
-  upcomingItem: {
+  timelineItem: {
     flexDirection: 'row',
+    marginBottom: 0,
+  },
+  timelineTime: {
+    fontFamily: 'Nunito-SemiBold',
+    width: 50,
+    fontSize: 14,
+    color: colors.textLight,
+    textAlign: 'right',
+    paddingTop: 16,
+  },
+  timelineLine: {
+    width: 30,
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 3,
+    paddingTop: 16,
   },
-  upcomingDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 14,
+  timelineDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.primary,
+    borderWidth: 3,
+    borderColor: colors.background,
+    zIndex: 1,
   },
-  upcomingInfo: {
+  timelineConnector: {
+    width: 2,
     flex: 1,
+    backgroundColor: colors.border,
+    marginTop: -2,
+    minHeight: 60,
   },
-  upcomingName: {
-    fontSize: 15,
-    fontWeight: '600',
+  timelineCard: {
+    flex: 1,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  timelineCardTitle: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 16,
     color: colors.textPrimary,
+    marginBottom: 4,
   },
-  upcomingDate: {
+  timelineCardSubtitle: {
+    fontFamily: 'Nunito-Regular',
     fontSize: 13,
-    color: '#888888',
-    marginTop: 2,
-  },
-  daysTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  upcomingDays: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 100,
-    right: 20,
-    shadowColor: '#E07B5C',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  fabGradient: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    color: colors.textLight,
   },
 });
 

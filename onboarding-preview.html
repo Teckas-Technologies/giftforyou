@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiftBox4you - Onboarding Screens Preview</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: #FDF8F3;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .handwritten {
+            font-family: 'Caveat', cursive;
+        }
+
+        :root {
+            --cream: #FDF8F3;
+            --warm-white: #FFFBF7;
+            --peach: #FFEEE4;
+            --coral: #FF8B7B;
+            --coral-dark: #E57367;
+            --sage: #9DC08B;
+            --sage-light: #E8F5E3;
+            --lavender: #C9B8E8;
+            --lavender-light: #EDE4F5;
+            --sunny: #FFD93D;
+            --sunny-light: #FFF4E4;
+            --text-dark: #3D3D3D;
+            --text-soft: #6B6B6B;
+            --text-muted: #9B9B9B;
+        }
+
+        .preview-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--text-dark);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 800;
+        }
+
+        h1 span {
+            color: var(--coral);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-soft);
+            font-size: 1.1rem;
+            margin-bottom: 50px;
+        }
+
+        .section-title {
+            font-family: 'Caveat', cursive;
+            font-size: 2rem;
+            color: var(--coral);
+            margin: 40px 0 30px;
+            text-align: center;
+        }
+
+        .screens-row {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+
+        .phone-frame {
+            width: 280px;
+            height: 580px;
+            background: var(--warm-white);
+            border-radius: 40px;
+            padding: 12px;
+            box-shadow:
+                0 25px 60px rgba(0,0,0,0.08),
+                0 10px 20px rgba(0,0,0,0.04),
+                inset 0 0 0 1px rgba(255,255,255,0.8);
+            position: relative;
+            transition: transform 0.4s ease;
+        }
+
+        .phone-frame:hover {
+            transform: translateY(-8px) rotate(1deg);
+        }
+
+        .phone-frame::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 25px;
+            background: var(--cream);
+            border-radius: 15px;
+            z-index: 10;
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: var(--cream);
+            border-radius: 30px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .screen-label {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: 700;
+            color: var(--text-dark);
+            font-size: 1rem;
+        }
+
+        .screen-label span {
+            font-family: 'Caveat', cursive;
+            font-size: 1.3rem;
+            color: var(--coral);
+            display: block;
+            margin-top: 4px;
+        }
+
+        /* ============ ONBOARDING SCREENS ============ */
+        .onboarding-screen {
+            background: var(--cream);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 50px 24px 30px;
+            position: relative;
+        }
+
+        .skip-btn {
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            font-family: 'Caveat', cursive;
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .skip-btn:hover {
+            color: var(--coral);
+        }
+
+        .onboarding-illustration {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .illustration-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Outer decorative ring */
+        .illustration-wrapper::before {
+            content: '';
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: 2px dashed rgba(0,0,0,0.08);
+            animation: spinSlow 20s linear infinite;
+        }
+
+        @keyframes spinSlow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .illustration-icon {
+            width: 100px;
+            height: 100px;
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 45px;
+            position: relative;
+            animation: gentlePulse 3s ease-in-out infinite;
+        }
+
+        @keyframes gentlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .illustration-icon.coral {
+            background: linear-gradient(145deg, var(--coral) 0%, var(--coral-dark) 100%);
+            box-shadow: 0 12px 35px rgba(255,139,123,0.4);
+        }
+
+        .illustration-icon.sage {
+            background: linear-gradient(145deg, var(--sage) 0%, #7BA66A 100%);
+            box-shadow: 0 12px 35px rgba(157,192,139,0.4);
+        }
+
+        .illustration-icon.lavender {
+            background: linear-gradient(145deg, var(--lavender) 0%, #B8A5DB 100%);
+            box-shadow: 0 12px 35px rgba(201,184,232,0.4);
+        }
+
+        .illustration-icon.sunny {
+            background: linear-gradient(145deg, var(--sunny) 0%, #F5C800 100%);
+            box-shadow: 0 12px 35px rgba(255,217,61,0.4);
+        }
+
+        /* Small accent dots around icon */
+        .accent-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--coral);
+            animation: dotPulse 2s ease-in-out infinite;
+        }
+
+        .accent-dot:nth-child(2) { top: -18px; left: 50%; transform: translateX(-50%); animation-delay: 0s; }
+        .accent-dot:nth-child(3) { bottom: -18px; left: 50%; transform: translateX(-50%); animation-delay: 0.5s; }
+        .accent-dot:nth-child(4) { left: -18px; top: 50%; transform: translateY(-50%); animation-delay: 1s; }
+        .accent-dot:nth-child(5) { right: -18px; top: 50%; transform: translateY(-50%); animation-delay: 1.5s; }
+
+        @keyframes dotPulse {
+            0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.3); }
+        }
+
+        .accent-dot:nth-child(2), .accent-dot:nth-child(3) {
+            transform-origin: center;
+        }
+
+        .sage .accent-dot { background: var(--sage); }
+        .lavender .accent-dot { background: var(--lavender); }
+        .sunny .accent-dot { background: var(--sunny); }
+
+        .onboarding-content {
+            padding: 20px 0 30px;
+            text-align: center;
+        }
+
+        .onboarding-title {
+            font-family: 'Caveat', cursive;
+            font-size: 2rem;
+            color: var(--coral);
+            margin-bottom: 12px;
+        }
+
+        .onboarding-description {
+            font-size: 0.95rem;
+            color: var(--text-soft);
+            line-height: 1.6;
+            padding: 0 10px;
+        }
+
+        .onboarding-footer {
+            padding-bottom: 20px;
+        }
+
+        /* Pagination dots */
+        .pagination-dots {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #E8E0D8;
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            width: 28px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--coral) 0%, var(--coral-dark) 100%);
+        }
+
+        /* Buttons */
+        .onboarding-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--coral) 0%, var(--coral-dark) 100%);
+            border: none;
+            border-radius: 18px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'Nunito', sans-serif;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(255,139,123,0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .onboarding-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(255,139,123,0.4);
+        }
+
+        .onboarding-btn.secondary {
+            background: var(--warm-white);
+            color: var(--coral);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 2px solid var(--peach);
+        }
+
+        .onboarding-btn.secondary:hover {
+            border-color: var(--coral);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        }
+
+        .btn-arrow {
+            font-size: 1.2rem;
+        }
+
+        /* Welcome screen specific */
+        .welcome-screen .illustration-icon {
+            width: 90px;
+            height: 90px;
+            font-size: 40px;
+        }
+
+        .welcome-badges {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .welcome-badge {
+            padding: 8px 16px;
+            background: var(--warm-white);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--text-soft);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+        }
+
+        .welcome-badge span {
+            font-size: 1rem;
+        }
+
+        /* Flow diagram */
+        .flow-section {
+            margin-top: 60px;
+            text-align: center;
+        }
+
+        .flow-title {
+            font-family: 'Caveat', cursive;
+            font-size: 2rem;
+            color: var(--coral);
+            margin-bottom: 30px;
+        }
+
+        .flow-diagram {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .flow-box {
+            padding: 12px 20px;
+            background: var(--warm-white);
+            border-radius: 16px;
+            font-weight: 700;
+            color: var(--text-dark);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            font-size: 0.9rem;
+        }
+
+        .flow-box.active {
+            background: linear-gradient(135deg, var(--coral) 0%, var(--coral-dark) 100%);
+            color: white;
+            box-shadow: 0 6px 20px rgba(255,139,123,0.35);
+        }
+
+        .flow-arrow {
+            font-size: 1.2rem;
+            color: var(--coral);
+        }
+
+        /* Notes section */
+        .notes-section {
+            margin-top: 50px;
+            background: var(--warm-white);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        }
+
+        .notes-title {
+            font-family: 'Caveat', cursive;
+            font-size: 1.8rem;
+            color: var(--coral);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .note-card {
+            background: var(--cream);
+            border-radius: 16px;
+            padding: 20px;
+            border-left: 4px solid var(--coral);
+        }
+
+        .note-card h4 {
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .note-card p {
+            font-size: 0.9rem;
+            color: var(--text-soft);
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-container">
+        <h1>Gift<span>Box</span>4you</h1>
+        <p class="subtitle">Onboarding Screens - Warm & Friendly Experience</p>
+
+        <!-- ONBOARDING SCREENS -->
+        <h2 class="section-title">~ Onboarding Flow ~</h2>
+        <div class="screens-row">
+            <!-- Onboarding 1: Never Forget -->
+            <div>
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="onboarding-screen">
+                            <div class="skip-btn">skip</div>
+
+                            <div class="onboarding-illustration">
+                                <div class="illustration-wrapper">
+                                    <div class="illustration-icon coral">
+                                        🗓️
+                                        <span class="accent-dot"></span>
+                                        <span class="accent-dot"></span>
+                                        <span class="accent-dot"></span>
+                                        <span class="accent-dot"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="onboarding-content">
+                                <div class="onboarding-title">Never Forget Again</div>
+                                <div class="onboarding-description">
+                                    Keep track of birthdays, anniversaries, and all the special moments that matter to you and your loved ones.
+                                </div>
+                            </div>
+
+                            <div class="onboarding-footer">
+                                <div class="pagination-dots">
+                                    <div class="dot active"></div>
+                                    <div class="dot"></div>
+                                    <div class="dot"></div>
+                                    <div class="dot"></div>
+                                </div>
+                                <button class="onboarding-btn">
+                                    Next <span class="btn-arrow">→</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">Step 1<span>remember dates</span></div>
+            </div>
+
+            <!-- Onboarding 2: Your Circles -->
+            <div>
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="onboarding-screen">
+                            <div class="skip-btn">skip</div>
+
+                            <div class="onboarding-illustration">
+                                <div class="illustration-wrapper sage">
+                                    <div class="illustration-icon sage">
+                                        👥
+                                        <span class="accent-dot"></span>
+                                        <span class="accent-dot"></span>
+                                        <span class="accent-dot"></span>
+                                        <span class="accent-dot"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="onboarding-content">
+                                <div class="onboarding-title">Organize Your People</div>
+                                <div class="onboarding-description">
+                                    Create circles for family, friends, and colleagues. Keep everyone organized and never miss a celebration.
+                                </div>
+                            </div>
+
+                            <div class="onboarding-footer">
+                                <div class="pagination-dots">
+                                    <div class="dot"></div>
+                                    <div class="dot active"></div>
+                                    <div class="dot"></div>
+                                    <div class="dot"></div>
+                                </div>
+                                <button class="onboarding-btn">
+                                    Next <span class="btn-arrow">→</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">Step 2<span>your circles</span></div>
+            </div>
+
+            <!-- Onboarding 3: Gift Ideas -->
+            <div>
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="onboarding-screen">
+                            <div class="skip-btn">skip</div>
+
+                            <div class="onboarding-illustration">
+                                <div class="illustration-wrapper lavender">
+                                    <div class="illustration-icon lavender">
+                                        🎁
+                                        <span class="accent-dot"></span>
+                                        <span class="accent-dot"></span>
+                                        <span class="accent-dot"></span>
+                                        <span class="accent-dot"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="onboarding-content">
+                                <div class="onboarding-title">Perfect Gift Ideas</div>
+                                <div class="onboarding-description">
+                                    Save gift ideas, track your budget, and never give a last-minute present again. Thoughtful gifting made easy!
+                                </div>
+                            </div>
+
+                            <div class="onboarding-footer">
+                                <div class="pagination-dots">
+                                    <div class="dot"></div>
+                                    <div class="dot"></div>
+                                    <div class="dot active"></div>
+                                    <div class="dot"></div>
+                                </div>
+                                <button class="onboarding-btn">
+                                    Next <span class="btn-arrow">→</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">Step 3<span>gift tracking</span></div>
+            </div>
+
+            <!-- Onboarding 4: Get Started -->
+            <div>
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="onboarding-screen welcome-screen">
+                            <div class="onboarding-illustration">
+                                <div class="illustration-wrapper sunny">
+                                    <div class="illustration-icon sunny">
+                                        🎉
+                                        <span class="accent-dot"></span>
+                                        <span class="accent-dot"></span>
+                                        <span class="accent-dot"></span>
+                                        <span class="accent-dot"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="onboarding-content">
+                                <div class="onboarding-title">You're All Set!</div>
+                                <div class="onboarding-description">
+                                    Start adding your special dates and make every celebration memorable. Let's spread some joy!
+                                </div>
+                                <div class="welcome-badges">
+                                    <div class="welcome-badge"><span>🔔</span> Reminders</div>
+                                    <div class="welcome-badge"><span>🎁</span> Gifts</div>
+                                    <div class="welcome-badge"><span>👥</span> Circles</div>
+                                </div>
+                            </div>
+
+                            <div class="onboarding-footer">
+                                <div class="pagination-dots">
+                                    <div class="dot"></div>
+                                    <div class="dot"></div>
+                                    <div class="dot"></div>
+                                    <div class="dot active"></div>
+                                </div>
+                                <button class="onboarding-btn" style="margin-bottom: 12px;">
+                                    Get Started <span class="btn-arrow">🚀</span>
+                                </button>
+                                <button class="onboarding-btn secondary">
+                                    I already have an account
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">Step 4<span>let's go!</span></div>
+            </div>
+        </div>
+
+        <!-- FLOW DIAGRAM -->
+        <div class="flow-section">
+            <h2 class="flow-title">~ Updated App Flow ~</h2>
+            <div class="flow-diagram">
+                <div class="flow-box">Splash</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-box active">Onboarding (4 steps)</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-box">Login</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-box">Main App</div>
+            </div>
+        </div>
+
+        <!-- DESIGN NOTES -->
+        <div class="notes-section">
+            <h2 class="notes-title">~ Design Notes ~</h2>
+            <div class="notes-grid">
+                <div class="note-card">
+                    <h4>🎨 Color Progression</h4>
+                    <p>Each screen uses a different accent color (Coral → Sage → Lavender → Sunny) to create visual variety while maintaining warmth.</p>
+                </div>
+                <div class="note-card">
+                    <h4>✨ Floating Elements</h4>
+                    <p>Subtle floating decorations add playfulness and movement without being distracting. They reinforce each screen's theme.</p>
+                </div>
+                <div class="note-card">
+                    <h4>📝 Typography</h4>
+                    <p>Caveat font for titles creates a personal, handwritten feel. Nunito for body text ensures readability and friendliness.</p>
+                </div>
+                <div class="note-card">
+                    <h4>🔘 Navigation</h4>
+                    <p>Skip option respects user's time. Animated pagination dots show progress. Clear CTA buttons guide the journey.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

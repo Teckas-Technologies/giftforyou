@@ -23,41 +23,41 @@ const LoginScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Simple fade animations
-  const logoAnim = useRef(new Animated.Value(0)).current;
-  const titleAnim = useRef(new Animated.Value(0)).current;
-  const formAnim = useRef(new Animated.Value(0)).current;
-  const buttonAnim = useRef(new Animated.Value(0)).current;
-  const socialAnim = useRef(new Animated.Value(0)).current;
+  // Animations
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const formSlide = useRef(new Animated.Value(30)).current;
+  const formOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.stagger(150, [
-      Animated.timing(logoAnim, {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
         toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
         duration: 500,
         useNativeDriver: true,
       }),
-      Animated.timing(titleAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      Animated.timing(formAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      Animated.timing(buttonAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      Animated.timing(socialAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
     ]).start();
+
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(formOpacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(formSlide, {
+          toValue: 0,
+          friction: 8,
+          tension: 50,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, 300);
   }, []);
 
   const handleLogin = () => {
@@ -72,155 +72,145 @@ const LoginScreen = ({ navigation }) => {
     navigation.replace('MainApp');
   };
 
-  const createFadeStyle = (anim) => ({
-    opacity: anim,
-    transform: [{
-      translateY: anim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [20, 0],
-      }),
-    }],
-  });
-
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+    <View style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Header Section */}
-        <View style={styles.header}>
-          <Animated.View style={[styles.logoContainer, createFadeStyle(logoAnim)]}>
-            <LinearGradient
-              colors={['#E07B5C', '#D06A4C']}
-              style={styles.logoGradient}
-            >
-              <Ionicons name="gift" size={38} color="#FFFFFF" />
-            </LinearGradient>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header Illustration */}
+          <Animated.View
+            style={[
+              styles.headerSection,
+              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+            ]}
+          >
+            <View style={styles.illustrationWrap}>
+              <Text style={styles.waveEmoji}>👋</Text>
+            </View>
+            <Text style={styles.welcomeText}>Welcome back!</Text>
+            <Text style={styles.subtitleText}>We missed you</Text>
           </Animated.View>
 
-          <Animated.Text style={[styles.welcomeText, createFadeStyle(titleAnim)]}>
-            Welcome back
-          </Animated.Text>
-          <Animated.Text style={[styles.subtitleText, createFadeStyle(titleAnim)]}>
-            Sign in to continue gifting
-          </Animated.Text>
-        </View>
-
-        {/* Form Section */}
-        <Animated.View style={[styles.formSection, createFadeStyle(formAnim)]}>
-          {/* Email Input */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Email</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color={colors.secondary} />
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your email"
-                placeholderTextColor="#AAAAAA"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-          </View>
-
-          {/* Password Input */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Password</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color={colors.secondary} />
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your password"
-                placeholderTextColor="#AAAAAA"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <Ionicons
-                  name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                  size={20}
-                  color={colors.secondary}
+          {/* Form Card */}
+          <Animated.View
+            style={[
+              styles.formCard,
+              { opacity: formOpacity, transform: [{ translateY: formSlide }] }
+            ]}
+          >
+            {/* Email Input */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Email</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="hello@example.com"
+                  placeholderTextColor={colors.placeholder}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
                 />
-              </TouchableOpacity>
+              </View>
             </View>
-          </View>
 
-          {/* Forgot Password */}
-          <TouchableOpacity style={styles.forgotPassword}>
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
-        </Animated.View>
+            {/* Password Input */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Password</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="your secret..."
+                  placeholderTextColor={colors.placeholder}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeBtn}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye' : 'eye-off'}
+                    size={20}
+                    color={colors.textLight}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
 
-        {/* Sign In Button */}
-        <Animated.View style={createFadeStyle(buttonAnim)}>
-          <TouchableOpacity onPress={handleLogin} activeOpacity={0.9}>
-            <LinearGradient
-              colors={['#E07B5C', '#D06A4C']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.signInButton}
+            {/* Forgot Password */}
+            <TouchableOpacity style={styles.forgotBtn}>
+              <Text style={styles.forgotText}>Forgot Password?</Text>
+            </TouchableOpacity>
+
+            {/* Login Button */}
+            <TouchableOpacity onPress={handleLogin} activeOpacity={0.9}>
+              <LinearGradient
+                colors={[colors.primary, colors.primaryDark]}
+                style={styles.loginBtn}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                {isLoading ? (
+                  <Text style={styles.loginBtnText}>Please wait...</Text>
+                ) : (
+                  <>
+                    <Text style={styles.loginBtnText}>Let's Go!</Text>
+                    <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Divider */}
+          <Animated.View style={[styles.divider, { opacity: formOpacity }]}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or continue with</Text>
+            <View style={styles.dividerLine} />
+          </Animated.View>
+
+          {/* Social Buttons */}
+          <Animated.View style={[styles.socialRow, { opacity: formOpacity }]}>
+            <TouchableOpacity
+              style={[styles.socialBtn, styles.appleBtn]}
+              onPress={() => handleSocialLogin('Apple')}
             >
-              {isLoading ? (
-                <Text style={styles.signInButtonText}>Signing in...</Text>
-              ) : (
-                <>
-                  <Text style={styles.signInButtonText}>Sign In</Text>
-                  <View style={styles.buttonIcon}>
-                    <Ionicons name="arrow-forward" size={16} color="#E07B5C" />
-                  </View>
-                </>
-              )}
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
+              <Text style={styles.appleIcon}>🍎</Text>
+            </TouchableOpacity>
 
-        {/* Divider */}
-        <Animated.View style={[styles.dividerContainer, createFadeStyle(socialAnim)]}>
-          <View style={styles.divider} />
-          <Text style={styles.dividerText}>or continue with</Text>
-          <View style={styles.divider} />
-        </Animated.View>
+            <TouchableOpacity
+              style={styles.socialBtn}
+              onPress={() => handleSocialLogin('Google')}
+            >
+              <Text style={styles.googleLetter}>G</Text>
+            </TouchableOpacity>
 
-        {/* Social Login Buttons */}
-        <Animated.View style={[styles.socialButtons, createFadeStyle(socialAnim)]}>
-          <TouchableOpacity
-            style={styles.socialButton}
-            onPress={() => handleSocialLogin('Google')}
-            activeOpacity={0.8}
-          >
-            <View style={styles.googleIconContainer}>
-              <Text style={styles.googleG}>G</Text>
-            </View>
-            <Text style={styles.socialButtonText}>Google</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.socialBtn}
+              onPress={() => handleSocialLogin('Email')}
+            >
+              <Ionicons name="mail-outline" size={24} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </Animated.View>
 
-          <TouchableOpacity
-            style={[styles.socialButton, styles.appleButton]}
-            onPress={() => handleSocialLogin('Apple')}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="logo-apple" size={22} color="#FFFFFF" />
-            <Text style={[styles.socialButtonText, styles.appleText]}>Apple</Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Sign Up Link */}
-        <Animated.View style={[styles.signUpContainer, createFadeStyle(socialAnim)]}>
-          <Text style={styles.signUpText}>Don't have an account? </Text>
-          <TouchableOpacity>
-            <Text style={styles.signUpLink}>Sign Up</Text>
-          </TouchableOpacity>
-        </Animated.View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Don't have an account? </Text>
+            <TouchableOpacity>
+              <Text style={styles.footerLink}>Sign Up</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
@@ -229,188 +219,170 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  keyboardView: {
+    flex: 1,
+  },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 28,
+    paddingHorizontal: 24,
     paddingTop: 80,
     paddingBottom: 40,
   },
-  header: {
+  headerSection: {
     alignItems: 'center',
     marginBottom: 40,
   },
-  logoContainer: {
-    marginBottom: 28,
-  },
-  logoGradient: {
-    width: 88,
-    height: 88,
-    borderRadius: 26,
+  illustrationWrap: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#E07B5C',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    elevation: 12,
+    marginBottom: 20,
+  },
+  waveEmoji: {
+    fontSize: 45,
   },
   welcomeText: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.textPrimary,
+    fontFamily: 'Caveat-SemiBold',
+    fontSize: 32,
+    color: colors.primary,
     marginBottom: 8,
   },
   subtitleText: {
-    fontSize: 15,
-    color: '#888888',
+    fontFamily: 'Nunito-Regular',
+    fontSize: 16,
+    color: colors.textSecondary,
   },
-  formSection: {
+  formCard: {
+    backgroundColor: colors.backgroundCard,
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 4,
     marginBottom: 24,
   },
   inputGroup: {
     marginBottom: 20,
   },
   inputLabel: {
+    fontFamily: 'Nunito-SemiBold',
     fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
+    color: colors.textSecondary,
     marginBottom: 10,
-    marginLeft: 4,
   },
-  inputContainer: {
+  inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background,
     borderRadius: 16,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    borderWidth: 1.5,
-    borderColor: '#F0EBE6',
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
-    elevation: 2,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    paddingHorizontal: 16,
   },
   input: {
     flex: 1,
-    fontSize: 15,
+    paddingVertical: 16,
+    fontFamily: 'Nunito-Regular',
+    fontSize: 16,
     color: colors.textPrimary,
   },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginTop: 4,
+  eyeBtn: {
+    padding: 8,
   },
-  forgotPasswordText: {
+  forgotBtn: {
+    alignSelf: 'flex-end',
+    marginBottom: 24,
+  },
+  forgotText: {
+    fontFamily: 'Nunito-SemiBold',
     fontSize: 14,
     color: colors.primary,
-    fontWeight: '600',
   },
-  signInButton: {
+  loginBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 18,
-    borderRadius: 16,
-    marginBottom: 28,
-    marginHorizontal: 0,
+    borderRadius: 18,
     gap: 10,
-    shadowColor: '#E07B5C',
-    shadowOffset: { width: 0, height: 10 },
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
-    shadowRadius: 20,
+    shadowRadius: 16,
     elevation: 8,
   },
-  signInButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+  loginBtnText: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 17,
     color: '#FFFFFF',
-  },
-  buttonIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 28,
   },
   divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#EBE6E1',
+    backgroundColor: colors.divider,
   },
   dividerText: {
+    fontFamily: 'Nunito-Regular',
     paddingHorizontal: 16,
-    fontSize: 13,
-    color: '#AAAAAA',
-    fontWeight: '500',
-  },
-  socialButtons: {
-    flexDirection: 'row',
-    gap: 14,
-    marginBottom: 36,
-  },
-  socialButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#F0EBE6',
-    backgroundColor: '#FFFFFF',
-    gap: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  googleIconContainer: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#F5F5F5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  googleG: {
     fontSize: 14,
-    fontWeight: '700',
+    color: colors.textLight,
+  },
+  socialRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginBottom: 40,
+  },
+  socialBtn: {
+    width: 70,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: colors.backgroundCard,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  appleBtn: {
+    backgroundColor: colors.textPrimary,
+    borderColor: colors.textPrimary,
+  },
+  appleIcon: {
+    fontSize: 24,
+  },
+  googleLetter: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 20,
     color: '#4285F4',
   },
-  socialButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  appleButton: {
-    backgroundColor: '#1F2937',
-    borderColor: '#1F2937',
-  },
-  appleText: {
-    color: '#FFFFFF',
-  },
-  signUpContainer: {
+  footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
   },
-  signUpText: {
+  footerText: {
+    fontFamily: 'Nunito-Regular',
     fontSize: 15,
-    color: '#888888',
+    color: colors.textSecondary,
   },
-  signUpLink: {
+  footerLink: {
+    fontFamily: 'Nunito-Bold',
     fontSize: 15,
     color: colors.primary,
-    fontWeight: '700',
   },
 });
 

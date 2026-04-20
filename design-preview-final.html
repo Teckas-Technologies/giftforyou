@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GiftBox4you - Final Design Preview</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0F172A;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    h1 { text-align: center; color: #fff; margin-bottom: 6px; font-size: 26px; font-weight: 600; }
+    .subtitle { text-align: center; color: #14B8A6; font-size: 13px; margin-bottom: 6px; font-weight: 500; }
+    .description { text-align: center; color: #64748B; font-size: 12px; margin-bottom: 40px; }
+
+    /* Color Palette Display */
+    .palette-row {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 50px;
+      flex-wrap: wrap;
+    }
+    .palette-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.05);
+      padding: 10px 16px;
+      border-radius: 12px;
+    }
+    .palette-dot { width: 28px; height: 28px; border-radius: 8px; }
+    .palette-info { text-align: left; }
+    .palette-name { color: #fff; font-size: 12px; font-weight: 600; }
+    .palette-hex { color: #64748B; font-size: 10px; font-family: monospace; }
+
+    /* Section Headers */
+    .section-label {
+      color: #14B8A6;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .section-title {
+      color: #fff;
+      font-size: 20px;
+      text-align: center;
+      margin-bottom: 30px;
+      font-weight: 500;
+    }
+
+    /* Screen Grid */
+    .screens-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 40px;
+      justify-content: center;
+      max-width: 1500px;
+      margin: 0 auto 60px;
+    }
+
+    .screen-wrapper { text-align: center; }
+    .screen-name { color: #fff; font-size: 15px; margin-bottom: 4px; font-weight: 600; }
+    .screen-desc { color: #475569; font-size: 11px; margin-bottom: 14px; }
+
+    .phone {
+      width: 270px;
+      height: 540px;
+      background: #000;
+      border-radius: 36px;
+      padding: 8px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+    }
+
+    .screen {
+      width: 100%;
+      height: 100%;
+      border-radius: 28px;
+      overflow: hidden;
+      position: relative;
+      background: #FFFFFF;
+    }
+
+    .notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 75px;
+      height: 20px;
+      background: #000;
+      border-radius: 0 0 12px 12px;
+      z-index: 100;
+    }
+
+    .replay-btn {
+      margin-top: 12px;
+      padding: 8px 18px;
+      background: transparent;
+      color: #14B8A6;
+      border: 1px solid #14B8A6;
+      border-radius: 20px;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .replay-btn:hover { background: #14B8A6; color: #0F172A; }
+
+    /* Animations */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+    /* ===== TAB BAR ===== */
+    .tab-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: #FFFFFF;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      border-top: 1px solid #F1F5F9;
+    }
+    .tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 6px;
+    }
+    .tab svg {
+      width: 22px;
+      height: 22px;
+      stroke: #CBD5E1;
+      stroke-width: 1.8;
+      fill: none;
+    }
+    .tab.active svg { stroke: #14B8A6; }
+    .tab span {
+      font-size: 9px;
+      color: #CBD5E1;
+      font-weight: 500;
+    }
+    .tab.active span { color: #14B8A6; }
+
+    /* ===== SPLASH ===== */
+    .splash {
+      height: 100%;
+      background: linear-gradient(160deg, #14B8A6 0%, #0D9488 50%, #0F766E 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .splash-circle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+    }
+    .splash-circle.c1 { width: 250px; height: 250px; top: -80px; right: -80px; }
+    .splash-circle.c2 { width: 180px; height: 180px; bottom: -40px; left: -40px; }
+
+    .splash-logo {
+      width: 76px;
+      height: 76px;
+      background: white;
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      margin-bottom: 20px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.15);
+      opacity: 0;
+      animation: scaleIn 0.5s ease-out 0.2s forwards;
+    }
+    .splash-title {
+      color: white;
+      font-size: 26px;
+      font-weight: 600;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 0.4s forwards;
+    }
+    .splash-title span { font-weight: 300; }
+    .splash-tagline {
+      color: rgba(255,255,255,0.7);
+      font-size: 12px;
+      margin-top: 6px;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 0.55s forwards;
+    }
+    .splash-dots {
+      position: absolute;
+      bottom: 50px;
+      display: flex;
+      gap: 6px;
+    }
+    .splash-dot {
+      width: 6px;
+      height: 6px;
+      background: rgba(255,255,255,0.5);
+      border-radius: 50%;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    .splash-dot:nth-child(2) { animation-delay: 0.2s; }
+    .splash-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    /* ===== LOGIN ===== */
+    .login {
+      height: 100%;
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+    }
+    .login-header {
+      height: 170px;
+      background: linear-gradient(160deg, #14B8A6 0%, #0D9488 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-top: 16px;
+      position: relative;
+    }
+    .login-header::after {
+      content: '';
+      position: absolute;
+      bottom: -18px;
+      left: 0;
+      right: 0;
+      height: 36px;
+      background: #FFFFFF;
+      border-radius: 28px 28px 0 0;
+    }
+    .login-logo-sm {
+      width: 52px;
+      height: 52px;
+      background: white;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+      opacity: 0;
+      animation: scaleIn 0.4s ease-out 0.2s forwards;
+    }
+    .login-title {
+      color: white;
+      font-size: 20px;
+      font-weight: 600;
+      margin-top: 10px;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 0.35s forwards;
+    }
+
+    .login-form { flex: 1; padding: 28px 22px; }
+
+    .input-group {
+      margin-bottom: 18px;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out forwards;
+    }
+    .input-group:nth-child(1) { animation-delay: 0.45s; }
+    .input-group:nth-child(2) { animation-delay: 0.55s; }
+
+    .input-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #334155;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .input-box {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      background: #F8FAFC;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .input-box svg {
+      width: 18px;
+      height: 18px;
+      stroke: #94A3B8;
+      stroke-width: 2;
+      fill: none;
+    }
+    .input-box span { color: #94A3B8; font-size: 13px; }
+
+    .forgot-row {
+      text-align: right;
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 0.65s forwards;
+    }
+    .forgot-row span { color: #14B8A6; font-size: 12px; font-weight: 500; }
+
+    .login-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #14B8A6, #0D9488);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 16px rgba(20, 184, 166, 0.3);
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 0.75s forwards;
+    }
+    .login-btn span { color: white; font-size: 14px; font-weight: 600; }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 22px 0;
+      opacity: 0;
+      animation: fadeIn 0.4s ease-out 0.85s forwards;
+    }
+    .divider-line { flex: 1; height: 1px; background: #E2E8F0; }
+    .divider span { color: #94A3B8; font-size: 11px; }
+
+    .social-row {
+      display: flex;
+      gap: 10px;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 0.95s forwards;
+    }
+    .social-btn {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: white;
+    }
+    .social-btn span { font-size: 12px; font-weight: 600; color: #334155; }
+    .social-btn.dark { background: #1E293B; border-color: #1E293B; }
+    .social-btn.dark span { color: white; }
+
+    /* ===== HOME ===== */
+    .home {
+      height: 100%;
+      background: #F8FAFC;
+      padding: 46px 18px 70px;
+      overflow: hidden;
+    }
+
+    .home-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 0.2s forwards;
+    }
+    .greeting { font-size: 12px; color: #94A3B8; }
+    .username { font-size: 20px; font-weight: 600; color: #1E293B; margin-top: 2px; }
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #14B8A6, #0D9488);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .section-label-sm {
+      font-size: 10px;
+      font-weight: 600;
+      color: #94A3B8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 0.35s forwards;
+    }
+
+    .timeline { display: flex; flex-direction: column; gap: 12px; }
+
+    .event-card {
+      background: white;
+      border-radius: 18px;
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      opacity: 0;
+      transform: translateX(-16px);
+    }
+    .event-card:nth-child(1) { animation: slideIn 0.4s ease-out 0.45s forwards; }
+    .event-card:nth-child(2) { animation: slideIn 0.4s ease-out 0.55s forwards; }
+    .event-card:nth-child(3) { animation: slideIn 0.4s ease-out 0.65s forwards; }
+
+    .event-card.featured {
+      background: linear-gradient(135deg, #14B8A6, #0D9488);
+      box-shadow: 0 8px 20px rgba(20, 184, 166, 0.25);
+    }
+
+    .event-icon {
+      width: 48px;
+      height: 48px;
+      background: #F0FDFA;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    .event-card.featured .event-icon { background: rgba(255,255,255,0.2); }
+
+    .event-info { flex: 1; }
+    .event-name { font-size: 15px; font-weight: 600; color: #1E293B; }
+    .event-card.featured .event-name { color: white; }
+    .event-date { font-size: 12px; color: #94A3B8; margin-top: 2px; }
+    .event-card.featured .event-date { color: rgba(255,255,255,0.75); }
+
+    .event-badge {
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .event-badge.soon { background: #F0FDFA; color: #0D9488; }
+    .event-badge.later { background: #F1F5F9; color: #64748B; }
+    .event-card.featured .event-badge { background: white; color: #0D9488; }
+
+    /* ===== CALENDAR - REDESIGNED ===== */
+    .calendar {
+      height: 100%;
+      background: #F8FAFC;
+      padding: 46px 18px 70px;
+      overflow: hidden;
+    }
+
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 0.2s forwards;
+    }
+    .cal-title { font-size: 20px; font-weight: 600; color: #1E293B; }
+    .cal-nav {
+      display: flex;
+      gap: 6px;
+    }
+    .cal-nav-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+    .cal-nav-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: #64748B;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    /* Horizontal Date Scroll */
+    .date-scroll {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 22px;
+      overflow-x: auto;
+      padding: 4px 0;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 0.35s forwards;
+    }
+    .date-scroll::-webkit-scrollbar { display: none; }
+
+    .date-item {
+      min-width: 52px;
+      padding: 12px 8px;
+      background: white;
+      border-radius: 14px;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .date-item:hover { transform: translateY(-2px); }
+    .date-item.active {
+      background: linear-gradient(135deg, #14B8A6, #0D9488);
+      box-shadow: 0 6px 16px rgba(20, 184, 166, 0.3);
+    }
+
+    .date-day { font-size: 10px; color: #94A3B8; font-weight: 500; margin-bottom: 6px; }
+    .date-item.active .date-day { color: rgba(255,255,255,0.75); }
+
+    .date-num { font-size: 18px; font-weight: 600; color: #1E293B; }
+    .date-item.active .date-num { color: white; }
+
+    .date-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #14B8A6;
+      margin: 6px auto 0;
+    }
+    .date-item.active .date-dot { background: white; }
+
+    /* Events List */
+    .events-list {
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 0.5s forwards;
+    }
+
+    .events-date-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #94A3B8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .event-row {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .event-row::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: #14B8A6;
+    }
+    .event-row.purple::before { background: #8B5CF6; }
+    .event-row.amber::before { background: #F59E0B; }
+
+    .event-row-icon { font-size: 20px; }
+    .event-row-info { flex: 1; }
+    .event-row-name { font-size: 14px; font-weight: 600; color: #1E293B; }
+    .event-row-time { font-size: 11px; color: #94A3B8; margin-top: 2px; }
+    .event-row-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: #14B8A6;
+    }
+    .event-row.purple .event-row-badge { color: #8B5CF6; }
+    .event-row.amber .event-row-badge { color: #F59E0B; }
+
+    /* Add Event Button */
+    .add-event-btn {
+      background: white;
+      border: 2px dashed #E2E8F0;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 10px;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 0.65s forwards;
+    }
+    .add-event-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: #94A3B8;
+      stroke-width: 2;
+      fill: none;
+    }
+    .add-event-btn span { font-size: 13px; color: #94A3B8; font-weight: 500; }
+
+    /* ===== CIRCLES ===== */
+    .circles {
+      height: 100%;
+      background: #F8FAFC;
+      padding: 46px 18px 70px;
+      overflow: hidden;
+    }
+
+    .circles-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 0.2s forwards;
+    }
+    .circles-title { font-size: 20px; font-weight: 600; color: #1E293B; }
+
+    .add-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #14B8A6, #0D9488);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(20, 184, 166, 0.25);
+    }
+    .add-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: white;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .circle-card {
+      background: white;
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    .circle-card:nth-child(1) { animation: fadeUp 0.4s ease-out 0.35s forwards; }
+    .circle-card:nth-child(2) { animation: fadeUp 0.4s ease-out 0.45s forwards; }
+    .circle-card:nth-child(3) { animation: fadeUp 0.4s ease-out 0.55s forwards; }
+
+    .circle-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .circle-emoji {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: #F0FDFA;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .circle-info { flex: 1; }
+    .circle-name { font-size: 15px; font-weight: 600; color: #1E293B; }
+    .circle-count { font-size: 12px; color: #94A3B8; margin-top: 2px; }
+
+    .circle-members {
+      display: flex;
+      padding-left: 56px;
+    }
+    .member {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 2px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+      margin-left: -10px;
+    }
+    .member:first-child { margin-left: 0; }
+    .member.teal { background: linear-gradient(135deg, #14B8A6, #0D9488); }
+    .member.blue { background: linear-gradient(135deg, #3B82F6, #2563EB); }
+    .member.purple { background: linear-gradient(135deg, #8B5CF6, #7C3AED); }
+    .member.amber { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .member.more { background: #F1F5F9; color: #64748B; }
+
+    /* ===== GIFTS ===== */
+    .gifts {
+      height: 100%;
+      background: #F8FAFC;
+      padding: 46px 18px 70px;
+      overflow: hidden;
+    }
+
+    .gifts-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 0.2s forwards;
+    }
+    .gifts-title { font-size: 20px; font-weight: 600; color: #1E293B; }
+
+    .gifts-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 0.3s forwards;
+    }
+    .gift-tab {
+      padding: 9px 16px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #94A3B8;
+      background: white;
+    }
+    .gift-tab.active {
+      background: linear-gradient(135deg, #14B8A6, #0D9488);
+      color: white;
+      box-shadow: 0 4px 12px rgba(20, 184, 166, 0.25);
+    }
+
+    .gift-card {
+      background: white;
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      gap: 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    .gift-card:nth-child(1) { animation: fadeUp 0.4s ease-out 0.4s forwards; }
+    .gift-card:nth-child(2) { animation: fadeUp 0.4s ease-out 0.5s forwards; }
+    .gift-card:nth-child(3) { animation: fadeUp 0.4s ease-out 0.6s forwards; }
+
+    .gift-image {
+      width: 64px;
+      height: 64px;
+      border-radius: 14px;
+      background: #F0FDFA;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+
+    .gift-info { flex: 1; }
+    .gift-name { font-size: 14px; font-weight: 600; color: #1E293B; }
+    .gift-for { font-size: 11px; color: #94A3B8; margin-top: 3px; }
+    .gift-price {
+      display: inline-block;
+      margin-top: 8px;
+      background: linear-gradient(135deg, #14B8A6, #0D9488);
+      color: white;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .gift-fav {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: #F0FDFA;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      align-self: flex-start;
+    }
+    .gift-fav svg {
+      width: 16px;
+      height: 16px;
+      fill: #14B8A6;
+      stroke: #14B8A6;
+    }
+    .gift-fav.empty svg { fill: none; stroke: #CBD5E1; }
+
+    /* ===== PROFILE ===== */
+    .profile {
+      height: 100%;
+      background: #F8FAFC;
+      padding: 46px 18px 70px;
+      overflow: hidden;
+    }
+
+    .profile-top {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .profile-avatar {
+      width: 74px;
+      height: 74px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, #14B8A6, #0D9488);
+      margin: 0 auto 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(20, 184, 166, 0.3);
+      opacity: 0;
+      animation: scaleIn 0.5s ease-out 0.25s forwards;
+    }
+
+    .profile-name {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1E293B;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 0.4s forwards;
+    }
+    .profile-email {
+      font-size: 12px;
+      color: #94A3B8;
+      margin-top: 3px;
+      opacity: 0;
+      animation: fadeUp 0.4s ease-out 0.5s forwards;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .stat-box {
+      flex: 1;
+      background: white;
+      border-radius: 16px;
+      padding: 16px 10px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    .stat-box:nth-child(1) { animation: scaleIn 0.4s ease-out 0.55s forwards; }
+    .stat-box:nth-child(2) { animation: scaleIn 0.4s ease-out 0.65s forwards; }
+    .stat-box:nth-child(3) { animation: scaleIn 0.4s ease-out 0.75s forwards; }
+
+    .stat-num { font-size: 24px; font-weight: 700; color: #1E293B; }
+    .stat-label { font-size: 10px; color: #94A3B8; margin-top: 3px; font-weight: 500; }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background: white;
+      border-radius: 14px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+      opacity: 0;
+      transform: translateX(-16px);
+    }
+    .menu-item:nth-child(1) { animation: slideIn 0.4s ease-out 0.85s forwards; }
+    .menu-item:nth-child(2) { animation: slideIn 0.4s ease-out 0.95s forwards; }
+
+    .menu-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .menu-icon svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2;
+      fill: none;
+    }
+    .menu-icon.teal { background: #F0FDFA; }
+    .menu-icon.teal svg { stroke: #14B8A6; }
+    .menu-icon.purple { background: #F5F3FF; }
+    .menu-icon.purple svg { stroke: #8B5CF6; }
+
+    .menu-text { flex: 1; }
+    .menu-title { font-size: 14px; font-weight: 600; color: #1E293B; }
+    .menu-desc { font-size: 11px; color: #94A3B8; margin-top: 2px; }
+
+    .menu-arrow svg {
+      width: 14px;
+      height: 14px;
+      stroke: #CBD5E1;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 50px;
+      padding: 30px;
+    }
+    .footer-title { color: #14B8A6; font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .footer-text { color: #475569; font-size: 11px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <h1>GiftBox4you</h1>
+  <p class="subtitle">Final Design Preview</p>
+  <p class="description">Teal/Emerald color palette | Clean minimal design</p>
+
+  <!-- Color Palette -->
+  <div class="palette-row">
+    <div class="palette-chip">
+      <div class="palette-dot" style="background: #14B8A6;"></div>
+      <div class="palette-info">
+        <div class="palette-name">Primary</div>
+        <div class="palette-hex">#14B8A6</div>
+      </div>
+    </div>
+    <div class="palette-chip">
+      <div class="palette-dot" style="background: #0D9488;"></div>
+      <div class="palette-info">
+        <div class="palette-name">Accent</div>
+        <div class="palette-hex">#0D9488</div>
+      </div>
+    </div>
+    <div class="palette-chip">
+      <div class="palette-dot" style="background: #8B5CF6;"></div>
+      <div class="palette-info">
+        <div class="palette-name">Purple</div>
+        <div class="palette-hex">#8B5CF6</div>
+      </div>
+    </div>
+    <div class="palette-chip">
+      <div class="palette-dot" style="background: #F59E0B;"></div>
+      <div class="palette-info">
+        <div class="palette-name">Amber</div>
+        <div class="palette-hex">#F59E0B</div>
+      </div>
+    </div>
+    <div class="palette-chip">
+      <div class="palette-dot" style="background: #1E293B;"></div>
+      <div class="palette-info">
+        <div class="palette-name">Text</div>
+        <div class="palette-hex">#1E293B</div>
+      </div>
+    </div>
+    <div class="palette-chip">
+      <div class="palette-dot" style="background: #F8FAFC; border: 1px solid #E2E8F0;"></div>
+      <div class="palette-info">
+        <div class="palette-name">Background</div>
+        <div class="palette-hex">#F8FAFC</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth -->
+  <div class="section-label">Authentication</div>
+  <div class="section-title">Splash & Login</div>
+
+  <div class="screens-grid">
+    <!-- Splash -->
+    <div class="screen-wrapper">
+      <div class="screen-name">Splash</div>
+      <div class="screen-desc">3 seconds</div>
+      <div class="phone">
+        <div class="screen" id="splash">
+          <div class="notch"></div>
+          <div class="splash">
+            <div class="splash-circle c1"></div>
+            <div class="splash-circle c2"></div>
+            <div class="splash-logo">🎁</div>
+            <div class="splash-title">GiftBox<span>4you</span></div>
+            <div class="splash-tagline">Perfect gifts, every time</div>
+            <div class="splash-dots">
+              <div class="splash-dot"></div>
+              <div class="splash-dot"></div>
+              <div class="splash-dot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="replay-btn" onclick="replay('splash')">Replay</button>
+    </div>
+
+    <!-- Login -->
+    <div class="screen-wrapper">
+      <div class="screen-name">Login</div>
+      <div class="screen-desc">Sign in / Sign up</div>
+      <div class="phone">
+        <div class="screen" id="login">
+          <div class="notch"></div>
+          <div class="login">
+            <div class="login-header">
+              <div class="login-logo-sm">🎁</div>
+              <div class="login-title">Welcome</div>
+            </div>
+            <div class="login-form">
+              <div class="input-group">
+                <span class="input-label">Email</span>
+                <div class="input-box">
+                  <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  <span>your@email.com</span>
+                </div>
+              </div>
+              <div class="input-group">
+                <span class="input-label">Password</span>
+                <div class="input-box">
+                  <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <span>••••••••</span>
+                </div>
+              </div>
+              <div class="forgot-row"><span>Forgot password?</span></div>
+              <div class="login-btn"><span>Sign In</span></div>
+              <div class="divider">
+                <div class="divider-line"></div>
+                <span>or</span>
+                <div class="divider-line"></div>
+              </div>
+              <div class="social-row">
+                <div class="social-btn"><span style="color:#4285F4;font-weight:700;">G</span><span>Google</span></div>
+                <div class="social-btn dark"><span></span><span>Apple</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="replay-btn" onclick="replay('login')">Replay</button>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div class="section-label">Main App</div>
+  <div class="section-title">5 Tabs: Home | Calendar | Circles | Gifts | Profile</div>
+
+  <div class="screens-grid">
+    <!-- Home -->
+    <div class="screen-wrapper">
+      <div class="screen-name">Home</div>
+      <div class="screen-desc">Events timeline</div>
+      <div class="phone">
+        <div class="screen" id="home">
+          <div class="notch"></div>
+          <div class="home">
+            <div class="home-header">
+              <div>
+                <div class="greeting">Good morning</div>
+                <div class="username">Sarah</div>
+              </div>
+              <div class="avatar">SJ</div>
+            </div>
+
+            <div class="section-label-sm">Upcoming</div>
+
+            <div class="timeline">
+              <div class="event-card featured">
+                <div class="event-icon">🎂</div>
+                <div class="event-info">
+                  <div class="event-name">Mom's Birthday</div>
+                  <div class="event-date">December 15</div>
+                </div>
+                <div class="event-badge">3 days</div>
+              </div>
+              <div class="event-card">
+                <div class="event-icon">💍</div>
+                <div class="event-info">
+                  <div class="event-name">Anniversary</div>
+                  <div class="event-date">December 20</div>
+                </div>
+                <div class="event-badge later">8 days</div>
+              </div>
+              <div class="event-card">
+                <div class="event-icon">🎄</div>
+                <div class="event-info">
+                  <div class="event-name">Christmas Party</div>
+                  <div class="event-date">December 25</div>
+                </div>
+                <div class="event-badge later">13 days</div>
+              </div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab active">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Home</span>
+              </div>
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span>Calendar</span>
+              </div>
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+                <span>Circles</span>
+              </div>
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+                <span>Gifts</span>
+              </div>
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>Profile</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="replay-btn" onclick="replay('home')">Replay</button>
+    </div>
+
+    <!-- Calendar -->
+    <div class="screen-wrapper">
+      <div class="screen-name">Calendar</div>
+      <div class="screen-desc">Horizontal date picker</div>
+      <div class="phone">
+        <div class="screen" id="calendar">
+          <div class="notch"></div>
+          <div class="calendar">
+            <div class="cal-header">
+              <div class="cal-title">December</div>
+              <div class="cal-nav">
+                <div class="cal-nav-btn"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+                <div class="cal-nav-btn"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+              </div>
+            </div>
+
+            <div class="date-scroll">
+              <div class="date-item">
+                <div class="date-day">Mon</div>
+                <div class="date-num">9</div>
+              </div>
+              <div class="date-item">
+                <div class="date-day">Tue</div>
+                <div class="date-num">10</div>
+              </div>
+              <div class="date-item">
+                <div class="date-day">Wed</div>
+                <div class="date-num">11</div>
+              </div>
+              <div class="date-item active">
+                <div class="date-day">Thu</div>
+                <div class="date-num">12</div>
+                <div class="date-dot"></div>
+              </div>
+              <div class="date-item">
+                <div class="date-day">Fri</div>
+                <div class="date-num">13</div>
+              </div>
+              <div class="date-item">
+                <div class="date-day">Sat</div>
+                <div class="date-num">14</div>
+              </div>
+              <div class="date-item">
+                <div class="date-day">Sun</div>
+                <div class="date-num">15</div>
+                <div class="date-dot"></div>
+              </div>
+            </div>
+
+            <div class="events-list">
+              <div class="events-date-label">This Week</div>
+
+              <div class="event-row">
+                <div class="event-row-icon">🎂</div>
+                <div class="event-row-info">
+                  <div class="event-row-name">Mom's Birthday</div>
+                  <div class="event-row-time">Sunday, Dec 15</div>
+                </div>
+                <div class="event-row-badge">3 days</div>
+              </div>
+
+              <div class="event-row purple">
+                <div class="event-row-icon">💍</div>
+                <div class="event-row-info">
+                  <div class="event-row-name">Anniversary</div>
+                  <div class="event-row-time">Friday, Dec 20</div>
+                </div>
+                <div class="event-row-badge">8 days</div>
+              </div>
+
+              <div class="event-row amber">
+                <div class="event-row-icon">🎄</div>
+                <div class="event-row-info">
+                  <div class="event-row-name">Christmas</div>
+                  <div class="event-row-time">Wednesday, Dec 25</div>
+                </div>
+                <div class="event-row-badge">13 days</div>
+              </div>
+
+              <div class="add-event-btn">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Add event</span>
+              </div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Home</span>
+              </div>
+              <div class="tab active">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span>Calendar</span>
+              </div>
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+                <span>Circles</span>
+              </div>
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+                <span>Gifts</span>
+              </div>
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>Profile</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="replay-btn" onclick="replay('calendar')">Replay</button>
+    </div>
+
+    <!-- Circles -->
+    <div class="screen-wrapper">
+      <div class="screen-name">Circles</div>
+      <div class="screen-desc">Contact groups</div>
+      <div class="phone">
+        <div class="screen" id="circles">
+          <div class="notch"></div>
+          <div class="circles">
+            <div class="circles-header">
+              <div class="circles-title">Circles</div>
+              <div class="add-btn">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </div>
+            </div>
+
+            <div class="circle-card">
+              <div class="circle-header">
+                <div class="circle-emoji">👨‍👩‍👧‍👦</div>
+                <div class="circle-info">
+                  <div class="circle-name">Family</div>
+                  <div class="circle-count">8 members</div>
+                </div>
+              </div>
+              <div class="circle-members">
+                <div class="member teal">M</div>
+                <div class="member blue">D</div>
+                <div class="member purple">S</div>
+                <div class="member more">+5</div>
+              </div>
+            </div>
+
+            <div class="circle-card">
+              <div class="circle-header">
+                <div class="circle-emoji">💼</div>
+                <div class="circle-info">
+                  <div class="circle-name">Work</div>
+                  <div class="circle-count">5 members</div>
+                </div>
+              </div>
+              <div class="circle-members">
+                <div class="member amber">J</div>
+                <div class="member teal">A</div>
+                <div class="member more">+3</div>
+              </div>
+            </div>
+
+            <div class="circle-card">
+              <div class="circle-header">
+                <div class="circle-emoji">🎓</div>
+                <div class="circle-info">
+                  <div class="circle-name">College</div>
+                  <div class="circle-count">12 members</div>
+                </div>
+              </div>
+              <div class="circle-members">
+                <div class="member purple">R</div>
+                <div class="member blue">K</div>
+                <div class="member more">+10</div>
+              </div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Home</span>
+              </div>
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span>Calendar</span>
+              </div>
+              <div class="tab active">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+                <span>Circles</span>
+              </div>
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+                <span>Gifts</span>
+              </div>
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>Profile</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="replay-btn" onclick="replay('circles')">Replay</button>
+    </div>
+
+    <!-- Gifts -->
+    <div class="screen-wrapper">
+      <div class="screen-name">Gifts</div>
+      <div class="screen-desc">Gift ideas</div>
+      <div class="phone">
+        <div class="screen" id="gifts">
+          <div class="notch"></div>
+          <div class="gifts">
+            <div class="gifts-header">
+              <div class="gifts-title">Gifts</div>
+            </div>
+
+            <div class="gifts-tabs">
+              <div class="gift-tab active">All</div>
+              <div class="gift-tab">Saved</div>
+              <div class="gift-tab">Bought</div>
+            </div>
+
+            <div class="gift-card">
+              <div class="gift-image">📱</div>
+              <div class="gift-info">
+                <div class="gift-name">Wireless Earbuds</div>
+                <div class="gift-for">For Mom's Birthday</div>
+                <div class="gift-price">$79.99</div>
+              </div>
+              <div class="gift-fav">
+                <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </div>
+            </div>
+
+            <div class="gift-card">
+              <div class="gift-image">📚</div>
+              <div class="gift-info">
+                <div class="gift-name">Book Collection</div>
+                <div class="gift-for">For Dad</div>
+                <div class="gift-price">$45.00</div>
+              </div>
+              <div class="gift-fav empty">
+                <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </div>
+            </div>
+
+            <div class="gift-card">
+              <div class="gift-image">🎨</div>
+              <div class="gift-info">
+                <div class="gift-name">Art Supply Kit</div>
+                <div class="gift-for">For Sister</div>
+                <div class="gift-price">$59.99</div>
+              </div>
+              <div class="gift-fav">
+                <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Home</span>
+              </div>
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span>Calendar</span>
+              </div>
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+                <span>Circles</span>
+              </div>
+              <div class="tab active">
+                <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+                <span>Gifts</span>
+              </div>
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>Profile</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="replay-btn" onclick="replay('gifts')">Replay</button>
+    </div>
+
+    <!-- Profile -->
+    <div class="screen-wrapper">
+      <div class="screen-name">Profile</div>
+      <div class="screen-desc">Settings</div>
+      <div class="phone">
+        <div class="screen" id="profile">
+          <div class="notch"></div>
+          <div class="profile">
+            <div class="profile-top">
+              <div class="profile-avatar">SJ</div>
+              <div class="profile-name">Sarah Johnson</div>
+              <div class="profile-email">sarah@email.com</div>
+            </div>
+
+            <div class="stats-row">
+              <div class="stat-box">
+                <div class="stat-num">5</div>
+                <div class="stat-label">Circles</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-num">23</div>
+                <div class="stat-label">Gifts</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-num">12</div>
+                <div class="stat-label">Events</div>
+              </div>
+            </div>
+
+            <div class="menu-item">
+              <div class="menu-icon teal">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </div>
+              <div class="menu-text">
+                <div class="menu-title">Settings</div>
+                <div class="menu-desc">Preferences</div>
+              </div>
+              <div class="menu-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+            </div>
+
+            <div class="menu-item">
+              <div class="menu-icon purple">
+                <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              </div>
+              <div class="menu-text">
+                <div class="menu-title">Notifications</div>
+                <div class="menu-desc">Alerts</div>
+              </div>
+              <div class="menu-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Home</span>
+              </div>
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span>Calendar</span>
+              </div>
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+                <span>Circles</span>
+              </div>
+              <div class="tab">
+                <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+                <span>Gifts</span>
+              </div>
+              <div class="tab active">
+                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>Profile</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="replay-btn" onclick="replay('profile')">Replay</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-title">design-preview-final.html</div>
+    <div class="footer-text">Teal/Emerald theme | Horizontal calendar | Clean minimal design<br>Review and confirm before implementation</div>
+  </div>
+
+  <script>
+    function replay(id) {
+      const el = document.getElementById(id);
+      const html = el.innerHTML;
+      el.innerHTML = '';
+      setTimeout(() => el.innerHTML = html, 50);
+    }
+  </script>
+</body>
+</html>

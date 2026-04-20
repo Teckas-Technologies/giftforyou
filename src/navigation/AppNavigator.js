@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import {
@@ -15,53 +15,55 @@ import {
   GiftsScreen,
   ProfileScreen,
 } from '../screens';
-import { colors, shadows } from '../theme';
+import { colors } from '../theme';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Bottom Tab Navigator
+// Get icon name based on route
+const getIconName = (routeName, focused) => {
+  switch (routeName) {
+    case 'Home':
+      return focused ? 'home' : 'home-outline';
+    case 'Calendar':
+      return focused ? 'calendar' : 'calendar-outline';
+    case 'Circles':
+      return focused ? 'people' : 'people-outline';
+    case 'Gifts':
+      return focused ? 'gift' : 'gift-outline';
+    case 'Me':
+      return focused ? 'person' : 'person-outline';
+    default:
+      return 'ellipse';
+  }
+};
+
+// Bottom Tab Navigator - 5 Tabs
 const MainTabNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
-
-          switch (route.name) {
-            case 'Home':
-              iconName = focused ? 'home' : 'home-outline';
-              break;
-            case 'Calendar':
-              iconName = focused ? 'calendar' : 'calendar-outline';
-              break;
-            case 'Circles':
-              iconName = focused ? 'people' : 'people-outline';
-              break;
-            case 'Gifts':
-              iconName = focused ? 'gift' : 'gift-outline';
-              break;
-            case 'Profile':
-              iconName = focused ? 'person' : 'person-outline';
-              break;
-            default:
-              iconName = 'ellipse';
-          }
-
+          const iconName = getIconName(route.name, focused);
           return <Ionicons name={iconName} size={24} color={color} />;
         },
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarInactiveTintColor: colors.tabBarInactive,
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
+        tabBarItemStyle: styles.tabBarItem,
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Calendar" component={CalendarScreen} />
       <Tab.Screen name="Circles" component={CirclesScreen} />
       <Tab.Screen name="Gifts" component={GiftsScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen
+        name="Me"
+        component={ProfileScreen}
+        options={{ tabBarLabel: 'Me' }}
+      />
     </Tab.Navigator>
   );
 };
@@ -88,23 +90,23 @@ const AppNavigator = () => {
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 0,
-    height: 88,
-    paddingTop: 10,
-    paddingBottom: 26,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    elevation: 12,
-    shadowColor: '#1F2937',
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
+    backgroundColor: colors.tabBarBackground,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    height: 85,
+    paddingTop: 8,
+    paddingBottom: 25,
+    paddingHorizontal: 10,
   },
   tabBarLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 2,
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 10,
+    marginTop: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  tabBarItem: {
+    paddingVertical: 4,
   },
 });
 

@@ -6,183 +6,149 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
 
+const { width } = Dimensions.get('window');
+
 const menuItems = [
-  {
-    id: '1',
-    icon: 'settings-outline',
-    title: 'Settings',
-    subtitle: 'Preferences & account',
-    color: '#E07B5C',
-    bgColor: '#FEF3F0',
-  },
-  {
-    id: '2',
-    icon: 'notifications-outline',
-    title: 'Notifications',
-    subtitle: 'Reminders & alerts',
-    color: '#5B7FD7',
-    bgColor: '#F0F4FE',
-  },
-  {
-    id: '3',
-    icon: 'help-circle-outline',
-    title: 'Help & Support',
-    subtitle: 'FAQs & contact us',
-    color: '#4CAF78',
-    bgColor: '#F0FBF5',
-  },
+  { id: '1', icon: 'settings-outline', title: 'Settings', emoji: '⚙️' },
+  { id: '2', icon: 'notifications-outline', title: 'Notifications', emoji: '🔔' },
+  { id: '3', icon: 'heart-outline', title: 'Premium', emoji: '💜' },
+  { id: '4', icon: 'help-circle-outline', title: 'Help & Support', emoji: '❓' },
 ];
 
-const ProfileScreen = () => {
-  // Animation values
-  const avatarAnim = useRef(new Animated.Value(0)).current;
-  const nameAnim = useRef(new Animated.Value(0)).current;
-  const statsAnims = useRef([
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-  ]).current;
-  const menuAnims = useRef(menuItems.map(() => new Animated.Value(0))).current;
+const ProfileScreen = ({ navigation }) => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+  const cardAnims = useRef(menuItems.map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
-    Animated.sequence([
-      Animated.spring(avatarAnim, {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    Animated.stagger(80, cardAnims.map(anim =>
+      Animated.spring(anim, {
         toValue: 1,
         friction: 8,
         tension: 40,
         useNativeDriver: true,
-      }),
-      Animated.timing(nameAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.stagger(100, statsAnims.map(anim =>
-        Animated.timing(anim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        })
-      )),
-      Animated.stagger(80, menuAnims.map(anim =>
-        Animated.spring(anim, {
-          toValue: 1,
-          friction: 8,
-          tension: 40,
-          useNativeDriver: true,
-        })
-      )),
-    ]).start();
+      })
+    )).start();
   }, []);
 
-  const createFadeStyle = (anim) => ({
-    opacity: anim,
-    transform: [{
-      translateY: anim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [15, 0],
-      }),
-    }],
-  });
-
-  const createSlideStyle = (anim) => ({
-    opacity: anim,
-    transform: [{
-      translateX: anim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [-15, 0],
-      }),
-    }],
-  });
+  const handleLogout = () => {
+    navigation.replace('Login');
+  };
 
   return (
     <View style={styles.container}>
-      {/* Background Glow */}
-      <View style={styles.backgroundGlow} />
-
       <ScrollView
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Profile Top */}
-        <View style={styles.profileTop}>
-          <Animated.View style={[
-            styles.avatarContainer,
-            {
-              opacity: avatarAnim,
-              transform: [{
-                scale: avatarAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.8, 1],
-                }),
-              }],
-            },
-          ]}>
-            <LinearGradient
-              colors={['#E07B5C', '#D06A4C']}
-              style={styles.avatar}
-            >
-              <Text style={styles.avatarText}>SJ</Text>
-            </LinearGradient>
-          </Animated.View>
+        {/* Header Card */}
+        <Animated.View
+          style={[
+            styles.headerCard,
+            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+          ]}
+        >
+          <LinearGradient
+            colors={[colors.primaryLight, '#FFD6C8']}
+            style={styles.headerGradient}
+          >
+            {/* Avatar */}
+            <View style={styles.avatarContainer}>
+              <LinearGradient
+                colors={[colors.primary, colors.primaryDark]}
+                style={styles.avatar}
+              >
+                <Text style={styles.avatarEmoji}>👩</Text>
+              </LinearGradient>
+            </View>
 
-          <Animated.Text style={[styles.profileName, createFadeStyle(nameAnim)]}>
-            Sarah Johnson
-          </Animated.Text>
-          <Animated.Text style={[styles.profileEmail, createFadeStyle(nameAnim)]}>
-            sarah@example.com
-          </Animated.Text>
-        </View>
+            {/* Name & Email */}
+            <Text style={styles.userName}>Sarah Johnson</Text>
+            <Text style={styles.userEmail}>sarah@email.com</Text>
 
-        {/* Stats Row */}
-        <View style={styles.statsRow}>
-          <Animated.View style={[styles.statBox, createFadeStyle(statsAnims[0])]}>
-            <Text style={[styles.statNum, { color: '#6B7FD7' }]}>48</Text>
-            <Text style={styles.statLabel}>Contacts</Text>
-          </Animated.View>
-          <Animated.View style={[styles.statBox, createFadeStyle(statsAnims[1])]}>
-            <Text style={[styles.statNum, { color: '#4CAF78' }]}>23</Text>
-            <Text style={styles.statLabel}>Gifts</Text>
-          </Animated.View>
-          <Animated.View style={[styles.statBox, createFadeStyle(statsAnims[2])]}>
-            <Text style={[styles.statNum, { color: '#E6A756' }]}>5</Text>
-            <Text style={styles.statLabel}>Circles</Text>
-          </Animated.View>
-        </View>
+            {/* Stats */}
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>24</Text>
+                <Text style={styles.statLabel}>Events</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>15</Text>
+                <Text style={styles.statLabel}>Gifts</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>4</Text>
+                <Text style={styles.statLabel}>Circles</Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </Animated.View>
 
         {/* Menu Items */}
         <View style={styles.menuSection}>
           {menuItems.map((item, index) => (
             <Animated.View
               key={item.id}
-              style={[styles.menuItem, createSlideStyle(menuAnims[index])]}
+              style={[
+                styles.menuItemWrapper,
+                {
+                  opacity: cardAnims[index],
+                  transform: [{
+                    translateX: cardAnims[index].interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-20, 0],
+                    })
+                  }]
+                }
+              ]}
             >
-              <TouchableOpacity style={styles.menuItemInner} activeOpacity={0.8}>
-                <View style={[styles.menuIcon, { backgroundColor: item.bgColor }]}>
-                  <Ionicons name={item.icon} size={22} color={item.color} />
+              <TouchableOpacity style={styles.menuItem} activeOpacity={0.8}>
+                <View style={styles.menuIcon}>
+                  <Text style={styles.menuEmoji}>{item.emoji}</Text>
                 </View>
-                <View style={styles.menuInfo}>
-                  <Text style={styles.menuTitle}>{item.title}</Text>
-                  <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color="#CCCCCC" />
+                <Text style={styles.menuTitle}>{item.title}</Text>
+                <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
               </TouchableOpacity>
             </Animated.View>
           ))}
         </View>
 
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutBtn} activeOpacity={0.8}>
-          <Ionicons name="log-out-outline" size={20} color="#E07B5C" />
-          <Text style={styles.logoutText}>Log Out</Text>
-        </TouchableOpacity>
+        <Animated.View style={{ opacity: fadeAnim }}>
+          <TouchableOpacity
+            style={styles.logoutBtn}
+            onPress={handleLogout}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.logoutText}>Sign Out</Text>
+          </TouchableOpacity>
+        </Animated.View>
 
-        <View style={{ height: 100 }} />
+        {/* Version */}
+        <Text style={styles.version}>Version 1.0.0</Text>
+
+        {/* Bottom spacing */}
+        <View style={{ height: 120 }} />
       </ScrollView>
     </View>
   );
@@ -193,134 +159,133 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  backgroundGlow: {
-    position: 'absolute',
-    top: 20,
-    left: '50%',
-    marginLeft: -100,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(224, 123, 92, 0.1)',
+  scrollView: {
+    flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
     paddingTop: 60,
+    paddingHorizontal: 20,
   },
-  profileTop: {
-    alignItems: 'center',
+  headerCard: {
     marginBottom: 28,
+    borderRadius: 32,
+    overflow: 'hidden',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  headerGradient: {
+    padding: 28,
+    alignItems: 'center',
   },
   avatarContainer: {
-    marginBottom: 18,
-    shadowColor: '#E07B5C',
-    shadowOffset: { width: 0, height: 15 },
-    shadowOpacity: 0.35,
-    shadowRadius: 25,
-    elevation: 12,
+    marginBottom: 16,
   },
   avatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 28,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    elevation: 8,
   },
-  avatarText: {
-    fontSize: 36,
-    fontWeight: '600',
-    color: '#FFFFFF',
+  avatarEmoji: {
+    fontSize: 45,
   },
-  profileName: {
+  userName: {
+    fontFamily: 'Nunito-ExtraBold',
     fontSize: 24,
-    fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: 4,
   },
-  profileEmail: {
-    fontSize: 15,
-    color: '#888888',
+  userEmail: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 20,
   },
   statsRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 28,
+    justifyContent: 'center',
+    gap: 40,
   },
-  statBox: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    paddingVertical: 18,
+  statItem: {
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    elevation: 4,
   },
-  statNum: {
-    fontSize: 26,
-    fontWeight: '700',
+  statValue: {
+    fontFamily: 'Nunito-ExtraBold',
+    fontSize: 24,
+    color: colors.primary,
   },
   statLabel: {
+    fontFamily: 'Nunito-SemiBold',
     fontSize: 12,
-    color: '#888888',
+    color: colors.textLight,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginTop: 4,
   },
   menuSection: {
-    marginBottom: 20,
+    marginBottom: 24,
+  },
+  menuItemWrapper: {
+    marginBottom: 12,
   },
   menuItem: {
-    marginBottom: 10,
-  },
-  menuItemInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: 18,
     padding: 16,
-    gap: 14,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
   },
   menuIcon: {
     width: 46,
     height: 46,
     borderRadius: 14,
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 14,
   },
-  menuInfo: {
-    flex: 1,
+  menuEmoji: {
+    fontSize: 22,
   },
   menuTitle: {
+    flex: 1,
+    fontFamily: 'Nunito-SemiBold',
     fontSize: 16,
-    fontWeight: '500',
     color: colors.textPrimary,
   },
-  menuSubtitle: {
-    fontSize: 13,
-    color: '#888888',
-    marginTop: 2,
-  },
   logoutBtn: {
-    flexDirection: 'row',
+    backgroundColor: colors.primaryLight,
+    borderRadius: 18,
+    padding: 18,
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 16,
-    gap: 10,
-    borderWidth: 1.5,
-    borderColor: '#FEF3F0',
+    marginBottom: 20,
   },
   logoutText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#E07B5C',
+    fontFamily: 'Nunito-Bold',
+    fontSize: 16,
+    color: colors.primary,
+  },
+  version: {
+    fontFamily: 'Nunito-Regular',
+    textAlign: 'center',
+    fontSize: 13,
+    color: colors.textLight,
   },
 });
 
