@@ -6,3 +6,5 @@ export { default as Card } from './Card';
 export { default as Avatar } from './Avatar';
 export { default as Badge, getBadgeVariant, formatCountdown } from './Badge';
 export { default as EventCard } from './EventCard';
+export { default as GradientText } from './GradientText';
+export * from './Icons';

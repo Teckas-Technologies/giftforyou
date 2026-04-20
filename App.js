@@ -4,14 +4,17 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useFonts } from 'expo-font';
 import {
-  Nunito_400Regular,
-  Nunito_600SemiBold,
-  Nunito_700Bold,
-  Nunito_800ExtraBold,
-} from '@expo-google-fonts/nunito';
+  Outfit_300Light,
+  Outfit_400Regular,
+  Outfit_500Medium,
+  Outfit_600SemiBold,
+  Outfit_700Bold,
+} from '@expo-google-fonts/outfit';
 import {
+  Caveat_400Regular,
   Caveat_500Medium,
   Caveat_600SemiBold,
+  Caveat_700Bold,
 } from '@expo-google-fonts/caveat';
 import * as SplashScreen from 'expo-splash-screen';
 import { AppNavigator } from './src/navigation';
@@ -22,12 +25,18 @@ SplashScreen.preventAutoHideAsync();
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    'Nunito-Regular': Nunito_400Regular,
-    'Nunito-SemiBold': Nunito_600SemiBold,
-    'Nunito-Bold': Nunito_700Bold,
-    'Nunito-ExtraBold': Nunito_800ExtraBold,
+    // Outfit fonts for body text
+    'Outfit-Light': Outfit_300Light,
+    'Outfit-Regular': Outfit_400Regular,
+    'Outfit-Medium': Outfit_500Medium,
+    'Outfit-SemiBold': Outfit_600SemiBold,
+    'Outfit-Bold': Outfit_700Bold,
+    // Caveat (decorative/handwritten) for display headings (replacing Gifted)
+    'Gifted-Regular': Caveat_400Regular,
+    'Caveat-Regular': Caveat_400Regular,
     'Caveat-Medium': Caveat_500Medium,
     'Caveat-SemiBold': Caveat_600SemiBold,
+    'Caveat-Bold': Caveat_700Bold,
   });
 
   const onLayoutRootView = useCallback(async () => {

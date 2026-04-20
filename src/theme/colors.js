@@ -1,78 +1,70 @@
 // GiftBox4you Color Palette
-// Warm & Humanized Theme
+// Pink Minimal Theme
 
 export const colors = {
-  // Primary Colors - Warm Coral
-  primary: '#FF8B7B',              // Warm coral - main brand
-  primaryLight: '#FFEEE4',         // Light peach tint
-  primaryDark: '#E57367',          // Deep coral
+  // Primary Colors - Pink
+  primary: '#E8789A',              // Pink dark - main brand
+  primaryLight: '#FFF0F5',         // Pink light tint
+  primaryAccent: '#F8A5C2',        // Pink accent
+  primaryBg: '#FBDCE9',            // Pink background
+  primarySoft: '#FDEEF3',          // Pink soft
 
-  // Secondary Colors - Sage Green
-  secondary: '#9DC08B',            // Sage green accent
-  secondaryLight: '#E8F5E3',       // Light sage
-  secondaryDark: '#7BA66A',        // Deep sage
-
-  // Accent Colors
-  accentLavender: '#C9B8E8',       // Lavender accent
-  accentSunny: '#FFD93D',          // Sunny yellow accent
-  accentBlue: '#A8D4E6',           // Soft blue accent
+  // Secondary Colors - Blue
+  secondary: '#5DADE2',            // Blue accent
+  secondaryLight: '#E8F4FD',       // Blue light background
+  secondaryBg: '#D6EAF8',          // Blue background
 
   // Background Colors
-  background: '#FDF8F3',           // Warm cream
-  backgroundCard: '#FFFBF7',       // Warm white cards
-  backgroundDark: '#FFEEE4',       // Peach background
+  background: '#FFFFFF',           // White
+  backgroundGray: '#F8F9FA',       // Gray background
+  backgroundCard: '#FFFFFF',       // White cards
+  backgroundPink: '#FBDCE9',       // Pink background
+  backgroundBlue: '#E8F4FD',       // Blue background
 
   // Text Colors
-  textPrimary: '#3D3D3D',          // Warm dark text
-  textSecondary: '#6B6B6B',        // Medium warm gray
-  textLight: '#9B9B9B',            // Light warm gray
+  textPrimary: '#2D3436',          // Dark text
+  textSecondary: '#636E72',        // Medium gray
+  textLight: '#B2BEC3',            // Light gray
   textWhite: '#FFFFFF',            // White
 
-  // Status Colors
-  success: '#9DC08B',              // Sage green
-  warning: '#FFD93D',              // Sunny yellow
-  error: '#FF8B7B',                // Coral (soft error)
-  info: '#A8D4E6',                 // Soft blue
+  // Border & Divider
+  border: '#EAEAEA',               // Light border
+  divider: '#EAEAEA',              // Divider
 
-  // Event Type Colors
-  birthday: '#FF8B7B',             // Coral
-  wedding: '#C9B8E8',              // Lavender
-  babyShower: '#A8D4E6',           // Soft blue
-  anniversary: '#9DC08B',          // Sage
-  custom: '#FFD93D',               // Sunny
+  // Status Colors
+  success: '#27AE60',              // Green
+  warning: '#F1C40F',              // Yellow
+  error: '#E74C3C',                // Red
+  info: '#5DADE2',                 // Blue
 
   // Badge Colors
-  badgeUrgent: '#FF8B7B',          // Coral
-  badgeSoon: '#FFD93D',            // Sunny
-  badgeLater: '#9DC08B',           // Sage
+  badgeTomorrow: '#F8A5C2',        // Pink accent - tomorrow
+  badgeSoon: '#FFF0F5',            // Pink light - soon
+  badgeLater: '#F8F9FA',           // Gray - later
 
-  // Circle Colors
-  family: '#FFE4E4',               // Soft pink
-  friends: '#E4F0FF',              // Soft blue
-  work: '#E8F5E3',                 // Soft green
-  special: '#FFF4E4',              // Soft orange
-
-  // Gradient Colors
-  gradientStart: '#FF8B7B',        // Coral
-  gradientEnd: '#E57367',          // Deep coral
-
-  // Border & Divider
-  border: '#EDE5DD',               // Warm border
-  divider: '#E8E0D8',              // Warm divider
-
-  // Overlay
-  overlay: 'rgba(61, 61, 61, 0.5)',
-
-  // Input
-  inputBackground: '#FFFBF7',
-  inputBorder: '#EDE5DD',
-  inputFocusBorder: '#FF8B7B',
-  placeholder: '#9B9B9B',
+  // Avatar Colors
+  avatarPink: '#FFF0F5',
+  avatarBlue: '#E8F4FD',
+  avatarPurple: '#E8D5F0',
+  avatarGreen: '#E8F5E3',
 
   // Tab Bar
-  tabBarBackground: '#FFFBF7',
-  tabBarActive: '#FF8B7B',
-  tabBarInactive: '#9B9B9B',
+  tabBarBackground: '#FFFFFF',
+  tabBarActive: '#E8789A',
+  tabBarInactive: '#B2BEC3',
+
+  // Input
+  inputBackground: '#F8F9FA',
+  inputBorder: 'transparent',
+  inputFocusBorder: '#F8A5C2',
+  placeholder: '#B2BEC3',
+
+  // Gradient
+  gradientStart: '#F8A5C2',
+  gradientEnd: '#E8789A',
+
+  // Overlay
+  overlay: 'rgba(45, 52, 54, 0.5)',
 };
 
 export default colors;

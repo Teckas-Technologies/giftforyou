@@ -1,0 +1,2688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiftBox4you - Implemented Design Preview</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'Gifted';
+            src: local('Gifted-Regular'), local('Gifted');
+            font-weight: 400;
+            font-style: normal;
+        }
+    </style>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #FDF5F7 0%, #EBF5FB 50%, #FDEEF3 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            letter-spacing: 0.03em;
+            font-weight: 300;
+            line-height: 1.7;
+        }
+
+        :root {
+            --pink-dark: #E8789A;
+            --pink-accent: #F8A5C2;
+            --pink-light: #FFF0F5;
+            --pink-bg: #FBDCE9;
+            --pink-soft: #FDEEF3;
+            --blue-accent: #5DADE2;
+            --blue-light: #E8F4FD;
+            --blue-bg: #D6EAF8;
+            --white: #FFFFFF;
+            --gray-bg: #F8F9FA;
+            --gray-border: #EAEAEA;
+            --text-dark: #2D3436;
+            --text-medium: #636E72;
+            --text-light: #B2BEC3;
+        }
+
+        .preview-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--text-dark);
+            font-family: 'Gifted', 'Outfit', sans-serif;
+            font-size: 2.8rem;
+            margin-bottom: 8px;
+            font-weight: 400;
+            letter-spacing: 0.03em;
+        }
+
+        h1 span {
+            background: linear-gradient(135deg, var(--pink-dark) 0%, var(--blue-accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-medium);
+            font-size: 1rem;
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-family: 'Gifted', 'Outfit', sans-serif;
+            font-size: 1.6rem;
+            background: linear-gradient(135deg, var(--pink-dark) 0%, var(--blue-accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 50px 0 25px;
+            text-align: center;
+            font-weight: 400;
+            letter-spacing: 0.03em;
+        }
+
+        .screens-row {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        /* Phone Frame */
+        .phone-frame {
+            width: 260px;
+            height: 540px;
+            background: var(--white);
+            border-radius: 40px;
+            padding: 10px;
+            box-shadow: 0 20px 60px rgba(232, 120, 154, 0.12), 0 20px 60px rgba(93, 173, 226, 0.12);
+            position: relative;
+        }
+
+        .phone-frame::before {
+            content: '';
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 24px;
+            background: var(--gray-bg);
+            border-radius: 12px;
+            z-index: 10;
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: var(--white);
+            border-radius: 32px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .screen-label {
+            text-align: center;
+            margin-top: 15px;
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+        }
+
+        /* ============ SPLASH SCREEN ============ */
+        .splash-screen {
+            background: linear-gradient(160deg, #FDEEF3 0%, #E8F4FD 40%, #FBDCE9 70%, #D6EAF8 100%);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .splash-logo {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--pink-accent) 0%, var(--blue-accent) 100%);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            margin-bottom: 20px;
+            box-shadow: 0 15px 40px rgba(93, 173, 226, 0.3), 0 15px 40px rgba(232, 120, 154, 0.3);
+        }
+
+        .splash-title {
+            font-family: 'Gifted', 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 400;
+            color: var(--text-dark);
+            letter-spacing: 0.03em;
+        }
+
+        .splash-title span {
+            background: linear-gradient(135deg, var(--pink-dark) 0%, var(--blue-accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .splash-tagline {
+            font-size: 0.95rem;
+            color: var(--pink-dark);
+            margin-top: 8px;
+            font-weight: 400;
+            letter-spacing: 0.05em;
+        }
+
+        .splash-dots {
+            display: flex;
+            gap: 10px;
+            margin-top: 50px;
+        }
+
+        .splash-dots span {
+            width: 10px;
+            height: 10px;
+            background: var(--pink-accent);
+            border-radius: 50%;
+            opacity: 0.6;
+        }
+
+        .splash-dots span:first-child {
+            opacity: 1;
+        }
+
+        /* ============ ONBOARDING SCREENS ============ */
+        .onboarding-screen {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 45px 18px 20px;
+        }
+
+        .onboarding-pink {
+            background: linear-gradient(180deg, #FDEEF3 0%, #E8F4FD 50%, #FBDCE9 100%);
+        }
+
+        .onboarding-blue {
+            background: linear-gradient(180deg, #EBF5FB 0%, #FDEEF3 50%, #D6EAF8 100%);
+        }
+
+        .onboarding-top {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .onboarding-headline {
+            font-size: 1.35rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            line-height: 1.5;
+            letter-spacing: 0.02em;
+        }
+
+        .highlight-pink {
+            color: var(--pink-dark);
+        }
+
+        .highlight-blue {
+            color: var(--blue-accent);
+        }
+
+        .onboarding-desc {
+            font-size: 0.8rem;
+            color: var(--text-medium);
+            margin-top: 8px;
+            line-height: 1.4;
+        }
+
+        .onboarding-visual {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .onboarding-footer {
+            text-align: center;
+        }
+
+        .onboarding-dots {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+
+        .onboarding-dots .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.15);
+        }
+
+        .onboarding-dots .dot.active {
+            width: 24px;
+            border-radius: 4px;
+            background: var(--pink-dark);
+        }
+
+        .onboarding-dots .dot.active-blue {
+            background: var(--blue-accent);
+        }
+
+        .onboarding-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--pink-accent) 0%, var(--blue-accent) 100%);
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            box-shadow: 0 6px 20px rgba(248, 165, 194, 0.3), 0 6px 20px rgba(93, 173, 226, 0.3);
+        }
+
+        .onboarding-btn.blue {
+            background: linear-gradient(135deg, var(--blue-accent) 0%, var(--pink-accent) 100%);
+            box-shadow: 0 6px 20px rgba(93, 173, 226, 0.3), 0 6px 20px rgba(248, 165, 194, 0.3);
+        }
+
+        .skip-text {
+            margin-top: 12px;
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        .login-link {
+            margin-top: 12px;
+            font-size: 0.75rem;
+            color: var(--text-medium);
+        }
+
+        .login-link span {
+            color: var(--pink-dark);
+            font-weight: 600;
+        }
+
+        /* Bell Animation */
+        .bell-container {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .bell-icon {
+            font-size: 45px;
+            animation: bellShake 2s ease-in-out infinite;
+        }
+
+        @keyframes bellShake {
+            0%, 100% { transform: rotate(0deg); }
+            10%, 30% { transform: rotate(-10deg); }
+            20%, 40% { transform: rotate(10deg); }
+            50% { transform: rotate(0deg); }
+        }
+
+        .bell-ring {
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 60px;
+            border: 2px solid var(--pink-accent);
+            border-radius: 50%;
+            animation: ringPulse 2s ease-out infinite;
+        }
+
+        @keyframes ringPulse {
+            0% { transform: translateX(-50%) scale(0.8); opacity: 0.8; }
+            100% { transform: translateX(-50%) scale(1.5); opacity: 0; }
+        }
+
+        .notification-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            background: var(--white);
+            padding: 10px 12px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+            width: 100%;
+        }
+
+        .notif-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--pink-accent);
+            border-radius: 50%;
+            margin-top: 4px;
+        }
+
+        .notif-content {
+            flex: 1;
+        }
+
+        .notif-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .notif-text {
+            font-size: 0.65rem;
+            color: var(--text-light);
+        }
+
+        .notif-time {
+            font-size: 0.6rem;
+            color: var(--text-light);
+        }
+
+        .mini-calendar {
+            background: var(--white);
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            width: 100%;
+        }
+
+        .mini-cal-header {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .mini-cal-grid {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .mini-cal-grid span {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            border-radius: 50%;
+        }
+
+        .mini-cal-grid span.highlight {
+            background: var(--pink-accent);
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Floating Avatars */
+        .floating-avatars {
+            position: relative;
+            width: 130px;
+            height: 85px;
+            margin-bottom: 15px;
+        }
+
+        .float-avatar {
+            position: absolute;
+            width: 45px;
+            height: 45px;
+            background: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        }
+
+        .float-avatar.a1 { top: 0; left: 0; }
+        .float-avatar.a2 { top: 8px; left: 42px; z-index: 2; }
+        .float-avatar.a3 { top: 0; right: 0; }
+
+        .plus-icon {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 32px;
+            height: 32px;
+            background: var(--blue-accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            box-shadow: 0 6px 20px rgba(93, 173, 226, 0.4);
+        }
+
+        .contacts-card {
+            background: var(--white);
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            width: 100%;
+        }
+
+        .contact-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--gray-border);
+        }
+
+        .contact-row:last-child {
+            border-bottom: none;
+        }
+
+        .contact-check {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--gray-border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .contact-check.checked {
+            background: var(--blue-accent);
+            border-color: var(--blue-accent);
+            color: white;
+        }
+
+        .contact-row span {
+            font-size: 0.85rem;
+            color: var(--text-dark);
+        }
+
+        /* Gift Cards */
+        .gift-box-icon {
+            font-size: 45px;
+            margin-bottom: 12px;
+        }
+
+        .gift-cards {
+            width: 100%;
+        }
+
+        .gift-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--white);
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .gift-emoji {
+            width: 36px;
+            height: 36px;
+            background: var(--blue-light);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .gift-details {
+            flex: 1;
+        }
+
+        .gift-name {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .gift-price {
+            font-size: 0.7rem;
+            color: var(--blue-accent);
+            font-weight: 600;
+        }
+
+        /* Celebration */
+        .celebration-icon {
+            font-size: 55px;
+            margin-bottom: 12px;
+        }
+
+        .feature-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .feature-pill {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 14px;
+            background: var(--white);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--text-dark);
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .feature-pill span {
+            font-size: 0.9rem;
+        }
+
+        /* ============ LOGIN SCREEN ============ */
+        .login-screen {
+            background: var(--white);
+            height: 100%;
+            padding: 55px 20px 25px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .login-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--pink-light) 0%, var(--blue-light) 100%);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 35px;
+        }
+
+        .login-title {
+            text-align: center;
+            font-family: 'Gifted', 'Outfit', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 400;
+            background: linear-gradient(135deg, var(--pink-dark) 0%, var(--blue-accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+            letter-spacing: 0.03em;
+        }
+
+        .login-subtitle {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            margin-bottom: 14px;
+        }
+
+        .input-label {
+            font-size: 0.75rem;
+            color: var(--text-medium);
+            margin-bottom: 6px;
+            display: block;
+            font-weight: 500;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--gray-bg);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            color: var(--text-dark);
+            outline: none;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--pink-accent) 0%, var(--blue-accent) 100%);
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-top: 8px;
+            box-shadow: 0 8px 25px rgba(248, 165, 194, 0.3), 0 8px 25px rgba(93, 173, 226, 0.3);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 18px 0;
+            color: var(--text-light);
+            font-size: 0.75rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--gray-border);
+        }
+
+        .divider span {
+            padding: 0 12px;
+        }
+
+        .social-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .social-btn {
+            flex: 1;
+            padding: 12px;
+            background: var(--gray-bg);
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+        }
+
+        .social-btn.google {
+            font-weight: 700;
+            color: #4285F4;
+        }
+
+        /* ============ HOME SCREEN ============ */
+        .home-screen {
+            background: var(--white);
+            height: 100%;
+            padding: 45px 14px 70px;
+            overflow-y: auto;
+        }
+
+        .home-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .home-label {
+            font-size: 0.65rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 3px;
+        }
+
+        .home-greeting {
+            font-family: 'Gifted', 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 400;
+            color: var(--text-dark);
+            letter-spacing: 0.02em;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--pink-light) 0%, var(--blue-light) 100%);
+            border-radius: 18px;
+            min-width: 70px;
+        }
+
+        .stat-card:nth-child(2) {
+            background: linear-gradient(135deg, var(--blue-light) 0%, var(--pink-light) 100%);
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+            font-size: 16px;
+        }
+
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        .stat-label {
+            font-size: 0.6rem;
+            color: var(--text-medium);
+            font-weight: 400;
+            letter-spacing: 0.03em;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .section-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            letter-spacing: 0.02em;
+        }
+
+        .see-all {
+            font-size: 0.7rem;
+            background: linear-gradient(135deg, var(--pink-dark) 0%, var(--blue-accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 500;
+        }
+
+        .birthday-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: var(--gray-bg);
+            border-radius: 14px;
+            margin-bottom: 8px;
+        }
+
+        .birthday-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--pink-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--pink-dark);
+        }
+
+        .birthday-avatar.blue {
+            background: var(--blue-light);
+            color: var(--blue-accent);
+        }
+
+        .birthday-info {
+            flex: 1;
+        }
+
+        .birthday-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            letter-spacing: 0.02em;
+        }
+
+        .birthday-relation {
+            font-size: 0.65rem;
+            color: var(--text-light);
+        }
+
+        .birthday-date-info {
+            text-align: right;
+        }
+
+        .birthday-date {
+            font-size: 0.7rem;
+            color: var(--text-medium);
+        }
+
+        .birthday-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 8px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            margin-top: 3px;
+        }
+
+        .badge-tomorrow {
+            background: linear-gradient(135deg, var(--pink-accent) 0%, var(--blue-accent) 100%);
+            color: white;
+        }
+
+        .badge-soon {
+            background: linear-gradient(135deg, var(--pink-light) 0%, var(--blue-light) 100%);
+            color: var(--pink-dark);
+        }
+
+        .quick-section {
+            margin-top: 16px;
+        }
+
+        .quick-title {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            letter-spacing: 0.02em;
+        }
+
+        .quick-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .quick-btn {
+            flex: 1;
+            padding: 10px;
+            background: linear-gradient(135deg, var(--pink-light) 0%, var(--blue-light) 100%);
+            border-radius: 12px;
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--pink-dark);
+            font-weight: 500;
+        }
+
+        .quick-btn:last-child {
+            background: linear-gradient(135deg, var(--blue-light) 0%, var(--pink-light) 100%);
+            color: var(--blue-accent);
+        }
+
+        /* ============ CALENDAR SCREEN ============ */
+        .calendar-screen {
+            background: var(--white);
+            height: 100%;
+            padding: 45px 14px 70px;
+            overflow-y: auto;
+        }
+
+        .calendar-header {
+            text-align: center;
+            margin-bottom: 18px;
+        }
+
+        .calendar-month {
+            font-family: 'Gifted', 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 400;
+            background: linear-gradient(135deg, var(--pink-dark) 0%, var(--blue-accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.03em;
+        }
+
+        .calendar-year {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        .calendar-nav {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .nav-btn {
+            width: 32px;
+            height: 32px;
+            background: var(--gray-bg);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-medium);
+            font-size: 1rem;
+        }
+
+        .calendar-week-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            margin-bottom: 6px;
+        }
+
+        .week-day {
+            text-align: center;
+            font-size: 0.65rem;
+            color: var(--text-light);
+            padding: 6px 0;
+            font-weight: 500;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: var(--text-dark);
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .calendar-day.today {
+            background: var(--pink-dark);
+            color: white;
+            font-weight: 600;
+        }
+
+        .calendar-day.has-event::after {
+            content: '';
+            position: absolute;
+            bottom: 3px;
+            width: 4px;
+            height: 4px;
+            background: var(--pink-dark);
+            border-radius: 50%;
+        }
+
+        .calendar-day.today.has-event::after {
+            background: white;
+        }
+
+        .events-section {
+            margin-top: 20px;
+        }
+
+        .events-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 12px;
+        }
+
+        .event-item {
+            display: flex;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--gray-border);
+        }
+
+        .event-time {
+            font-size: 0.7rem;
+            color: var(--text-light);
+            width: 45px;
+        }
+
+        .event-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--pink-accent);
+            border-radius: 50%;
+            margin-top: 4px;
+        }
+
+        .event-content {
+            flex: 1;
+        }
+
+        .event-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .event-desc {
+            font-size: 0.7rem;
+            color: var(--text-light);
+        }
+
+        /* ============ PROFILE SCREEN ============ */
+        .profile-screen {
+            background: var(--white);
+            height: 100%;
+            padding: 45px 14px 70px;
+            overflow-y: auto;
+        }
+
+        .profile-card {
+            background: linear-gradient(135deg, var(--pink-light) 0%, var(--blue-light) 100%);
+            border-radius: 22px;
+            padding: 22px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .profile-avatar {
+            width: 75px;
+            height: 75px;
+            background: linear-gradient(135deg, var(--pink-accent) 0%, var(--blue-accent) 100%);
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            border: 4px solid white;
+            box-shadow: 0 8px 25px rgba(248, 165, 194, 0.3), 0 8px 25px rgba(93, 173, 226, 0.3);
+        }
+
+        .profile-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .profile-email {
+            font-size: 0.8rem;
+            color: var(--text-medium);
+            margin-bottom: 15px;
+        }
+
+        .profile-stats {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+        }
+
+        .profile-stat {
+            text-align: center;
+        }
+
+        .profile-stat-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--pink-dark) 0%, var(--blue-accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .profile-stat-label {
+            font-size: 0.65rem;
+            color: var(--text-light);
+        }
+
+        .menu-section {
+            margin-bottom: 15px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            background: var(--gray-bg);
+            border-radius: 14px;
+            margin-bottom: 8px;
+        }
+
+        .menu-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--pink-light) 0%, var(--blue-light) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .menu-item:nth-child(2) .menu-icon,
+        .menu-item:nth-child(4) .menu-icon {
+            background: linear-gradient(135deg, var(--blue-light) 0%, var(--pink-light) 100%);
+        }
+
+        .menu-text {
+            flex: 1;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        .menu-arrow {
+            color: var(--text-light);
+            font-size: 1rem;
+        }
+
+        .logout-btn {
+            background: var(--gray-bg);
+            border-radius: 14px;
+            padding: 14px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-medium);
+            font-weight: 500;
+        }
+
+        /* ============ TAB BAR ============ */
+        .tab-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 65px;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid var(--gray-border);
+            padding-bottom: 8px;
+        }
+
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            padding: 8px 18px;
+            border-radius: 14px;
+        }
+
+        .tab-item.active {
+            background: linear-gradient(135deg, var(--pink-light) 0%, var(--blue-light) 100%);
+        }
+
+        .tab-icon {
+            font-size: 18px;
+        }
+
+        .tab-label {
+            font-size: 0.6rem;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .tab-item.active .tab-label {
+            color: var(--pink-dark);
+        }
+
+        /* ============ CONTACTS SCREEN ============ */
+        .contacts-screen {
+            background: var(--white);
+            height: 100%;
+            padding: 45px 14px 70px;
+            overflow-y: auto;
+        }
+
+        .contacts-header {
+            text-align: center;
+            margin-bottom: 18px;
+        }
+
+        .contacts-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--pink-dark) 0%, var(--blue-accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .contacts-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            background: var(--gray-bg);
+            border-radius: 14px;
+            margin-bottom: 18px;
+        }
+
+        .search-bar svg {
+            width: 18px;
+            height: 18px;
+            color: var(--text-light);
+        }
+
+        .search-bar input {
+            border: none;
+            background: transparent;
+            font-size: 0.85rem;
+            color: var(--text-dark);
+            outline: none;
+            width: 100%;
+        }
+
+        .search-bar input::placeholder {
+            color: var(--text-light);
+        }
+
+        .contact-list-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--gray-bg);
+            border-radius: 14px;
+            margin-bottom: 10px;
+            animation: slideInUp 0.4s ease-out both;
+        }
+
+        .contact-list-item:nth-child(1) { animation-delay: 0.05s; }
+        .contact-list-item:nth-child(2) { animation-delay: 0.1s; }
+        .contact-list-item:nth-child(3) { animation-delay: 0.15s; }
+        .contact-list-item:nth-child(4) { animation-delay: 0.2s; }
+        .contact-list-item:nth-child(5) { animation-delay: 0.25s; }
+
+        .contact-list-item {
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .contact-list-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, var(--pink-light) 0%, var(--blue-light) 100%);
+        }
+
+        .contact-avatar-large {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .contact-avatar-large.pink {
+            background: var(--pink-light);
+            color: var(--pink-dark);
+        }
+
+        .contact-avatar-large.blue {
+            background: var(--blue-light);
+            color: var(--blue-accent);
+        }
+
+        .contact-details {
+            flex: 1;
+        }
+
+        .contact-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .contact-bday {
+            font-size: 0.7rem;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .contact-bday svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        .contact-relation-tag {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            font-weight: 500;
+        }
+
+        .tag-family {
+            background: var(--pink-light);
+            color: var(--pink-dark);
+        }
+
+        .tag-friend {
+            background: var(--blue-light);
+            color: var(--blue-accent);
+        }
+
+        .tag-work {
+            background: #E8F5E9;
+            color: #43A047;
+        }
+
+        .add-contact-fab {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--pink-accent) 0%, var(--blue-accent) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 25px rgba(248, 165, 194, 0.4), 0 8px 25px rgba(93, 173, 226, 0.4);
+            animation: fabPulse 2s ease-in-out infinite;
+        }
+
+        .add-contact-fab svg {
+            width: 24px;
+            height: 24px;
+            color: white;
+        }
+
+        /* ============ ENHANCED ANIMATIONS ============ */
+
+        /* Entrance Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            70% {
+                transform: scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Floating Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        @keyframes floatRotate {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-6px) rotate(5deg); }
+        }
+
+        /* Pulse Animations */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes fabPulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 8px 25px rgba(248, 165, 194, 0.4), 0 8px 25px rgba(93, 173, 226, 0.4);
+            }
+            50% {
+                transform: scale(1.08);
+                box-shadow: 0 12px 35px rgba(248, 165, 194, 0.6), 0 12px 35px rgba(93, 173, 226, 0.6);
+            }
+        }
+
+        @keyframes glowPulse {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(248, 165, 194, 0.3), 0 0 20px rgba(93, 173, 226, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 35px rgba(248, 165, 194, 0.5), 0 0 35px rgba(93, 173, 226, 0.5);
+            }
+        }
+
+        /* Shimmer Effect */
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* Icon Spin */
+        @keyframes iconSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Wiggle */
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+        }
+
+        /* Heartbeat */
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            14% { transform: scale(1.15); }
+            28% { transform: scale(1); }
+            42% { transform: scale(1.15); }
+            70% { transform: scale(1); }
+        }
+
+        /* Apply animations to elements */
+        .splash-logo {
+            animation: bounceIn 0.8s ease-out, glowPulse 2s ease-in-out infinite 0.8s;
+        }
+
+        .splash-title {
+            animation: slideInUp 0.6s ease-out 0.3s both;
+        }
+
+        .splash-tagline {
+            animation: fadeIn 0.6s ease-out 0.5s both;
+        }
+
+        .splash-dots span {
+            animation: scaleIn 0.3s ease-out both;
+        }
+
+        .splash-dots span:nth-child(1) { animation-delay: 0.7s; }
+        .splash-dots span:nth-child(2) { animation-delay: 0.8s; }
+        .splash-dots span:nth-child(3) { animation-delay: 0.9s; }
+
+        .notification-card {
+            animation: slideInRight 0.5s ease-out 0.3s both;
+        }
+
+        .mini-calendar {
+            animation: slideInUp 0.5s ease-out 0.5s both;
+        }
+
+        .float-avatar {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .float-avatar.a1 { animation-delay: 0s; }
+        .float-avatar.a2 { animation-delay: 0.3s; }
+        .float-avatar.a3 { animation-delay: 0.6s; }
+
+        .plus-icon {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .gift-card {
+            animation: slideInLeft 0.4s ease-out both;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .gift-card:nth-child(1) { animation-delay: 0.1s; }
+        .gift-card:nth-child(2) { animation-delay: 0.2s; }
+        .gift-card:nth-child(3) { animation-delay: 0.3s; }
+
+        .gift-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+
+        .celebration-icon {
+            animation: bounceIn 0.6s ease-out, wiggle 1s ease-in-out infinite 0.6s;
+        }
+
+        .feature-pill {
+            animation: scaleIn 0.4s ease-out both;
+            transition: transform 0.2s ease;
+        }
+
+        .feature-pill:nth-child(1) { animation-delay: 0.1s; }
+        .feature-pill:nth-child(2) { animation-delay: 0.15s; }
+        .feature-pill:nth-child(3) { animation-delay: 0.2s; }
+        .feature-pill:nth-child(4) { animation-delay: 0.25s; }
+
+        .feature-pill:hover {
+            transform: scale(1.05);
+        }
+
+        .login-icon {
+            animation: bounceIn 0.6s ease-out;
+        }
+
+        .login-btn {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(248, 165, 194, 0.4), 0 12px 35px rgba(93, 173, 226, 0.4);
+        }
+
+        .stat-card {
+            animation: scaleIn 0.4s ease-out both;
+            transition: transform 0.2s ease;
+        }
+
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .stat-card:nth-child(3) { animation-delay: 0.3s; }
+
+        .stat-card:hover {
+            transform: scale(1.05);
+        }
+
+        .stat-icon svg {
+            animation: floatRotate 2s ease-in-out infinite;
+        }
+
+        .birthday-card {
+            animation: slideInUp 0.4s ease-out both;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .birthday-card:nth-child(1) { animation-delay: 0.1s; }
+        .birthday-card:nth-child(2) { animation-delay: 0.2s; }
+        .birthday-card:nth-child(3) { animation-delay: 0.3s; }
+
+        .birthday-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        }
+
+        .quick-btn {
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .quick-btn:hover {
+            transform: scale(1.03);
+            background: linear-gradient(135deg, var(--pink-bg) 0%, var(--blue-bg) 100%);
+        }
+
+        .calendar-day {
+            transition: transform 0.15s ease, background 0.15s ease;
+        }
+
+        .calendar-day:hover {
+            transform: scale(1.15);
+            background: var(--pink-light);
+        }
+
+        .calendar-day.today:hover {
+            background: var(--pink-dark);
+        }
+
+        .event-item {
+            animation: slideInLeft 0.4s ease-out both;
+            transition: background 0.2s ease;
+        }
+
+        .event-item:nth-child(1) { animation-delay: 0.1s; }
+        .event-item:nth-child(2) { animation-delay: 0.2s; }
+
+        .event-item:hover {
+            background: var(--gray-bg);
+        }
+
+        .profile-card {
+            animation: slideInDown 0.5s ease-out;
+        }
+
+        .profile-avatar {
+            animation: bounceIn 0.6s ease-out 0.2s both;
+        }
+
+        .menu-item {
+            animation: slideInRight 0.4s ease-out both;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .menu-item:nth-child(1) { animation-delay: 0.1s; }
+        .menu-item:nth-child(2) { animation-delay: 0.15s; }
+        .menu-item:nth-child(3) { animation-delay: 0.2s; }
+        .menu-item:nth-child(4) { animation-delay: 0.25s; }
+
+        .menu-item:hover {
+            transform: translateX(5px);
+            background: linear-gradient(135deg, var(--pink-light) 0%, var(--blue-light) 100%);
+        }
+
+        .onboarding-btn {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .onboarding-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(248, 165, 194, 0.4), 0 10px 30px rgba(93, 173, 226, 0.4);
+        }
+
+        .onboarding-btn.blue:hover {
+            box-shadow: 0 10px 30px rgba(93, 173, 226, 0.4), 0 10px 30px rgba(248, 165, 194, 0.4);
+        }
+
+        .tab-item {
+            transition: transform 0.2s ease;
+        }
+
+        .tab-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .nav-btn {
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            transform: scale(1.1);
+            background: linear-gradient(135deg, var(--pink-light) 0%, var(--blue-light) 100%);
+        }
+
+        /* SVG Icon Styles */
+        .svg-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .svg-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Loading shimmer for buttons */
+        .onboarding-btn::after,
+        .login-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            background-size: 200% 100%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .onboarding-btn:hover::after,
+        .login-btn:hover::after {
+            opacity: 1;
+            animation: shimmer 1.5s infinite;
+        }
+
+        .onboarding-btn,
+        .login-btn {
+            position: relative;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-container">
+        <h1>Gift<span>Box</span>4you</h1>
+        <p class="subtitle">Implemented Design Preview - Pink & Blue Theme</p>
+
+        <!-- ONBOARDING SCREENS -->
+        <h2 class="section-title">Onboarding Flow (Pink & Blue)</h2>
+        <div class="screens-row">
+            <!-- Onboarding 1: Pink -->
+            <div>
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="onboarding-screen onboarding-pink">
+                            <div class="onboarding-top">
+                                <div class="onboarding-headline">Never miss a<br><span class="highlight-pink">Birthday</span> again</div>
+                            </div>
+
+                            <div class="onboarding-visual">
+                                <div class="bell-container">
+                                    <div class="bell-icon">
+                                        <svg width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="var(--pink-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                                        </svg>
+                                    </div>
+                                    <div class="bell-ring"></div>
+                                </div>
+
+                                <div class="notification-card">
+                                    <div class="notif-dot"></div>
+                                    <div class="notif-content">
+                                        <div class="notif-title">Anna: Birthday in 30 days</div>
+                                        <div class="notif-text">Have you got a gift yet?</div>
+                                    </div>
+                                    <div class="notif-time">now</div>
+                                </div>
+
+                                <div class="mini-calendar">
+                                    <div class="mini-cal-header">March 2026</div>
+                                    <div class="mini-cal-grid">
+                                        <span>25</span>
+                                        <span class="highlight">26</span>
+                                        <span>27</span>
+                                        <span>28</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="onboarding-footer">
+                                <div class="onboarding-dots">
+                                    <span class="dot active"></span>
+                                    <span class="dot"></span>
+                                    <span class="dot"></span>
+                                    <span class="dot"></span>
+                                </div>
+                                <button class="onboarding-btn">Next →</button>
+                                <div class="skip-text">Skip</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">1. Reminders (Pink)</div>
+            </div>
+
+            <!-- Onboarding 2: Blue -->
+            <div>
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="onboarding-screen onboarding-blue">
+                            <div class="onboarding-top">
+                                <div class="onboarding-headline">Add friends from<br><span class="highlight-blue">your contacts</span></div>
+                            </div>
+
+                            <div class="onboarding-visual">
+                                <div class="floating-avatars">
+                                    <div class="float-avatar a1">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--pink-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                            <circle cx="12" cy="7" r="4"/>
+                                        </svg>
+                                    </div>
+                                    <div class="float-avatar a2">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--blue-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                            <circle cx="12" cy="7" r="4"/>
+                                        </svg>
+                                    </div>
+                                    <div class="float-avatar a3">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--pink-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                            <circle cx="12" cy="7" r="4"/>
+                                        </svg>
+                                    </div>
+                                    <div class="plus-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="12" y1="5" x2="12" y2="19"/>
+                                            <line x1="5" y1="12" x2="19" y2="12"/>
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <div class="contacts-card">
+                                    <div class="contact-row">
+                                        <div class="contact-check checked">✓</div>
+                                        <span>Anna</span>
+                                    </div>
+                                    <div class="contact-row">
+                                        <div class="contact-check checked">✓</div>
+                                        <span>Chris</span>
+                                    </div>
+                                    <div class="contact-row">
+                                        <div class="contact-check"></div>
+                                        <span>Tom</span>
+                                    </div>
+                                    <div class="contact-row">
+                                        <div class="contact-check"></div>
+                                        <span>Sara</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="onboarding-footer">
+                                <div class="onboarding-dots">
+                                    <span class="dot"></span>
+                                    <span class="dot active active-blue"></span>
+                                    <span class="dot"></span>
+                                    <span class="dot"></span>
+                                </div>
+                                <button class="onboarding-btn blue">Next →</button>
+                                <div class="skip-text">Skip</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">2. Contacts (Blue)</div>
+            </div>
+
+            <!-- Onboarding 3: Blue -->
+            <div>
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="onboarding-screen onboarding-blue">
+                            <div class="onboarding-top">
+                                <div class="onboarding-headline">Find <span class="highlight-blue">perfect</span><br>gift ideas</div>
+                            </div>
+
+                            <div class="onboarding-visual">
+                                <div class="gift-box-icon">
+                                    <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="var(--blue-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="8" width="18" height="12" rx="2"/>
+                                        <path d="M12 8V3"/>
+                                        <path d="M3 12h18"/>
+                                        <path d="M12 3c-1.5 0-3 1.5-3 3s1.5 2 3 2 3-.5 3-2-1.5-3-3-3z"/>
+                                        <path d="M12 3c1.5 0 3 1.5 3 3s-1.5 2-3 2-3-.5-3-2 1.5-3 3-3z"/>
+                                    </svg>
+                                </div>
+
+                                <div class="gift-cards">
+                                    <div class="gift-card">
+                                        <div class="gift-emoji">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+                                                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+                                            </svg>
+                                        </div>
+                                        <div class="gift-details">
+                                            <div class="gift-name">Wireless Earbuds</div>
+                                            <div class="gift-price">$79</div>
+                                        </div>
+                                    </div>
+                                    <div class="gift-card">
+                                        <div class="gift-emoji">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                                            </svg>
+                                        </div>
+                                        <div class="gift-details">
+                                            <div class="gift-name">Book Collection</div>
+                                            <div class="gift-price">$45</div>
+                                        </div>
+                                    </div>
+                                    <div class="gift-card">
+                                        <div class="gift-emoji">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--pink-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/>
+                                                <path d="M8.5 8.5v.01"/>
+                                                <path d="M16 15.5v.01"/>
+                                                <path d="M12 12v.01"/>
+                                                <path d="M11 17v.01"/>
+                                                <path d="M7 14v.01"/>
+                                            </svg>
+                                        </div>
+                                        <div class="gift-details">
+                                            <div class="gift-name">Spa Gift Set</div>
+                                            <div class="gift-price">$35</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="onboarding-footer">
+                                <div class="onboarding-dots">
+                                    <span class="dot"></span>
+                                    <span class="dot"></span>
+                                    <span class="dot active active-blue"></span>
+                                    <span class="dot"></span>
+                                </div>
+                                <button class="onboarding-btn blue">Next →</button>
+                                <div class="skip-text">Skip</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">3. Gift Ideas (Blue)</div>
+            </div>
+
+            <!-- Onboarding 4: Pink -->
+            <div>
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="onboarding-screen onboarding-pink">
+                            <div class="onboarding-top" style="margin-top: 30px;">
+                                <div class="celebration-icon">
+                                    <svg width="55" height="55" viewBox="0 0 24 24" fill="none" stroke="var(--pink-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M5.8 11.3 2 22l10.7-3.79"/>
+                                        <path d="M4 3h.01"/>
+                                        <path d="M22 8h.01"/>
+                                        <path d="M15 2h.01"/>
+                                        <path d="M22 20h.01"/>
+                                        <path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12v0c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/>
+                                        <path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11v0c-.11.7-.72 1.22-1.43 1.22H17"/>
+                                        <path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98v0C9.52 4.9 9 5.52 9 6.23V7"/>
+                                        <path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/>
+                                    </svg>
+                                </div>
+                                <div class="onboarding-headline" style="text-align: center;">You're all<br><span class="highlight-pink">set!</span></div>
+                                <div class="onboarding-desc">Start adding birthdays and never forget a special day again</div>
+                            </div>
+
+                            <div class="onboarding-visual">
+                                <div class="feature-pills">
+                                    <div class="feature-pill">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--pink-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                                        </svg>
+                                        Reminders
+                                    </div>
+                                    <div class="feature-pill">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                            <circle cx="9" cy="7" r="4"/>
+                                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                        </svg>
+                                        Contacts
+                                    </div>
+                                    <div class="feature-pill">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--pink-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="8" width="18" height="12" rx="2"/>
+                                            <path d="M12 8V3"/>
+                                            <path d="M3 12h18"/>
+                                        </svg>
+                                        Gift Ideas
+                                    </div>
+                                    <div class="feature-pill">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                            <line x1="16" y1="2" x2="16" y2="6"/>
+                                            <line x1="8" y1="2" x2="8" y2="6"/>
+                                            <line x1="3" y1="10" x2="21" y2="10"/>
+                                        </svg>
+                                        Calendar
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="onboarding-footer">
+                                <div class="onboarding-dots">
+                                    <span class="dot"></span>
+                                    <span class="dot"></span>
+                                    <span class="dot"></span>
+                                    <span class="dot active"></span>
+                                </div>
+                                <button class="onboarding-btn">Get Started 🚀</button>
+                                <div class="login-link">Already have an account? <span>Sign in</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">4. Get Started (Pink)</div>
+            </div>
+        </div>
+
+        <!-- WELCOME FLOW -->
+        <h2 class="section-title">Welcome Flow</h2>
+        <div class="screens-row">
+            <!-- Splash -->
+            <div>
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="splash-screen">
+                            <div class="splash-logo">
+                                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="8" width="18" height="12" rx="2"/>
+                                    <path d="M12 8V3"/>
+                                    <path d="M3 12h18"/>
+                                    <path d="M12 3c-1.5 0-3 1.5-3 3s1.5 2 3 2 3-.5 3-2-1.5-3-3-3z"/>
+                                    <path d="M12 3c1.5 0 3 1.5 3 3s-1.5 2-3 2-3-.5-3-2 1.5-3 3-3z"/>
+                                </svg>
+                            </div>
+                            <div class="splash-title">Gift<span>Box</span>4you</div>
+                            <div class="splash-tagline">Never miss a birthday</div>
+                            <div class="splash-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">Splash Screen</div>
+            </div>
+
+            <!-- Login -->
+            <div>
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="login-screen">
+                            <div class="login-icon">
+                                <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="var(--pink-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                    <path d="M2 11.03c0-1.17 1.04-2.02 2.11-1.95 6.02.36 11.76.36 17.78 0 1.07-.07 2.11.78 2.11 1.95v7.92c0 1.17-1.04 2.02-2.11 1.95-6.02-.36-11.76-.36-17.78 0-1.07.07-2.11-.78-2.11-1.95v-7.92Z"/>
+                                    <path d="M12 12v4"/>
+                                </svg>
+                            </div>
+                            <div class="login-title">Welcome back!</div>
+                            <div class="login-subtitle">Sign in to continue</div>
+
+                            <div class="input-group">
+                                <label class="input-label">Email</label>
+                                <input type="text" class="input-field" placeholder="hello@example.com">
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">Password</label>
+                                <input type="password" class="input-field" placeholder="Your password">
+                            </div>
+
+                            <button class="login-btn">Sign In</button>
+
+                            <div class="divider"><span>or</span></div>
+
+                            <div class="social-btns">
+                                <button class="social-btn">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#000">
+                                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                                    </svg>
+                                </button>
+                                <button class="social-btn google">
+                                    <svg width="20" height="20" viewBox="0 0 24 24">
+                                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">Login Screen</div>
+            </div>
+        </div>
+
+        <!-- MAIN APP -->
+        <h2 class="section-title">Main App Screens</h2>
+        <div class="screens-row">
+            <!-- Home -->
+            <div>
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="home-screen">
+                            <div class="home-header">
+                                <div class="home-label">HOME</div>
+                                <div class="home-greeting">Good evening, Anna!</div>
+                            </div>
+
+                            <div class="stats-row">
+                                <div class="stat-card">
+                                    <div class="stat-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pink-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                            <circle cx="9" cy="7" r="4"/>
+                                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                        </svg>
+                                    </div>
+                                    <div class="stat-value">12</div>
+                                    <div class="stat-label">Contacts</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pink-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                            <line x1="16" y1="2" x2="16" y2="6"/>
+                                            <line x1="8" y1="2" x2="8" y2="6"/>
+                                            <line x1="3" y1="10" x2="21" y2="10"/>
+                                        </svg>
+                                    </div>
+                                    <div class="stat-value">3</div>
+                                    <div class="stat-label">This month</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pink-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="8" width="18" height="12" rx="2"/>
+                                            <path d="M12 8V3"/>
+                                            <path d="M3 12h18"/>
+                                        </svg>
+                                    </div>
+                                    <div class="stat-value">5</div>
+                                    <div class="stat-label">Gift ideas</div>
+                                </div>
+                            </div>
+
+                            <div class="section-header">
+                                <span class="section-label">Upcoming birthdays</span>
+                                <span class="see-all">See all</span>
+                            </div>
+
+                            <div class="birthday-card">
+                                <div class="birthday-avatar">C</div>
+                                <div class="birthday-info">
+                                    <div class="birthday-name">Claude</div>
+                                    <div class="birthday-relation">Girlfriend</div>
+                                </div>
+                                <div class="birthday-date-info">
+                                    <div class="birthday-date">24. March</div>
+                                    <span class="birthday-badge badge-tomorrow">tomorrow</span>
+                                </div>
+                            </div>
+
+                            <div class="birthday-card">
+                                <div class="birthday-avatar blue">SU</div>
+                                <div class="birthday-info">
+                                    <div class="birthday-name">Susanne</div>
+                                    <div class="birthday-relation">Friend</div>
+                                </div>
+                                <div class="birthday-date-info">
+                                    <div class="birthday-date">25. March</div>
+                                    <span class="birthday-badge badge-soon">in 2 days</span>
+                                </div>
+                            </div>
+
+                            <div class="birthday-card">
+                                <div class="birthday-avatar">CA</div>
+                                <div class="birthday-info">
+                                    <div class="birthday-name">Caroline</div>
+                                    <div class="birthday-relation">Sister</div>
+                                </div>
+                                <div class="birthday-date-info">
+                                    <div class="birthday-date">27. March</div>
+                                    <span class="birthday-badge badge-soon">in 4 days</span>
+                                </div>
+                            </div>
+
+                            <div class="quick-section">
+                                <div class="quick-title">Quick actions</div>
+                                <div class="quick-row">
+                                    <div class="quick-btn">+ Add Contact</div>
+                                    <div class="quick-btn">🎁 Gift Ideas</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-bar">
+                            <div class="tab-item">
+                                <span class="tab-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                        <line x1="16" y1="2" x2="16" y2="6"/>
+                                        <line x1="8" y1="2" x2="8" y2="6"/>
+                                        <line x1="3" y1="10" x2="21" y2="10"/>
+                                    </svg>
+                                </span>
+                                <span class="tab-label">Calendar</span>
+                            </div>
+                            <div class="tab-item active">
+                                <span class="tab-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                        <polyline points="9 22 9 12 15 12 15 22"/>
+                                    </svg>
+                                </span>
+                                <span class="tab-label">Home</span>
+                            </div>
+                            <div class="tab-item">
+                                <span class="tab-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="12" cy="7" r="4"/>
+                                    </svg>
+                                </span>
+                                <span class="tab-label">Profile</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">Home Screen</div>
+            </div>
+
+            <!-- Calendar -->
+            <div>
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="calendar-screen">
+                            <div class="calendar-header">
+                                <div class="calendar-month">March</div>
+                                <div class="calendar-year">2026</div>
+                                <div class="calendar-nav">
+                                    <div class="nav-btn">‹</div>
+                                    <div class="nav-btn">›</div>
+                                </div>
+                            </div>
+
+                            <div class="calendar-week-header">
+                                <span class="week-day">Sun</span>
+                                <span class="week-day">Mon</span>
+                                <span class="week-day">Tue</span>
+                                <span class="week-day">Wed</span>
+                                <span class="week-day">Thu</span>
+                                <span class="week-day">Fri</span>
+                                <span class="week-day">Sat</span>
+                            </div>
+
+                            <div class="calendar-grid">
+                                <span class="calendar-day">1</span>
+                                <span class="calendar-day">2</span>
+                                <span class="calendar-day">3</span>
+                                <span class="calendar-day">4</span>
+                                <span class="calendar-day">5</span>
+                                <span class="calendar-day">6</span>
+                                <span class="calendar-day">7</span>
+                                <span class="calendar-day">8</span>
+                                <span class="calendar-day">9</span>
+                                <span class="calendar-day">10</span>
+                                <span class="calendar-day">11</span>
+                                <span class="calendar-day">12</span>
+                                <span class="calendar-day">13</span>
+                                <span class="calendar-day">14</span>
+                                <span class="calendar-day">15</span>
+                                <span class="calendar-day">16</span>
+                                <span class="calendar-day">17</span>
+                                <span class="calendar-day">18</span>
+                                <span class="calendar-day">19</span>
+                                <span class="calendar-day">20</span>
+                                <span class="calendar-day">21</span>
+                                <span class="calendar-day">22</span>
+                                <span class="calendar-day today">23</span>
+                                <span class="calendar-day has-event">24</span>
+                                <span class="calendar-day has-event">25</span>
+                                <span class="calendar-day">26</span>
+                                <span class="calendar-day has-event">27</span>
+                                <span class="calendar-day">28</span>
+                                <span class="calendar-day">29</span>
+                                <span class="calendar-day">30</span>
+                                <span class="calendar-day">31</span>
+                            </div>
+
+                            <div class="events-section">
+                                <div class="events-title">This week</div>
+                                <div class="event-item">
+                                    <div class="event-time">Mar 24</div>
+                                    <div class="event-dot"></div>
+                                    <div class="event-content">
+                                        <div class="event-title">Claude's Birthday 🎂</div>
+                                        <div class="event-desc">Tomorrow</div>
+                                    </div>
+                                </div>
+                                <div class="event-item">
+                                    <div class="event-time">Mar 25</div>
+                                    <div class="event-dot"></div>
+                                    <div class="event-content">
+                                        <div class="event-title">Susanne's Birthday 🎉</div>
+                                        <div class="event-desc">In 2 days</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-bar">
+                            <div class="tab-item active">
+                                <span class="tab-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                        <line x1="16" y1="2" x2="16" y2="6"/>
+                                        <line x1="8" y1="2" x2="8" y2="6"/>
+                                        <line x1="3" y1="10" x2="21" y2="10"/>
+                                    </svg>
+                                </span>
+                                <span class="tab-label">Calendar</span>
+                            </div>
+                            <div class="tab-item">
+                                <span class="tab-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                        <polyline points="9 22 9 12 15 12 15 22"/>
+                                    </svg>
+                                </span>
+                                <span class="tab-label">Home</span>
+                            </div>
+                            <div class="tab-item">
+                                <span class="tab-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="12" cy="7" r="4"/>
+                                    </svg>
+                                </span>
+                                <span class="tab-label">Profile</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">Calendar Screen</div>
+            </div>
+
+            <!-- Profile -->
+            <div>
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="profile-screen">
+                            <div class="profile-card">
+                                <div class="profile-avatar">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="12" cy="7" r="4"/>
+                                    </svg>
+                                </div>
+                                <div class="profile-name">Anna Johnson</div>
+                                <div class="profile-email">anna@email.com</div>
+                                <div class="profile-stats">
+                                    <div class="profile-stat">
+                                        <div class="profile-stat-value">12</div>
+                                        <div class="profile-stat-label">Contacts</div>
+                                    </div>
+                                    <div class="profile-stat">
+                                        <div class="profile-stat-value">8</div>
+                                        <div class="profile-stat-label">This month</div>
+                                    </div>
+                                    <div class="profile-stat">
+                                        <div class="profile-stat-value">5</div>
+                                        <div class="profile-stat-label">Gift ideas</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="menu-section">
+                                <div class="menu-item">
+                                    <div class="menu-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--pink-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                                        </svg>
+                                    </div>
+                                    <div class="menu-text">Notifications</div>
+                                    <span class="menu-arrow">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="9 18 15 12 9 6"/>
+                                        </svg>
+                                    </span>
+                                </div>
+                                <div class="menu-item">
+                                    <div class="menu-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--pink-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <polyline points="12 6 12 12 16 14"/>
+                                        </svg>
+                                    </div>
+                                    <div class="menu-text">Reminder Settings</div>
+                                    <span class="menu-arrow">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="9 18 15 12 9 6"/>
+                                        </svg>
+                                    </span>
+                                </div>
+                                <div class="menu-item">
+                                    <div class="menu-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--pink-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                            <path d="M2 17l10 5 10-5"/>
+                                            <path d="M2 12l10 5 10-5"/>
+                                        </svg>
+                                    </div>
+                                    <div class="menu-text">Premium</div>
+                                    <span class="menu-arrow">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="9 18 15 12 9 6"/>
+                                        </svg>
+                                    </span>
+                                </div>
+                                <div class="menu-item">
+                                    <div class="menu-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--pink-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                        </svg>
+                                    </div>
+                                    <div class="menu-text">Help & Support</div>
+                                    <span class="menu-arrow">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="9 18 15 12 9 6"/>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="logout-btn">Log Out</div>
+                        </div>
+
+                        <div class="tab-bar">
+                            <div class="tab-item">
+                                <span class="tab-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                        <line x1="16" y1="2" x2="16" y2="6"/>
+                                        <line x1="8" y1="2" x2="8" y2="6"/>
+                                        <line x1="3" y1="10" x2="21" y2="10"/>
+                                    </svg>
+                                </span>
+                                <span class="tab-label">Calendar</span>
+                            </div>
+                            <div class="tab-item">
+                                <span class="tab-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                        <polyline points="9 22 9 12 15 12 15 22"/>
+                                    </svg>
+                                </span>
+                                <span class="tab-label">Home</span>
+                            </div>
+                            <div class="tab-item active">
+                                <span class="tab-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="12" cy="7" r="4"/>
+                                    </svg>
+                                </span>
+                                <span class="tab-label">Profile</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">Profile Screen</div>
+            </div>
+
+            <!-- Contacts -->
+            <div>
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="contacts-screen">
+                            <div class="contacts-header">
+                                <div class="contacts-title">Contacts</div>
+                                <div class="contacts-subtitle">12 contacts saved</div>
+                            </div>
+
+                            <div class="search-bar">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8"/>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                </svg>
+                                <input type="text" placeholder="Search contacts...">
+                            </div>
+
+                            <div class="contact-list">
+                                <div class="contact-list-item">
+                                    <div class="contact-avatar-large pink">CL</div>
+                                    <div class="contact-details">
+                                        <div class="contact-name">Claude</div>
+                                        <div class="contact-bday">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                                <line x1="3" y1="10" x2="21" y2="10"/>
+                                            </svg>
+                                            24 March
+                                        </div>
+                                    </div>
+                                    <span class="contact-relation-tag tag-family">Girlfriend</span>
+                                </div>
+
+                                <div class="contact-list-item">
+                                    <div class="contact-avatar-large blue">SU</div>
+                                    <div class="contact-details">
+                                        <div class="contact-name">Susanne</div>
+                                        <div class="contact-bday">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                                <line x1="3" y1="10" x2="21" y2="10"/>
+                                            </svg>
+                                            25 March
+                                        </div>
+                                    </div>
+                                    <span class="contact-relation-tag tag-friend">Friend</span>
+                                </div>
+
+                                <div class="contact-list-item">
+                                    <div class="contact-avatar-large pink">CA</div>
+                                    <div class="contact-details">
+                                        <div class="contact-name">Caroline</div>
+                                        <div class="contact-bday">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                                <line x1="3" y1="10" x2="21" y2="10"/>
+                                            </svg>
+                                            27 March
+                                        </div>
+                                    </div>
+                                    <span class="contact-relation-tag tag-family">Sister</span>
+                                </div>
+
+                                <div class="contact-list-item">
+                                    <div class="contact-avatar-large blue">JO</div>
+                                    <div class="contact-details">
+                                        <div class="contact-name">John Miller</div>
+                                        <div class="contact-bday">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                                <line x1="3" y1="10" x2="21" y2="10"/>
+                                            </svg>
+                                            15 April
+                                        </div>
+                                    </div>
+                                    <span class="contact-relation-tag tag-work">Colleague</span>
+                                </div>
+
+                                <div class="contact-list-item">
+                                    <div class="contact-avatar-large pink">EM</div>
+                                    <div class="contact-details">
+                                        <div class="contact-name">Emma Wilson</div>
+                                        <div class="contact-bday">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                                <line x1="3" y1="10" x2="21" y2="10"/>
+                                            </svg>
+                                            8 May
+                                        </div>
+                                    </div>
+                                    <span class="contact-relation-tag tag-friend">Friend</span>
+                                </div>
+                            </div>
+
+                            <div class="add-contact-fab">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19"/>
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="tab-bar">
+                            <div class="tab-item">
+                                <span class="tab-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                        <line x1="16" y1="2" x2="16" y2="6"/>
+                                        <line x1="8" y1="2" x2="8" y2="6"/>
+                                        <line x1="3" y1="10" x2="21" y2="10"/>
+                                    </svg>
+                                </span>
+                                <span class="tab-label">Calendar</span>
+                            </div>
+                            <div class="tab-item">
+                                <span class="tab-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                        <polyline points="9 22 9 12 15 12 15 22"/>
+                                    </svg>
+                                </span>
+                                <span class="tab-label">Home</span>
+                            </div>
+                            <div class="tab-item active">
+                                <span class="tab-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="9" cy="7" r="4"/>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                    </svg>
+                                </span>
+                                <span class="tab-label">Contacts</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">Contacts Screen</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

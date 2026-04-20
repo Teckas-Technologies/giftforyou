@@ -7,15 +7,13 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Dimensions,
   Animated,
   TextInput,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
-
-const { width, height } = Dimensions.get('window');
+import { GradientText, WaveIcon } from '../components';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -83,41 +81,49 @@ const LoginScreen = ({ navigation }) => {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header Illustration */}
+          {/* Header */}
           <Animated.View
             style={[
               styles.headerSection,
               { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
             ]}
           >
-            <View style={styles.illustrationWrap}>
-              <Text style={styles.waveEmoji}>👋</Text>
-            </View>
-            <Text style={styles.welcomeText}>Welcome back!</Text>
-            <Text style={styles.subtitleText}>We missed you</Text>
+            <LinearGradient
+              colors={[colors.primaryLight, colors.secondaryLight]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.iconCircle}
+            >
+              <WaveIcon size={40} color={colors.primary} />
+            </LinearGradient>
+            <GradientText
+              style={styles.welcomeText}
+              colors={[colors.primary, colors.secondary]}
+            >
+              Welcome back!
+            </GradientText>
+            <Text style={styles.subtitleText}>Sign in to continue</Text>
           </Animated.View>
 
-          {/* Form Card */}
+          {/* Form */}
           <Animated.View
             style={[
-              styles.formCard,
+              styles.formSection,
               { opacity: formOpacity, transform: [{ translateY: formSlide }] }
             ]}
           >
             {/* Email Input */}
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Email</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="hello@example.com"
-                  placeholderTextColor={colors.placeholder}
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="hello@example.com"
+                placeholderTextColor={colors.placeholder}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
             </View>
 
             {/* Password Input */}
@@ -125,8 +131,8 @@ const LoginScreen = ({ navigation }) => {
               <Text style={styles.inputLabel}>Password</Text>
               <View style={styles.inputWrapper}>
                 <TextInput
-                  style={styles.input}
-                  placeholder="your secret..."
+                  style={[styles.input, styles.passwordInput]}
+                  placeholder="Your password"
                   placeholderTextColor={colors.placeholder}
                   value={password}
                   onChangeText={setPassword}
@@ -145,27 +151,17 @@ const LoginScreen = ({ navigation }) => {
               </View>
             </View>
 
-            {/* Forgot Password */}
-            <TouchableOpacity style={styles.forgotBtn}>
-              <Text style={styles.forgotText}>Forgot Password?</Text>
-            </TouchableOpacity>
-
             {/* Login Button */}
             <TouchableOpacity onPress={handleLogin} activeOpacity={0.9}>
               <LinearGradient
-                colors={[colors.primary, colors.primaryDark]}
+                colors={[colors.primaryAccent, colors.secondary]}
                 style={styles.loginBtn}
                 start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
+                end={{ x: 1, y: 1 }}
               >
-                {isLoading ? (
-                  <Text style={styles.loginBtnText}>Please wait...</Text>
-                ) : (
-                  <>
-                    <Text style={styles.loginBtnText}>Let's Go!</Text>
-                    <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-                  </>
-                )}
+                <Text style={styles.loginBtnText}>
+                  {isLoading ? 'Signing in...' : 'Sign In'}
+                </Text>
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
@@ -173,31 +169,24 @@ const LoginScreen = ({ navigation }) => {
           {/* Divider */}
           <Animated.View style={[styles.divider, { opacity: formOpacity }]}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or continue with</Text>
+            <Text style={styles.dividerText}>or</Text>
             <View style={styles.dividerLine} />
           </Animated.View>
 
           {/* Social Buttons */}
           <Animated.View style={[styles.socialRow, { opacity: formOpacity }]}>
             <TouchableOpacity
-              style={[styles.socialBtn, styles.appleBtn]}
+              style={styles.socialBtn}
               onPress={() => handleSocialLogin('Apple')}
             >
-              <Text style={styles.appleIcon}>🍎</Text>
+              <Ionicons name="logo-apple" size={24} color={colors.textPrimary} />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.socialBtn}
               onPress={() => handleSocialLogin('Google')}
             >
-              <Text style={styles.googleLetter}>G</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.socialBtn}
-              onPress={() => handleSocialLogin('Email')}
-            >
-              <Ionicons name="mail-outline" size={24} color={colors.textSecondary} />
+              <Ionicons name="logo-google" size={22} color="#4285F4" />
             </TouchableOpacity>
           </Animated.View>
 
@@ -225,163 +214,133 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 80,
+    paddingTop: 60,
     paddingBottom: 40,
   },
   headerSection: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 30,
   },
-  illustrationWrap: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+  iconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
-  },
-  waveEmoji: {
-    fontSize: 45,
+    borderWidth: 0,
+    overflow: 'hidden',
   },
   welcomeText: {
-    fontFamily: 'Caveat-SemiBold',
-    fontSize: 32,
+    fontFamily: 'Gifted-Regular',
+    fontSize: 28,
     color: colors.primary,
-    marginBottom: 8,
+    marginBottom: 5,
+    letterSpacing: 0.5,
   },
   subtitleText: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 16,
-    color: colors.textSecondary,
+    fontFamily: 'Outfit-Light',
+    fontSize: 15,
+    color: colors.textLight,
   },
-  formCard: {
-    backgroundColor: colors.backgroundCard,
-    borderRadius: 24,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    elevation: 4,
-    marginBottom: 24,
-  },
-  inputGroup: {
+  formSection: {
     marginBottom: 20,
   },
+  inputGroup: {
+    marginBottom: 16,
+  },
   inputLabel: {
-    fontFamily: 'Nunito-SemiBold',
-    fontSize: 14,
+    fontFamily: 'Outfit-Medium',
+    fontSize: 13,
     color: colors.textSecondary,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    paddingHorizontal: 16,
   },
   input: {
-    flex: 1,
-    paddingVertical: 16,
-    fontFamily: 'Nunito-Regular',
-    fontSize: 16,
+    backgroundColor: colors.backgroundGray,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    fontFamily: 'Outfit-Regular',
+    fontSize: 15,
     color: colors.textPrimary,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    width: '100%',
+  },
+  passwordInput: {
+    flex: 1,
+    paddingRight: 50,
   },
   eyeBtn: {
+    position: 'absolute',
+    right: 16,
     padding: 8,
   },
-  forgotBtn: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
-  },
-  forgotText: {
-    fontFamily: 'Nunito-SemiBold',
-    fontSize: 14,
-    color: colors.primary,
-  },
   loginBtn: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 18,
-    borderRadius: 18,
-    gap: 10,
-    shadowColor: colors.primary,
+    paddingVertical: 16,
+    borderRadius: 16,
+    marginTop: 10,
+    shadowColor: colors.primaryAccent,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
+    shadowOpacity: 0.4,
+    shadowRadius: 25,
     elevation: 8,
   },
   loginBtnText: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 17,
-    color: '#FFFFFF',
+    fontFamily: 'Outfit-Medium',
+    fontSize: 16,
+    color: colors.textWhite,
+    letterSpacing: 0.8,
   },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginVertical: 20,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.divider,
+    backgroundColor: colors.border,
   },
   dividerText: {
-    fontFamily: 'Nunito-Regular',
-    paddingHorizontal: 16,
-    fontSize: 14,
+    fontFamily: 'Outfit-Light',
+    paddingHorizontal: 15,
+    fontSize: 13,
     color: colors.textLight,
   },
   socialRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 16,
+    gap: 12,
     marginBottom: 40,
   },
   socialBtn: {
-    width: 70,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: colors.backgroundCard,
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: colors.backgroundGray,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  appleBtn: {
-    backgroundColor: colors.textPrimary,
-    borderColor: colors.textPrimary,
-  },
-  appleIcon: {
-    fontSize: 24,
-  },
-  googleLetter: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 20,
-    color: '#4285F4',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
   },
   footerText: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 15,
+    fontFamily: 'Outfit-Light',
+    fontSize: 14,
     color: colors.textSecondary,
   },
   footerLink: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 15,
+    fontFamily: 'Outfit-SemiBold',
+    fontSize: 14,
     color: colors.primary,
   },
 });

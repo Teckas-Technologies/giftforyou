@@ -2,8 +2,8 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, View, Text } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import {
   SplashScreen,
@@ -11,8 +11,7 @@ import {
   LoginScreen,
   HomeScreen,
   CalendarScreen,
-  CirclesScreen,
-  GiftsScreen,
+  ContactsScreen,
   ProfileScreen,
 } from '../screens';
 import { colors } from '../theme';
@@ -20,49 +19,67 @@ import { colors } from '../theme';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Get icon name based on route
-const getIconName = (routeName, focused) => {
-  switch (routeName) {
-    case 'Home':
-      return focused ? 'home' : 'home-outline';
-    case 'Calendar':
-      return focused ? 'calendar' : 'calendar-outline';
-    case 'Circles':
-      return focused ? 'people' : 'people-outline';
-    case 'Gifts':
-      return focused ? 'gift' : 'gift-outline';
-    case 'Me':
-      return focused ? 'person' : 'person-outline';
-    default:
-      return 'ellipse';
+// Tab Icon Component with Gradient Active State
+const TabIcon = ({ emoji, label, focused }) => {
+  if (focused) {
+    return (
+      <LinearGradient
+        colors={[colors.primaryLight, colors.secondaryLight]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.tabItemActive}
+      >
+        <Text style={styles.tabEmoji}>{emoji}</Text>
+        <Text style={[styles.tabLabel, styles.tabLabelActive]}>{label}</Text>
+      </LinearGradient>
+    );
   }
+  return (
+    <View style={styles.tabItem}>
+      <Text style={styles.tabEmoji}>{emoji}</Text>
+      <Text style={styles.tabLabel}>{label}</Text>
+    </View>
+  );
 };
 
-// Bottom Tab Navigator - 5 Tabs
+// Bottom Tab Navigator - 4 Tabs (Home, Calendar, Contacts, Profile)
 const MainTabNavigator = () => {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      screenOptions={{
         headerShown: false,
-        tabBarIcon: ({ focused, color, size }) => {
-          const iconName = getIconName(route.name, focused);
-          return <Ionicons name={iconName} size={24} color={color} />;
-        },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.tabBarInactive,
         tabBarStyle: styles.tabBar,
-        tabBarLabelStyle: styles.tabBarLabel,
-        tabBarItemStyle: styles.tabBarItem,
-      })}
+        tabBarShowLabel: false,
+      }}
+      initialRouteName="Home"
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Calendar" component={CalendarScreen} />
-      <Tab.Screen name="Circles" component={CirclesScreen} />
-      <Tab.Screen name="Gifts" component={GiftsScreen} />
       <Tab.Screen
-        name="Me"
+        name="Home"
+        component={HomeScreen}
+        options={{
+          tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" label="Home" focused={focused} />,
+        }}
+      />
+      <Tab.Screen
+        name="Calendar"
+        component={CalendarScreen}
+        options={{
+          tabBarIcon: ({ focused }) => <TabIcon emoji="📅" label="Calendar" focused={focused} />,
+        }}
+      />
+      <Tab.Screen
+        name="Contacts"
+        component={ContactsScreen}
+        options={{
+          tabBarIcon: ({ focused }) => <TabIcon emoji="👥" label="Contacts" focused={focused} />,
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
         component={ProfileScreen}
-        options={{ tabBarLabel: 'Me' }}
+        options={{
+          tabBarIcon: ({ focused }) => <TabIcon emoji="👤" label="Profile" focused={focused} />,
+        }}
       />
     </Tab.Navigator>
   );
@@ -90,23 +107,42 @@ const AppNavigator = () => {
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
-    backgroundColor: colors.tabBarBackground,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.background,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    height: 85,
-    paddingTop: 8,
-    paddingBottom: 25,
-    paddingHorizontal: 10,
+    height: 65,
+    paddingBottom: 8,
+    paddingTop: 5,
   },
-  tabBarLabel: {
-    fontFamily: 'Nunito-SemiBold',
+  tabItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 14,
+  },
+  tabItemActive: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 14,
+  },
+  tabEmoji: {
+    fontSize: 18,
+  },
+  tabLabel: {
+    fontFamily: 'Outfit-Regular',
     fontSize: 10,
-    marginTop: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
+    color: colors.textLight,
+    marginTop: 3,
+    letterSpacing: 0.5,
   },
-  tabBarItem: {
-    paddingVertical: 4,
+  tabLabelActive: {
+    color: colors.primary,
   },
 });
 

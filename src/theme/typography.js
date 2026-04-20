@@ -1,11 +1,18 @@
 // GiftBox4you Typography System
+// Pink & Blue Blend Theme
+// Headlines: Gifted | Body: Outfit (Light & Modern)
 
 export const typography = {
-  // Font Families (using system fonts)
+  // Font Families
   fontFamily: {
-    regular: 'System',
-    medium: 'System',
-    bold: 'System',
+    // Display/Headlines
+    display: 'Gifted-Regular',
+    // Body Text
+    light: 'Outfit-Light',
+    regular: 'Outfit-Regular',
+    medium: 'Outfit-Medium',
+    semiBold: 'Outfit-SemiBold',
+    bold: 'Outfit-Bold',
   },
 
   // Font Sizes
@@ -24,6 +31,7 @@ export const typography = {
 
   // Font Weights
   fontWeight: {
+    light: '300',
     regular: '400',
     medium: '500',
     semibold: '600',
@@ -32,87 +40,152 @@ export const typography = {
 
   // Line Heights
   lineHeight: {
-    tight: 1.2,
-    normal: 1.5,
-    relaxed: 1.75,
+    tight: 1.3,
+    normal: 1.6,
+    relaxed: 1.8,
+    loose: 2.0,
   },
 
   // Letter Spacing
   letterSpacing: {
-    tight: -0.5,
-    normal: 0,
-    wide: 0.5,
+    tight: -0.3,
+    normal: 0.3,
+    wide: 0.6,
+    wider: 1,
+    widest: 2,
   },
 };
 
 // Predefined Text Styles
 export const textStyles = {
-  // Headings
+  // Headings - Gifted font
   h1: {
+    fontFamily: 'Gifted-Regular',
     fontSize: 32,
-    fontWeight: '700',
-    lineHeight: 40,
+    lineHeight: 42,
+    letterSpacing: 0.5,
   },
   h2: {
+    fontFamily: 'Gifted-Regular',
     fontSize: 28,
-    fontWeight: '700',
-    lineHeight: 36,
+    lineHeight: 38,
+    letterSpacing: 0.4,
   },
   h3: {
+    fontFamily: 'Gifted-Regular',
     fontSize: 24,
-    fontWeight: '600',
-    lineHeight: 32,
+    lineHeight: 34,
+    letterSpacing: 0.3,
   },
   h4: {
+    fontFamily: 'Gifted-Regular',
     fontSize: 20,
-    fontWeight: '600',
-    lineHeight: 28,
+    lineHeight: 30,
+    letterSpacing: 0.3,
   },
 
-  // Body
+  // Body - Outfit Light
   bodyLarge: {
+    fontFamily: 'Outfit-Light',
     fontSize: 18,
-    fontWeight: '400',
-    lineHeight: 28,
+    lineHeight: 30,
+    letterSpacing: 0.4,
   },
   body: {
+    fontFamily: 'Outfit-Light',
     fontSize: 16,
-    fontWeight: '400',
-    lineHeight: 24,
+    lineHeight: 26,
+    letterSpacing: 0.4,
   },
   bodySmall: {
+    fontFamily: 'Outfit-Light',
     fontSize: 14,
-    fontWeight: '400',
-    lineHeight: 20,
+    lineHeight: 22,
+    letterSpacing: 0.3,
   },
 
   // Labels & Captions
   label: {
+    fontFamily: 'Outfit-Regular',
     fontSize: 14,
-    fontWeight: '500',
-    lineHeight: 20,
+    lineHeight: 22,
+    letterSpacing: 0.5,
   },
   caption: {
+    fontFamily: 'Outfit-Light',
     fontSize: 12,
-    fontWeight: '400',
-    lineHeight: 16,
+    lineHeight: 18,
+    letterSpacing: 0.4,
   },
   captionSmall: {
+    fontFamily: 'Outfit-Light',
     fontSize: 10,
-    fontWeight: '400',
-    lineHeight: 14,
+    lineHeight: 16,
+    letterSpacing: 0.5,
   },
 
   // Buttons
   button: {
+    fontFamily: 'Outfit-Regular',
     fontSize: 16,
-    fontWeight: '600',
     lineHeight: 24,
+    letterSpacing: 0.8,
   },
   buttonSmall: {
+    fontFamily: 'Outfit-Regular',
     fontSize: 14,
-    fontWeight: '600',
     lineHeight: 20,
+    letterSpacing: 0.6,
+  },
+
+  // App Specific
+  appTitle: {
+    fontFamily: 'Gifted-Regular',
+    fontSize: 36,
+    lineHeight: 46,
+    letterSpacing: 0.5,
+  },
+  greeting: {
+    fontFamily: 'Gifted-Regular',
+    fontSize: 22,
+    lineHeight: 32,
+    letterSpacing: 0.3,
+  },
+  sectionTitle: {
+    fontFamily: 'Gifted-Regular',
+    fontSize: 18,
+    lineHeight: 26,
+    letterSpacing: 0.3,
+  },
+  cardTitle: {
+    fontFamily: 'Outfit-Regular',
+    fontSize: 15,
+    lineHeight: 22,
+    letterSpacing: 0.3,
+  },
+  statValue: {
+    fontFamily: 'Outfit-Medium',
+    fontSize: 22,
+    lineHeight: 30,
+    letterSpacing: 0,
+  },
+  statLabel: {
+    fontFamily: 'Outfit-Light',
+    fontSize: 11,
+    lineHeight: 16,
+    letterSpacing: 0.8,
+  },
+  menuText: {
+    fontFamily: 'Outfit-Light',
+    fontSize: 15,
+    lineHeight: 22,
+    letterSpacing: 0.4,
+  },
+  tabLabel: {
+    fontFamily: 'Outfit-Regular',
+    fontSize: 11,
+    lineHeight: 16,
+    letterSpacing: 0.5,
   },
 };
 

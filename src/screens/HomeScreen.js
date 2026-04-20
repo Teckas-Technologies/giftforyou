@@ -1,91 +1,61 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Animated,
-  Dimensions,
-  TextInput,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
-
-const { width } = Dimensions.get('window');
+import { GradientText, UsersIcon, CalendarIcon, GiftIcon } from '../components';
 
 // Mock data
-const upcomingEvents = [
+const upcomingBirthdays = [
   {
     id: '1',
-    name: "Mom's Birthday",
-    type: 'Family',
-    category: 'Birthday',
-    emoji: '🎂',
-    day: '24',
-    month: 'Apr',
-    color: colors.primary,
-    bgColor: colors.family,
+    name: 'Claude',
+    relation: 'Girlfriend',
+    date: '24. March',
+    badge: 'tomorrow',
+    badgeType: 'tomorrow',
+    initials: 'C',
+    avatarType: 'pink',
   },
   {
     id: '2',
-    name: 'Anniversary',
-    type: 'Special',
-    category: '5 years',
-    emoji: '💍',
-    day: '28',
-    month: 'Apr',
-    color: colors.secondary,
-    bgColor: colors.secondaryLight,
+    name: 'Susanne',
+    relation: 'Friend',
+    date: '25. March',
+    badge: 'in 2 days',
+    badgeType: 'soon',
+    initials: 'SU',
+    avatarType: 'blue',
   },
   {
     id: '3',
-    name: 'Christmas',
-    type: 'Holiday',
-    category: '',
-    emoji: '🎄',
-    day: '25',
-    month: 'Dec',
-    color: colors.accentLavender,
-    bgColor: '#EDE4F5',
+    name: 'Caroline',
+    relation: 'Sister',
+    date: '27. March',
+    badge: 'in 4 days',
+    badgeType: 'soon',
+    initials: 'CA',
+    avatarType: 'pink',
   },
 ];
 
+const stats = [
+  { iconType: 'users', value: '12', label: 'Contacts' },
+  { iconType: 'calendar', value: '3', label: 'This month' },
+  { iconType: 'gift', value: '5', label: 'Gift ideas' },
+];
+
 const HomeScreen = ({ navigation }) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-  const cardAnims = useRef(upcomingEvents.map(() => new Animated.Value(0))).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    Animated.stagger(100, cardAnims.map(anim =>
-      Animated.spring(anim, {
-        toValue: 1,
-        friction: 8,
-        tension: 40,
-        useNativeDriver: true,
-      })
-    )).start();
-  }, []);
-
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning!';
-    if (hour < 18) return 'Good afternoon!';
-    return 'Good evening!';
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
   };
 
   return (
@@ -96,96 +66,124 @@ const HomeScreen = ({ navigation }) => {
         contentContainerStyle={styles.scrollContent}
       >
         {/* Header */}
-        <Animated.View
-          style={[
-            styles.header,
-            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
-          ]}
-        >
-          <View style={styles.headerLeft}>
-            <Text style={styles.greeting}>{getGreeting()}</Text>
-            <Text style={styles.userName}>Sarah</Text>
-          </View>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarEmoji}>😊</Text>
-          </View>
-        </Animated.View>
+        <View style={styles.header}>
+          <Text style={styles.headerLabel}>HOME</Text>
+          <Text style={styles.greeting}>{getGreeting()}, Anna!</Text>
+        </View>
 
-        {/* Search Bar */}
-        <Animated.View
-          style={[
-            styles.searchBar,
-            { opacity: fadeAnim }
-          ]}
-        >
-          <Ionicons name="search-outline" size={20} color={colors.textLight} />
-          <Text style={styles.searchPlaceholder}>Search events or people...</Text>
-        </Animated.View>
+        {/* Stats Row */}
+        <View style={styles.statsRow}>
+          {stats.map((stat, index) => {
+            const renderIcon = () => {
+              switch (stat.iconType) {
+                case 'users':
+                  return <UsersIcon size={18} color={colors.primary} />;
+                case 'calendar':
+                  return <CalendarIcon size={18} color={colors.secondary} />;
+                case 'gift':
+                  return <GiftIcon size={18} color={colors.primary} />;
+                default:
+                  return null;
+              }
+            };
+            return (
+              <LinearGradient
+                key={index}
+                colors={index === 1 ? [colors.secondaryLight, colors.primaryLight] : [colors.primaryLight, colors.secondaryLight]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.statCard}
+              >
+                <View style={styles.statIcon}>
+                  {renderIcon()}
+                </View>
+                <Text style={styles.statValue}>{stat.value}</Text>
+                <Text style={styles.statLabel}>{stat.label}</Text>
+              </LinearGradient>
+            );
+          })}
+        </View>
 
         {/* Section Header */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Coming Up</Text>
+          <Text style={styles.sectionTitle}>Upcoming birthdays</Text>
           <TouchableOpacity>
-            <Text style={styles.seeAll}>see all →</Text>
+            <GradientText
+              style={styles.seeAll}
+              colors={[colors.primary, colors.secondary]}
+            >
+              See all
+            </GradientText>
           </TouchableOpacity>
         </View>
 
-        {/* Event Cards */}
-        {upcomingEvents.map((event, index) => (
-          <Animated.View
-            key={event.id}
-            style={[
-              styles.eventCard,
-              {
-                opacity: cardAnims[index],
-                transform: [{
-                  translateX: cardAnims[index].interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-30, 0],
-                  })
-                }]
-              }
-            ]}
-          >
-            <TouchableOpacity style={styles.eventCardInner} activeOpacity={0.8}>
-              {/* Left accent bar */}
-              <View style={[styles.accentBar, { backgroundColor: event.color }]} />
+        {/* Birthday Cards */}
+        {upcomingBirthdays.map((birthday) => (
+          <TouchableOpacity key={birthday.id} style={styles.birthdayCard} activeOpacity={0.8}>
+            <View style={[
+              styles.birthdayAvatar,
+              birthday.avatarType === 'blue' && styles.avatarBlue
+            ]}>
+              <Text style={[
+                styles.avatarInitials,
+                birthday.avatarType === 'blue' && styles.initialsBlue
+              ]}>{birthday.initials}</Text>
+            </View>
 
-              {/* Emoji */}
-              <View style={[styles.eventEmoji, { backgroundColor: event.bgColor }]}>
-                <Text style={styles.emojiText}>{event.emoji}</Text>
-              </View>
+            <View style={styles.birthdayInfo}>
+              <Text style={styles.birthdayName}>{birthday.name}</Text>
+              <Text style={styles.birthdayRelation}>{birthday.relation}</Text>
+            </View>
 
-              {/* Event Info */}
-              <View style={styles.eventInfo}>
-                <Text style={styles.eventName}>{event.name}</Text>
-                <Text style={styles.eventType}>
-                  {event.type}{event.category ? ` · ${event.category}` : ''}
-                </Text>
-              </View>
-
-              {/* Date */}
-              <View style={styles.eventDate}>
-                <Text style={[styles.eventDay, { color: event.color }]}>{event.day}</Text>
-                <Text style={styles.eventMonth}>{event.month}</Text>
-              </View>
-            </TouchableOpacity>
-          </Animated.View>
+            <View style={styles.birthdayDateInfo}>
+              <Text style={styles.birthdayDate}>{birthday.date}</Text>
+              <LinearGradient
+                colors={birthday.badgeType === 'tomorrow'
+                  ? [colors.primaryAccent, colors.secondary]
+                  : [colors.primaryLight, colors.secondaryLight]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.badge}
+              >
+                <Text style={[
+                  styles.badgeText,
+                  { color: birthday.badgeType === 'tomorrow' ? colors.textWhite : colors.primary }
+                ]}>{birthday.badge}</Text>
+              </LinearGradient>
+            </View>
+          </TouchableOpacity>
         ))}
 
-        {/* Bottom spacing for tab bar */}
-        <View style={{ height: 120 }} />
-      </ScrollView>
+        {/* Quick Actions */}
+        <View style={styles.quickSection}>
+          <Text style={styles.quickTitle}>Quick actions</Text>
+          <View style={styles.quickActionsRow}>
+            <LinearGradient
+              colors={[colors.primaryLight, colors.secondaryLight]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.quickBtn}
+            >
+              <TouchableOpacity style={styles.quickBtnInner}>
+                <Text style={styles.quickBtnText}>+ Add Contact</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+            <LinearGradient
+              colors={[colors.secondaryLight, colors.primaryLight]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.quickBtn}
+            >
+              <TouchableOpacity style={styles.quickBtnInner}>
+                <Text style={[styles.quickBtnText, { color: colors.secondary }]}>🎁 Gift Ideas</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
+        </View>
 
-      {/* Floating Add Button */}
-      <TouchableOpacity style={styles.fab} activeOpacity={0.9}>
-        <LinearGradient
-          colors={[colors.primary, colors.primaryDark]}
-          style={styles.fabGradient}
-        >
-          <Ionicons name="add" size={28} color="#FFFFFF" />
-        </LinearGradient>
-      </TouchableOpacity>
+        {/* Bottom spacing for tab bar */}
+        <View style={{ height: 100 }} />
+      </ScrollView>
     </View>
   );
 };
@@ -199,160 +197,168 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingHorizontal: 16,
+    paddingTop: 50,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 25,
   },
-  headerLeft: {},
-  greeting: {
-    fontFamily: 'Caveat-Medium',
-    fontSize: 22,
-    color: colors.primary,
+  headerLabel: {
+    fontFamily: 'Outfit-Light',
+    fontSize: 11,
+    color: colors.textLight,
+    letterSpacing: 2,
     marginBottom: 4,
   },
-  userName: {
-    fontFamily: 'Nunito-ExtraBold',
-    fontSize: 28,
+  greeting: {
+    fontFamily: 'Gifted-Regular',
+    fontSize: 24,
     color: colors.textPrimary,
+    letterSpacing: 0.5,
   },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.accentLavender,
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginBottom: 28,
+  },
+  statCard: {
+    alignItems: 'center',
+    padding: 15,
+    borderRadius: 20,
+    minWidth: 85,
+  },
+  statIcon: {
+    width: 45,
+    height: 45,
+    backgroundColor: colors.background,
+    borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.accentLavender,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 5,
+    marginBottom: 10,
   },
-  avatarEmoji: {
-    fontSize: 28,
+  statValue: {
+    fontFamily: 'Outfit-Medium',
+    fontSize: 22,
+    color: colors.textPrimary,
+    letterSpacing: 0,
   },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.backgroundCard,
-    borderRadius: 18,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    marginBottom: 28,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  searchPlaceholder: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 15,
-    color: colors.textLight,
+  statLabel: {
+    fontFamily: 'Outfit-Light',
+    fontSize: 11,
+    color: colors.textSecondary,
+    letterSpacing: 0.5,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 20,
-    color: colors.textPrimary,
-  },
-  seeAll: {
-    fontFamily: 'Caveat-Medium',
-    fontSize: 18,
-    color: colors.primary,
-  },
-  eventCard: {
     marginBottom: 14,
   },
-  eventCardInner: {
+  sectionTitle: {
+    fontFamily: 'Gifted-Regular',
+    fontSize: 18,
+    color: colors.textPrimary,
+    letterSpacing: 0.3,
+  },
+  seeAll: {
+    fontFamily: 'Outfit-Medium',
+    fontSize: 13,
+    color: colors.primary,
+    letterSpacing: 0.3,
+  },
+  birthdayCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.backgroundCard,
-    borderRadius: 24,
-    padding: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
-    elevation: 3,
-    overflow: 'hidden',
+    backgroundColor: colors.backgroundGray,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
   },
-  accentBar: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 5,
-    borderTopLeftRadius: 24,
-    borderBottomLeftRadius: 24,
-  },
-  eventEmoji: {
-    width: 54,
-    height: 54,
-    borderRadius: 18,
+  birthdayAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 4,
   },
-  emojiText: {
-    fontSize: 28,
+  avatarBlue: {
+    backgroundColor: colors.secondaryLight,
   },
-  eventInfo: {
+  avatarInitials: {
+    fontFamily: 'Outfit-Medium',
+    fontSize: 14,
+    color: colors.primary,
+    letterSpacing: 0.3,
+  },
+  initialsBlue: {
+    color: colors.secondary,
+  },
+  birthdayInfo: {
     flex: 1,
-    marginLeft: 14,
+    marginLeft: 12,
   },
-  eventName: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 17,
+  birthdayName: {
+    fontFamily: 'Outfit-Regular',
+    fontSize: 15,
     color: colors.textPrimary,
-    marginBottom: 4,
+    letterSpacing: 0.3,
   },
-  eventType: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 13,
-    color: colors.textLight,
-  },
-  eventDate: {
-    alignItems: 'flex-end',
-  },
-  eventDay: {
-    fontFamily: 'Nunito-ExtraBold',
-    fontSize: 26,
-  },
-  eventMonth: {
-    fontFamily: 'Nunito-SemiBold',
+  birthdayRelation: {
+    fontFamily: 'Outfit-Light',
     fontSize: 12,
     color: colors.textLight,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 0.3,
   },
-  fab: {
-    position: 'absolute',
-    bottom: 100,
-    right: 20,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
+  birthdayDateInfo: {
+    alignItems: 'flex-end',
   },
-  fabGradient: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+  birthdayDate: {
+    fontFamily: 'Outfit-Light',
+    fontSize: 13,
+    color: colors.textSecondary,
+    letterSpacing: 0.3,
+  },
+  badge: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    marginTop: 4,
+  },
+  badgeText: {
+    fontFamily: 'Outfit-Medium',
+    fontSize: 11,
+    letterSpacing: 0.3,
+  },
+  quickSection: {
+    marginTop: 20,
+  },
+  quickTitle: {
+    fontFamily: 'Gifted-Regular',
+    fontSize: 18,
+    color: colors.textPrimary,
+    marginBottom: 10,
+    letterSpacing: 0.3,
+  },
+  quickActionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  quickBtn: {
+    flex: 1,
+    borderRadius: 14,
+  },
+  quickBtnInner: {
+    padding: 12,
     alignItems: 'center',
-    justifyContent: 'center',
+  },
+  quickBtnText: {
+    fontFamily: 'Outfit-Regular',
+    fontSize: 13,
+    color: colors.primary,
+    letterSpacing: 0.5,
   },
 });
 

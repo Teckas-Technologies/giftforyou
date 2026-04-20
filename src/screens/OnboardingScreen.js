@@ -10,119 +10,55 @@ import {
   Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
+import { BellIcon, GiftIcon, UsersIcon, CalendarIcon, CelebrationIcon, UserIcon, HeadphonesIcon, BookIcon, FlowerIcon } from '../components';
 
 const { width, height } = Dimensions.get('window');
-
-const onboardingData = [
-  {
-    id: '1',
-    emoji: '🗓️',
-    title: 'Never Forget Again',
-    description: 'Keep track of birthdays, anniversaries, and all the special moments that matter to you and your loved ones.',
-    color: colors.primary,
-    gradientColors: [colors.primary, colors.primaryDark],
-    dotColor: colors.primary,
-  },
-  {
-    id: '2',
-    emoji: '👥',
-    title: 'Organize Your People',
-    description: 'Create circles for family, friends, and colleagues. Keep everyone organized and never miss a celebration.',
-    color: colors.secondary,
-    gradientColors: [colors.secondary, '#7BA66A'],
-    dotColor: colors.secondary,
-  },
-  {
-    id: '3',
-    emoji: '🎁',
-    title: 'Perfect Gift Ideas',
-    description: 'Save gift ideas, track your budget, and never give a last-minute present again. Thoughtful gifting made easy!',
-    color: colors.accentLavender,
-    gradientColors: [colors.accentLavender, '#B8A5DB'],
-    dotColor: colors.accentLavender,
-  },
-  {
-    id: '4',
-    emoji: '🎉',
-    title: "You're All Set!",
-    description: "Start adding your special dates and make every celebration memorable. Let's spread some joy!",
-    color: colors.accentSunny,
-    gradientColors: [colors.accentSunny, '#F5C800'],
-    dotColor: colors.accentSunny,
-    isLast: true,
-  },
-];
 
 const OnboardingScreen = ({ navigation }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef(null);
   const scrollX = useRef(new Animated.Value(0)).current;
 
-  // Animations
-  const iconScale = useRef(new Animated.Value(1)).current;
-  const ringRotation = useRef(new Animated.Value(0)).current;
-  const dotAnims = useRef([
-    new Animated.Value(0.4),
-    new Animated.Value(0.4),
-    new Animated.Value(0.4),
-    new Animated.Value(0.4),
-  ]).current;
+  // Bell shake animation
+  const bellShake = useRef(new Animated.Value(0)).current;
+  const ringPulse = useRef(new Animated.Value(0.8)).current;
 
   useEffect(() => {
-    // Start ring rotation animation
-    Animated.loop(
-      Animated.timing(ringRotation, {
-        toValue: 1,
-        duration: 20000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    ).start();
-
-    // Start icon pulse animation
+    // Bell shake animation
     Animated.loop(
       Animated.sequence([
-        Animated.timing(iconScale, {
-          toValue: 1.05,
-          duration: 1500,
-          easing: Easing.inOut(Easing.ease),
+        Animated.timing(bellShake, { toValue: -10, duration: 100, useNativeDriver: true }),
+        Animated.timing(bellShake, { toValue: 10, duration: 100, useNativeDriver: true }),
+        Animated.timing(bellShake, { toValue: -10, duration: 100, useNativeDriver: true }),
+        Animated.timing(bellShake, { toValue: 10, duration: 100, useNativeDriver: true }),
+        Animated.timing(bellShake, { toValue: 0, duration: 100, useNativeDriver: true }),
+        Animated.delay(1500),
+      ])
+    ).start();
+
+    // Ring pulse animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(ringPulse, {
+          toValue: 1.5,
+          duration: 1000,
+          easing: Easing.out(Easing.ease),
           useNativeDriver: true,
         }),
-        Animated.timing(iconScale, {
-          toValue: 1,
-          duration: 1500,
-          easing: Easing.inOut(Easing.ease),
+        Animated.timing(ringPulse, {
+          toValue: 0.8,
+          duration: 0,
           useNativeDriver: true,
         }),
       ])
     ).start();
-
-    // Start dot pulse animations with stagger
-    dotAnims.forEach((anim, index) => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(index * 500),
-          Animated.timing(anim, {
-            toValue: 0.8,
-            duration: 1000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(anim, {
-            toValue: 0.4,
-            duration: 1000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    });
   }, []);
 
-  const ringRotateInterpolate = ringRotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
+  const ringOpacity = ringPulse.interpolate({
+    inputRange: [0.8, 1.5],
+    outputRange: [0.8, 0],
   });
 
   const viewableItemsChanged = useRef(({ viewableItems }) => {
@@ -134,7 +70,7 @@ const OnboardingScreen = ({ navigation }) => {
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
   const scrollToNext = () => {
-    if (currentIndex < onboardingData.length - 1) {
+    if (currentIndex < 3) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
     } else {
       navigation.replace('Login');
@@ -145,91 +81,236 @@ const OnboardingScreen = ({ navigation }) => {
     navigation.replace('Login');
   };
 
-  const renderItem = ({ item, index }) => {
-    return (
-      <View style={styles.slide}>
-        {/* Skip button - not on last screen */}
-        {!item.isLast && (
-          <TouchableOpacity style={styles.skipButton} onPress={skipToLogin}>
-            <Text style={styles.skipText}>skip</Text>
-          </TouchableOpacity>
-        )}
+  // Screen 1: Never miss a Birthday
+  const renderScreen1 = () => (
+    <LinearGradient
+      colors={['#FDEEF3', '#E8F4FD', '#FBDCE9']}
+      locations={[0, 0.5, 1]}
+      style={styles.slide}
+    >
+      <View style={styles.contentTop}>
+        <Text style={styles.headline}>Never miss a{'\n'}<Text style={styles.highlightPink}>Birthday</Text> again</Text>
+      </View>
 
-        {/* Illustration */}
-        <View style={styles.illustrationContainer}>
-          {/* Dashed ring */}
+      <View style={styles.visualContainer}>
+        {/* Bell with shake animation */}
+        <View style={styles.bellContainer}>
+          <Animated.View
+            style={[styles.bellIconContainer, { transform: [{ rotate: bellShake.interpolate({
+              inputRange: [-10, 10],
+              outputRange: ['-10deg', '10deg'],
+            }) }] }]}
+          >
+            <BellIcon size={45} color={colors.primary} />
+          </Animated.View>
           <Animated.View
             style={[
-              styles.dashedRing,
-              { transform: [{ rotate: ringRotateInterpolate }] },
+              styles.bellRing,
+              {
+                transform: [{ scale: ringPulse }],
+                opacity: ringOpacity,
+              },
             ]}
           />
-
-          {/* Main icon */}
-          <Animated.View
-            style={[
-              styles.iconWrapper,
-              { transform: [{ scale: iconScale }] },
-            ]}
-          >
-            <LinearGradient
-              colors={item.gradientColors}
-              style={styles.iconGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Text style={styles.iconEmoji}>{item.emoji}</Text>
-            </LinearGradient>
-
-            {/* Accent dots */}
-            <Animated.View style={[styles.accentDot, styles.dotTop, { opacity: dotAnims[0], backgroundColor: item.dotColor }]} />
-            <Animated.View style={[styles.accentDot, styles.dotBottom, { opacity: dotAnims[1], backgroundColor: item.dotColor }]} />
-            <Animated.View style={[styles.accentDot, styles.dotLeft, { opacity: dotAnims[2], backgroundColor: item.dotColor }]} />
-            <Animated.View style={[styles.accentDot, styles.dotRight, { opacity: dotAnims[3], backgroundColor: item.dotColor }]} />
-          </Animated.View>
         </View>
 
-        {/* Content */}
-        <View style={styles.contentContainer}>
-          <Text style={styles.title}>{item.title}</Text>
-          <Text style={styles.description}>{item.description}</Text>
+        {/* Notification card */}
+        <View style={styles.notificationCard}>
+          <View style={styles.notifDot} />
+          <View style={styles.notifContent}>
+            <Text style={styles.notifTitle}>Anna: Birthday in 30 days</Text>
+            <Text style={styles.notifText}>Have you got a gift yet?</Text>
+          </View>
+          <Text style={styles.notifTime}>now</Text>
+        </View>
 
-          {/* Feature badges on last screen */}
-          {item.isLast && (
-            <View style={styles.badgesContainer}>
-              <View style={styles.badge}>
-                <Text style={styles.badgeIcon}>🔔</Text>
-                <Text style={styles.badgeText}>Reminders</Text>
-              </View>
-              <View style={styles.badge}>
-                <Text style={styles.badgeIcon}>🎁</Text>
-                <Text style={styles.badgeText}>Gifts</Text>
-              </View>
-              <View style={styles.badge}>
-                <Text style={styles.badgeIcon}>👥</Text>
-                <Text style={styles.badgeText}>Circles</Text>
-              </View>
+        {/* Mini calendar */}
+        <View style={styles.miniCalendar}>
+          <Text style={styles.miniCalHeader}>March 2026</Text>
+          <View style={styles.miniCalGrid}>
+            <Text style={styles.miniCalDay}>25</Text>
+            <View style={styles.miniCalHighlight}>
+              <Text style={styles.miniCalDayHighlight}>26</Text>
             </View>
-          )}
+            <Text style={styles.miniCalDay}>27</Text>
+            <Text style={styles.miniCalDay}>28</Text>
+          </View>
         </View>
       </View>
-    );
+    </LinearGradient>
+  );
+
+  // Screen 2: Import Contacts
+  const renderScreen2 = () => (
+    <LinearGradient
+      colors={['#EBF5FB', '#FDEEF3', '#D6EAF8']}
+      locations={[0, 0.5, 1]}
+      style={styles.slide}
+    >
+      <View style={styles.contentTop}>
+        <Text style={styles.headline}>Add friends from{'\n'}<Text style={styles.highlightBlue}>your contacts</Text></Text>
+      </View>
+
+      <View style={styles.visualContainer}>
+        {/* Floating avatars */}
+        <View style={styles.floatingAvatars}>
+          <View style={[styles.floatAvatar, styles.avatar1]}>
+            <Ionicons name="person" size={22} color={colors.primary} />
+          </View>
+          <View style={[styles.floatAvatar, styles.avatar2]}>
+            <Ionicons name="person" size={22} color={colors.secondary} />
+          </View>
+          <View style={[styles.floatAvatar, styles.avatar3]}>
+            <Ionicons name="person" size={22} color={colors.primary} />
+          </View>
+          <View style={styles.plusIcon}>
+            <Ionicons name="add" size={24} color={colors.textWhite} />
+          </View>
+        </View>
+
+        {/* Contacts preview card */}
+        <View style={styles.contactsCard}>
+          <View style={styles.contactRow}>
+            <View style={[styles.contactCheck, styles.checked]}>
+              <Ionicons name="checkmark" size={12} color={colors.textWhite} />
+            </View>
+            <Text style={styles.contactName}>Anna</Text>
+          </View>
+          <View style={styles.contactRow}>
+            <View style={[styles.contactCheck, styles.checked]}>
+              <Ionicons name="checkmark" size={12} color={colors.textWhite} />
+            </View>
+            <Text style={styles.contactName}>Chris</Text>
+          </View>
+          <View style={styles.contactRow}>
+            <View style={styles.contactCheck} />
+            <Text style={styles.contactName}>Tom</Text>
+          </View>
+          <View style={[styles.contactRow, styles.lastRow]}>
+            <View style={styles.contactCheck} />
+            <Text style={styles.contactName}>Sara</Text>
+          </View>
+        </View>
+      </View>
+    </LinearGradient>
+  );
+
+  // Screen 3: Gift Ideas
+  const renderScreen3 = () => (
+    <LinearGradient
+      colors={['#EBF5FB', '#FDEEF3', '#D6EAF8']}
+      locations={[0, 0.5, 1]}
+      style={styles.slide}
+    >
+      <View style={styles.contentTop}>
+        <Text style={styles.headline}>Find <Text style={styles.highlightBlue}>perfect</Text>{'\n'}gift ideas</Text>
+      </View>
+
+      <View style={styles.visualContainer}>
+        <View style={styles.giftBoxIconContainer}>
+          <GiftIcon size={50} color={colors.secondary} />
+        </View>
+
+        <View style={styles.giftCardsStack}>
+          <View style={styles.giftCard}>
+            <View style={[styles.giftEmoji, { backgroundColor: colors.secondaryLight }]}>
+              <HeadphonesIcon size={22} color={colors.secondary} />
+            </View>
+            <View style={styles.giftDetails}>
+              <Text style={styles.giftName}>Wireless Earbuds</Text>
+              <Text style={styles.giftPrice}>$79</Text>
+            </View>
+          </View>
+          <View style={styles.giftCard}>
+            <View style={[styles.giftEmoji, { backgroundColor: colors.secondaryLight }]}>
+              <BookIcon size={22} color={colors.secondary} />
+            </View>
+            <View style={styles.giftDetails}>
+              <Text style={styles.giftName}>Book Collection</Text>
+              <Text style={styles.giftPrice}>$45</Text>
+            </View>
+          </View>
+          <View style={styles.giftCard}>
+            <View style={[styles.giftEmoji, { backgroundColor: colors.primaryLight }]}>
+              <FlowerIcon size={22} color={colors.primary} />
+            </View>
+            <View style={styles.giftDetails}>
+              <Text style={styles.giftName}>Spa Gift Set</Text>
+              <Text style={styles.giftPrice}>$35</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    </LinearGradient>
+  );
+
+  // Screen 4: Get Started
+  const renderScreen4 = () => (
+    <LinearGradient
+      colors={['#FDEEF3', '#E8F4FD', '#FBDCE9']}
+      locations={[0, 0.5, 1]}
+      style={styles.slide}
+    >
+      <View style={[styles.contentTop, { marginTop: 40 }]}>
+        <View style={styles.celebrationIconContainer}>
+          <CelebrationIcon size={60} color={colors.primary} />
+        </View>
+        <Text style={[styles.headline, { textAlign: 'center' }]}>You're all{'\n'}<Text style={styles.highlightPink}>set!</Text></Text>
+        <Text style={styles.subtitle}>Start adding birthdays and never forget a special day again</Text>
+      </View>
+
+      <View style={styles.visualContainer}>
+        <View style={styles.featurePills}>
+          <View style={styles.featurePill}>
+            <BellIcon size={18} color={colors.primary} />
+            <Text style={styles.pillText}>Reminders</Text>
+          </View>
+          <View style={styles.featurePill}>
+            <UsersIcon size={18} color={colors.secondary} />
+            <Text style={styles.pillText}>Contacts</Text>
+          </View>
+          <View style={styles.featurePill}>
+            <GiftIcon size={18} color={colors.primary} />
+            <Text style={styles.pillText}>Gift Ideas</Text>
+          </View>
+          <View style={styles.featurePill}>
+            <CalendarIcon size={18} color={colors.secondary} />
+            <Text style={styles.pillText}>Calendar</Text>
+          </View>
+        </View>
+      </View>
+    </LinearGradient>
+  );
+
+  const renderItem = ({ item, index }) => {
+    switch (index) {
+      case 0:
+        return renderScreen1();
+      case 1:
+        return renderScreen2();
+      case 2:
+        return renderScreen3();
+      case 3:
+        return renderScreen4();
+      default:
+        return renderScreen1();
+    }
   };
 
-  const currentItem = onboardingData[currentIndex];
+  const isBlueScreen = currentIndex === 1 || currentIndex === 2;
+  const isLastScreen = currentIndex === 3;
 
   return (
     <View style={styles.container}>
-      {/* Slides */}
       <FlatList
         ref={flatListRef}
-        data={onboardingData}
+        data={[1, 2, 3, 4]}
         renderItem={renderItem}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         bounces={false}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => index.toString()}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
           { useNativeDriver: false }
@@ -243,7 +324,7 @@ const OnboardingScreen = ({ navigation }) => {
       <View style={styles.footer}>
         {/* Pagination dots */}
         <View style={styles.paginationContainer}>
-          {onboardingData.map((item, index) => {
+          {[0, 1, 2, 3].map((index) => {
             const inputRange = [
               (index - 1) * width,
               index * width,
@@ -252,7 +333,7 @@ const OnboardingScreen = ({ navigation }) => {
 
             const dotWidth = scrollX.interpolate({
               inputRange,
-              outputRange: [10, 28, 10],
+              outputRange: [8, 24, 8],
               extrapolate: 'clamp',
             });
 
@@ -277,27 +358,33 @@ const OnboardingScreen = ({ navigation }) => {
           })}
         </View>
 
-        {/* Buttons */}
+        {/* Next button */}
         <TouchableOpacity onPress={scrollToNext} activeOpacity={0.9}>
           <LinearGradient
-            colors={[colors.primary, colors.primaryDark]}
+            colors={isBlueScreen ? [colors.secondary, colors.primaryAccent] : [colors.primaryAccent, colors.secondary]}
             style={styles.nextButton}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
             <Text style={styles.nextButtonText}>
-              {currentIndex === onboardingData.length - 1 ? 'Get Started' : 'Next'}
+              {isLastScreen ? 'Get Started' : 'Next'}
             </Text>
             <Text style={styles.nextButtonArrow}>
-              {currentIndex === onboardingData.length - 1 ? '🚀' : '→'}
+              {isLastScreen ? '🚀' : '→'}
             </Text>
           </LinearGradient>
         </TouchableOpacity>
 
-        {/* Secondary button on last screen */}
-        {currentItem.isLast && (
-          <TouchableOpacity style={styles.secondaryButton} onPress={skipToLogin}>
-            <Text style={styles.secondaryButtonText}>I already have an account</Text>
+        {/* Skip / Sign in text */}
+        {!isLastScreen ? (
+          <TouchableOpacity onPress={skipToLogin} style={styles.skipButton}>
+            <Text style={styles.skipText}>Skip</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity onPress={skipToLogin} style={styles.loginLink}>
+            <Text style={styles.loginText}>
+              Already have an account? <Text style={styles.loginHighlight}>Sign in</Text>
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -313,177 +400,380 @@ const styles = StyleSheet.create({
   slide: {
     width,
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 50,
+    paddingHorizontal: 20,
   },
-  skipButton: {
-    position: 'absolute',
-    top: 60,
-    right: 24,
-    zIndex: 10,
+  contentTop: {
+    alignItems: 'center',
+    marginBottom: 20,
   },
-  skipText: {
-    fontFamily: 'Caveat-Medium',
-    fontSize: 22,
-    color: colors.textLight,
+  headline: {
+    fontFamily: 'Outfit-Medium',
+    fontSize: 26,
+    color: colors.textPrimary,
+    lineHeight: 38,
+    letterSpacing: 0.3,
   },
-  illustrationContainer: {
+  highlightPink: {
+    color: colors.primary,
+  },
+  highlightBlue: {
+    color: colors.secondary,
+  },
+  subtitle: {
+    fontFamily: 'Outfit-Light',
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 10,
+    lineHeight: 22,
+    paddingHorizontal: 20,
+    letterSpacing: 0.3,
+  },
+  visualContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dashedRing: {
-    position: 'absolute',
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    borderWidth: 2,
-    borderColor: 'rgba(0,0,0,0.08)',
-    borderStyle: 'dashed',
-  },
-  iconWrapper: {
+
+  // Screen 1 styles
+  bellContainer: {
     position: 'relative',
+    marginBottom: 15,
+  },
+  bellIconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconGradient: {
-    width: 100,
-    height: 100,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 12,
-  },
-  iconEmoji: {
-    fontSize: 45,
-  },
-  accentDot: {
+  bellRing: {
     position: 'absolute',
+    top: -10,
+    left: '50%',
+    marginLeft: -35,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    borderWidth: 2,
+    borderColor: colors.primaryAccent,
+  },
+  notificationCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: colors.background,
+    padding: 14,
+    borderRadius: 14,
+    width: '100%',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 25,
+    elevation: 8,
+  },
+  notifDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
+    backgroundColor: colors.primaryAccent,
+    marginTop: 5,
+    marginRight: 10,
   },
-  dotTop: {
-    top: -18,
-    left: '50%',
-    marginLeft: -4,
+  notifContent: {
+    flex: 1,
   },
-  dotBottom: {
-    bottom: -18,
-    left: '50%',
-    marginLeft: -4,
+  notifTitle: {
+    fontFamily: 'Outfit-SemiBold',
+    fontSize: 13,
+    color: colors.textPrimary,
   },
-  dotLeft: {
-    left: -18,
-    top: '50%',
-    marginTop: -4,
+  notifText: {
+    fontFamily: 'Outfit-Light',
+    fontSize: 12,
+    color: colors.textLight,
+    marginTop: 2,
   },
-  dotRight: {
-    right: -18,
-    top: '50%',
-    marginTop: -4,
+  notifTime: {
+    fontFamily: 'Outfit-Light',
+    fontSize: 11,
+    color: colors.textLight,
   },
-  contentContainer: {
-    paddingVertical: 30,
-    alignItems: 'center',
+  miniCalendar: {
+    backgroundColor: colors.background,
+    padding: 12,
+    borderRadius: 14,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 25,
+    elevation: 8,
   },
-  title: {
-    fontFamily: 'Caveat-SemiBold',
-    fontSize: 32,
-    color: colors.primary,
+  miniCalHeader: {
+    fontFamily: 'Outfit-SemiBold',
+    fontSize: 13,
+    color: colors.textPrimary,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  description: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: 10,
-  },
-  badgesContainer: {
+  miniCalGrid: {
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 12,
-    marginTop: 24,
   },
-  badge: {
+  miniCalDay: {
+    fontFamily: 'Outfit-Regular',
+    fontSize: 14,
+    color: colors.textPrimary,
+    width: 36,
+    height: 36,
+    textAlign: 'center',
+    lineHeight: 36,
+  },
+  miniCalHighlight: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primaryAccent,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  miniCalDayHighlight: {
+    fontFamily: 'Outfit-SemiBold',
+    fontSize: 14,
+    color: colors.textWhite,
+  },
+
+  // Screen 2 styles
+  floatingAvatars: {
+    position: 'relative',
+    width: 150,
+    height: 100,
+    marginBottom: 20,
+  },
+  floatAvatar: {
+    position: 'absolute',
+    width: 50,
+    height: 50,
+    backgroundColor: colors.background,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 6,
+  },
+  avatar1: {
+    top: 0,
+    left: 0,
+  },
+  avatar2: {
+    top: 10,
+    left: 50,
+    zIndex: 2,
+  },
+  avatar3: {
+    top: 0,
+    right: 0,
+  },
+  plusIcon: {
+    position: 'absolute',
+    bottom: 0,
+    left: '50%',
+    marginLeft: -18,
+    width: 36,
+    height: 36,
+    backgroundColor: colors.secondary,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: colors.secondary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 6,
+  },
+  contactsCard: {
+    backgroundColor: colors.background,
+    padding: 12,
+    borderRadius: 14,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 25,
+    elevation: 8,
+  },
+  contactRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    backgroundColor: colors.backgroundCard,
-    borderRadius: 20,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  lastRow: {
+    borderBottomWidth: 0,
+  },
+  contactCheck: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: colors.border,
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checked: {
+    backgroundColor: colors.secondary,
+    borderColor: colors.secondary,
+  },
+  contactName: {
+    fontFamily: 'Outfit-Regular',
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+
+  // Screen 3 styles
+  giftBoxIconContainer: {
+    marginBottom: 15,
+    alignItems: 'center',
+  },
+  giftCardsStack: {
+    width: '100%',
+  },
+  giftCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 15,
+    elevation: 4,
   },
-  badgeIcon: {
-    fontSize: 16,
+  giftEmoji: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
-  badgeText: {
-    fontFamily: 'Nunito-SemiBold',
+  giftDetails: {
+    flex: 1,
+  },
+  giftName: {
+    fontFamily: 'Outfit-SemiBold',
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  giftPrice: {
+    fontFamily: 'Outfit-SemiBold',
     fontSize: 13,
-    color: colors.textSecondary,
+    color: colors.secondary,
   },
+
+  // Screen 4 styles
+  celebrationIconContainer: {
+    marginBottom: 15,
+    alignItems: 'center',
+  },
+  featurePills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  featurePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 15,
+    elevation: 4,
+    gap: 6,
+  },
+  pillText: {
+    fontFamily: 'Outfit-Medium',
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+
+  // Footer styles
   footer: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+    backgroundColor: 'transparent',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   paginationContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   paginationDot: {
-    height: 10,
-    borderRadius: 5,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: colors.primary,
-    marginHorizontal: 5,
+    marginHorizontal: 4,
   },
   nextButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 18,
+    paddingVertical: 14,
+    borderRadius: 14,
     gap: 8,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
+    shadowColor: colors.primaryAccent,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
     elevation: 8,
   },
   nextButtonText: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 17,
-    color: '#FFFFFF',
+    fontFamily: 'Outfit-Medium',
+    fontSize: 16,
+    color: colors.textWhite,
+    letterSpacing: 0.8,
   },
   nextButtonArrow: {
-    fontSize: 18,
-    color: '#FFFFFF',
+    fontSize: 16,
+    color: colors.textWhite,
   },
-  secondaryButton: {
-    marginTop: 12,
-    paddingVertical: 16,
-    borderRadius: 18,
-    backgroundColor: colors.backgroundCard,
-    borderWidth: 2,
-    borderColor: colors.primaryLight,
+  skipButton: {
     alignItems: 'center',
+    marginTop: 15,
   },
-  secondaryButtonText: {
-    fontFamily: 'Nunito-SemiBold',
-    fontSize: 15,
+  skipText: {
+    fontFamily: 'Outfit-Light',
+    fontSize: 14,
+    color: colors.textLight,
+  },
+  loginLink: {
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  loginText: {
+    fontFamily: 'Outfit-Light',
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  loginHighlight: {
+    fontFamily: 'Outfit-SemiBold',
     color: colors.primary,
   },
 });

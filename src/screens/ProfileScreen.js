@@ -1,55 +1,23 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Animated,
-  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
-
-const { width } = Dimensions.get('window');
+import { GradientText, BellIcon, ClockIcon, DiamondIcon, HelpIcon, UserIcon, ChevronRightIcon } from '../components';
 
 const menuItems = [
-  { id: '1', icon: 'settings-outline', title: 'Settings', emoji: '⚙️' },
-  { id: '2', icon: 'notifications-outline', title: 'Notifications', emoji: '🔔' },
-  { id: '3', icon: 'heart-outline', title: 'Premium', emoji: '💜' },
-  { id: '4', icon: 'help-circle-outline', title: 'Help & Support', emoji: '❓' },
+  { id: '1', iconType: 'bell', title: 'Notifications', gradientType: 'pinkBlue' },
+  { id: '2', iconType: 'clock', title: 'Reminder Settings', gradientType: 'bluePink' },
+  { id: '3', iconType: 'diamond', title: 'Premium', gradientType: 'pinkBlue' },
+  { id: '4', iconType: 'help', title: 'Help & Support', gradientType: 'bluePink' },
 ];
 
 const ProfileScreen = ({ navigation }) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-  const cardAnims = useRef(menuItems.map(() => new Animated.Value(0))).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    Animated.stagger(80, cardAnims.map(anim =>
-      Animated.spring(anim, {
-        toValue: 1,
-        friction: 8,
-        tension: 40,
-        useNativeDriver: true,
-      })
-    )).start();
-  }, []);
-
   const handleLogout = () => {
     navigation.replace('Login');
   };
@@ -61,94 +29,106 @@ const ProfileScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Header Card */}
-        <Animated.View
-          style={[
-            styles.headerCard,
-            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
-          ]}
+        {/* Profile Card with Stats */}
+        <LinearGradient
+          colors={[colors.primaryLight, colors.secondaryLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.profileCard}
         >
           <LinearGradient
-            colors={[colors.primaryLight, '#FFD6C8']}
-            style={styles.headerGradient}
+            colors={[colors.primaryAccent, colors.secondary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.avatar}
           >
-            {/* Avatar */}
-            <View style={styles.avatarContainer}>
-              <LinearGradient
-                colors={[colors.primary, colors.primaryDark]}
-                style={styles.avatar}
-              >
-                <Text style={styles.avatarEmoji}>👩</Text>
-              </LinearGradient>
-            </View>
-
-            {/* Name & Email */}
-            <Text style={styles.userName}>Sarah Johnson</Text>
-            <Text style={styles.userEmail}>sarah@email.com</Text>
-
-            {/* Stats */}
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>24</Text>
-                <Text style={styles.statLabel}>Events</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>15</Text>
-                <Text style={styles.statLabel}>Gifts</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>4</Text>
-                <Text style={styles.statLabel}>Circles</Text>
-              </View>
-            </View>
+            <UserIcon size={36} color={colors.textWhite} />
           </LinearGradient>
-        </Animated.View>
+          <Text style={styles.userName}>Anna Johnson</Text>
+          <Text style={styles.userEmail}>anna@email.com</Text>
+
+          {/* Stats Row */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <GradientText
+                style={styles.statValue}
+                colors={[colors.primary, colors.secondary]}
+              >
+                12
+              </GradientText>
+              <Text style={styles.statLabel}>Contacts</Text>
+            </View>
+            <View style={styles.statItem}>
+              <GradientText
+                style={styles.statValue}
+                colors={[colors.primary, colors.secondary]}
+              >
+                8
+              </GradientText>
+              <Text style={styles.statLabel}>This month</Text>
+            </View>
+            <View style={styles.statItem}>
+              <GradientText
+                style={styles.statValue}
+                colors={[colors.primary, colors.secondary]}
+              >
+                5
+              </GradientText>
+              <Text style={styles.statLabel}>Gift ideas</Text>
+            </View>
+          </View>
+        </LinearGradient>
 
         {/* Menu Items */}
         <View style={styles.menuSection}>
-          {menuItems.map((item, index) => (
-            <Animated.View
-              key={item.id}
-              style={[
-                styles.menuItemWrapper,
-                {
-                  opacity: cardAnims[index],
-                  transform: [{
-                    translateX: cardAnims[index].interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [-20, 0],
-                    })
-                  }]
-                }
-              ]}
-            >
-              <TouchableOpacity style={styles.menuItem} activeOpacity={0.8}>
-                <View style={styles.menuIcon}>
-                  <Text style={styles.menuEmoji}>{item.emoji}</Text>
-                </View>
+          {menuItems.map((item) => {
+            const iconColor = item.gradientType === 'pinkBlue' ? colors.primary : colors.secondary;
+            const gradientColors = item.gradientType === 'pinkBlue'
+              ? [colors.primaryLight, colors.secondaryLight]
+              : [colors.secondaryLight, colors.primaryLight];
+
+            const renderMenuIcon = () => {
+              switch (item.iconType) {
+                case 'bell':
+                  return <BellIcon size={20} color={iconColor} />;
+                case 'clock':
+                  return <ClockIcon size={20} color={iconColor} />;
+                case 'diamond':
+                  return <DiamondIcon size={20} color={iconColor} />;
+                case 'help':
+                  return <HelpIcon size={20} color={iconColor} />;
+                default:
+                  return null;
+              }
+            };
+            return (
+              <TouchableOpacity key={item.id} style={styles.menuItem} activeOpacity={0.8}>
+                <LinearGradient
+                  colors={gradientColors}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.menuIcon}
+                >
+                  {renderMenuIcon()}
+                </LinearGradient>
                 <Text style={styles.menuTitle}>{item.title}</Text>
-                <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
+                <ChevronRightIcon size={20} color={colors.textLight} />
               </TouchableOpacity>
-            </Animated.View>
-          ))}
+            );
+          })}
         </View>
 
         {/* Logout Button */}
-        <Animated.View style={{ opacity: fadeAnim }}>
-          <TouchableOpacity
-            style={styles.logoutBtn}
-            onPress={handleLogout}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.logoutText}>Sign Out</Text>
-          </TouchableOpacity>
-        </Animated.View>
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={handleLogout}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.logoutText}>Log Out</Text>
+        </TouchableOpacity>
 
-        {/* Version */}
-        <Text style={styles.version}>Version 1.0.0</Text>
-
-        {/* Bottom spacing */}
-        <View style={{ height: 120 }} />
+        {/* Bottom spacing for tab bar */}
+        <View style={{ height: 100 }} />
       </ScrollView>
     </View>
   );
@@ -163,129 +143,96 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 60,
-    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingHorizontal: 16,
   },
-  headerCard: {
-    marginBottom: 28,
-    borderRadius: 32,
-    overflow: 'hidden',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  headerGradient: {
-    padding: 28,
+  profileCard: {
+    borderRadius: 24,
+    padding: 25,
     alignItems: 'center',
-  },
-  avatarContainer: {
-    marginBottom: 16,
+    marginBottom: 25,
   },
   avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 12,
     borderWidth: 4,
-    borderColor: '#FFFFFF',
-    shadowColor: colors.primary,
+    borderColor: colors.background,
+    shadowColor: colors.primaryAccent,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
-    shadowRadius: 15,
+    shadowRadius: 25,
     elevation: 8,
   },
-  avatarEmoji: {
-    fontSize: 45,
-  },
   userName: {
-    fontFamily: 'Nunito-ExtraBold',
-    fontSize: 24,
+    fontFamily: 'Outfit-Bold',
+    fontSize: 20,
     color: colors.textPrimary,
     marginBottom: 4,
   },
   userEmail: {
-    fontFamily: 'Nunito-Regular',
+    fontFamily: 'Outfit-Light',
     fontSize: 14,
     color: colors.textSecondary,
-    marginBottom: 20,
+    marginBottom: 18,
   },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 40,
+    gap: 30,
   },
   statItem: {
     alignItems: 'center',
   },
   statValue: {
-    fontFamily: 'Nunito-ExtraBold',
-    fontSize: 24,
+    fontFamily: 'Outfit-Bold',
+    fontSize: 22,
     color: colors.primary,
   },
   statLabel: {
-    fontFamily: 'Nunito-SemiBold',
-    fontSize: 12,
+    fontFamily: 'Outfit-Light',
+    fontSize: 11,
     color: colors.textLight,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 4,
   },
   menuSection: {
-    marginBottom: 24,
-  },
-  menuItemWrapper: {
-    marginBottom: 12,
+    marginBottom: 20,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.backgroundCard,
-    borderRadius: 18,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 2,
+    backgroundColor: colors.backgroundGray,
+    borderRadius: 16,
+    marginBottom: 10,
   },
   menuIcon: {
-    width: 46,
-    height: 46,
+    width: 44,
+    height: 44,
     borderRadius: 14,
-    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,
   },
-  menuEmoji: {
-    fontSize: 22,
-  },
   menuTitle: {
     flex: 1,
-    fontFamily: 'Nunito-SemiBold',
-    fontSize: 16,
+    fontFamily: 'Outfit-Medium',
+    fontSize: 15,
     color: colors.textPrimary,
   },
   logoutBtn: {
-    backgroundColor: colors.primaryLight,
-    borderRadius: 18,
-    padding: 18,
+    backgroundColor: colors.backgroundGray,
+    borderRadius: 16,
+    padding: 16,
     alignItems: 'center',
     marginBottom: 20,
   },
   logoutText: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 16,
-    color: colors.primary,
-  },
-  version: {
-    fontFamily: 'Nunito-Regular',
-    textAlign: 'center',
-    fontSize: 13,
-    color: colors.textLight,
+    fontFamily: 'Outfit-Medium',
+    fontSize: 15,
+    color: colors.textSecondary,
   },
 });
 
