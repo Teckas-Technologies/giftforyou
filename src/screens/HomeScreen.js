@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,35 +6,105 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
-  Dimensions,
+  Easing,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme';
+import MaskedView from '@react-native-masked-view/masked-view';
+import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
+import { useFocusEffect } from '@react-navigation/native';
+import { getDashboardStats, getUpcomingEvents, getProfile } from '../services/api';
 
-const { width } = Dimensions.get('window');
+// Users Icon SVG
+const UsersIcon = ({ size = 18, color = '#ca9ad6' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+    <Circle cx="9" cy="7" r="4" />
+    <Path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+    <Path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </Svg>
+);
 
-// Mock data
-const upcomingEvents = [
-  {
-    id: '1',
-    name: "Mom's Birthday",
-    date: 'December 15, 2024',
-    daysUntil: 3,
-    emoji: '🎂',
-    type: 'birthday',
-  },
-  {
-    id: '2',
-    name: 'Anniversary',
-    date: 'December 20, 2024',
-    daysUntil: 8,
-    emoji: '💝',
-    type: 'anniversary',
-  },
-];
+// Calendar Icon SVG
+const CalendarIcon = ({ size = 18, color = '#ca9ad6' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+    <Line x1="16" y1="2" x2="16" y2="6" />
+    <Line x1="8" y1="2" x2="8" y2="6" />
+    <Line x1="3" y1="10" x2="21" y2="10" />
+  </Svg>
+);
+
+// Gift Icon SVG
+const GiftIcon = ({ size = 18, color = '#ca9ad6' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Rect x="3" y="8" width="18" height="12" rx="2" />
+    <Path d="M12 8V3" />
+    <Path d="M3 12h18" />
+  </Svg>
+);
+
+// Sparkle Icon
+const SparkleIcon = ({ size = 16, color = '#70d0dd' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+    <Path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
+  </Svg>
+);
+
+// Helper to get initials from name
+const getInitials = (name) => {
+  if (!name) return '?';
+  const parts = name.trim().split(' ');
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+};
+
+// Helper to format date
+const formatEventDate = (dateStr) => {
+  const date = new Date(dateStr);
+  const day = date.getDate();
+  const month = date.toLocaleString('default', { month: 'long' });
+  return `${day}. ${month}`;
+};
+
+// Helper to get days until event
+const getDaysUntil = (dateStr) => {
+  const eventDate = new Date(dateStr);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  eventDate.setHours(0, 0, 0, 0);
+  const diffTime = eventDate - today;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+};
+
+// Helper to get badge info
+const getBadgeInfo = (daysUntil) => {
+  if (daysUntil === 0) return { text: 'today', type: 'urgent' };
+  if (daysUntil === 1) return { text: 'tomorrow', type: 'urgent' };
+  if (daysUntil <= 7) return { text: `in ${daysUntil} days`, type: 'soon' };
+  return { text: `in ${daysUntil} days`, type: 'normal' };
+};
+
+const getAvatarStyle = (index) => {
+  if (index % 2 === 0) {
+    return { bg: '#fbe5f5', color: '#ca9ad6', colorType: 'pink' };
+  }
+  return { bg: '#ccf9ff', color: '#70d0dd', colorType: 'blue' };
+};
 
 const HomeScreen = ({ navigation }) => {
+  // State
+  const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState('');
+  const [stats, setStats] = useState({
+    contactsCount: 0,
+    upcomingEventsCount: 0,
+    giftsGivenCount: 0,
+  });
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+
   // Animation values
   const headerAnim = useRef(new Animated.Value(0)).current;
   const statsAnims = useRef([
@@ -43,19 +113,73 @@ const HomeScreen = ({ navigation }) => {
     new Animated.Value(0),
   ]).current;
   const sectionAnim = useRef(new Animated.Value(0)).current;
-  const eventAnims = useRef(upcomingEvents.map(() => new Animated.Value(0))).current;
+  const cardAnims = useRef([...Array(5)].map(() => new Animated.Value(0))).current;
+  const quickAnim = useRef(new Animated.Value(0)).current;
+
+  // Premium animations
+  const floatAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
+  const sparkleAnim = useRef(new Animated.Value(0)).current;
+  const breatheAnim = useRef(new Animated.Value(1)).current;
+
+  // Fetch data from API - auto-refresh when screen comes into focus
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      // Fetch all data in parallel
+      const [profileRes, statsRes, eventsRes] = await Promise.all([
+        getProfile().catch(() => ({ user: { name: 'User' } })),
+        getDashboardStats().catch(() => ({ contactsCount: 0, upcomingEventsCount: 0, giftsGivenCount: 0 })),
+        getUpcomingEvents(5).catch(() => ({ events: [] })),
+      ]);
+
+      // Set user name
+      if (profileRes?.user?.name) {
+        setUserName(profileRes.user.name.split(' ')[0]); // First name only
+      }
+
+      // Set stats
+      if (statsRes) {
+        setStats({
+          contactsCount: statsRes.contactsCount || 0,
+          upcomingEventsCount: statsRes.upcomingEventsCount || 0,
+          giftsGivenCount: statsRes.giftsGivenCount || 0,
+        });
+      }
+
+      // Set upcoming events
+      if (eventsRes?.events) {
+        setUpcomingEvents(eventsRes.events);
+      }
+    } catch (error) {
+      console.error('Error fetching home data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData])
+  );
 
   useEffect(() => {
+    // Entry animations with spring physics
     Animated.sequence([
-      Animated.timing(headerAnim, {
+      Animated.spring(headerAnim, {
         toValue: 1,
-        duration: 400,
+        friction: 8,
+        tension: 40,
         useNativeDriver: true,
       }),
-      Animated.stagger(100, statsAnims.map(anim =>
-        Animated.timing(anim, {
+      Animated.stagger(80, statsAnims.map(anim =>
+        Animated.spring(anim, {
           toValue: 1,
-          duration: 350,
+          friction: 6,
+          tension: 50,
           useNativeDriver: true,
         })
       )),
@@ -64,15 +188,103 @@ const HomeScreen = ({ navigation }) => {
         duration: 300,
         useNativeDriver: true,
       }),
-      Animated.stagger(100, eventAnims.map(anim =>
+      Animated.stagger(100, cardAnims.map(anim =>
         Animated.spring(anim, {
           toValue: 1,
-          friction: 8,
-          tension: 40,
+          friction: 7,
+          tension: 45,
           useNativeDriver: true,
         })
       )),
+      Animated.spring(quickAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }),
     ]).start();
+
+    // Continuous floating animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, {
+          toValue: 1,
+          duration: 3000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim, {
+          toValue: 0,
+          duration: 3000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    // Pulse animation for icons
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.15,
+          duration: 1500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    // Glow animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 2000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0,
+          duration: 2000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    // Sparkle rotation
+    Animated.loop(
+      Animated.timing(sparkleAnim, {
+        toValue: 1,
+        duration: 4000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+
+    // Breathe animation for cards
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(breatheAnim, {
+          toValue: 1.02,
+          duration: 2500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(breatheAnim, {
+          toValue: 1,
+          duration: 2500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
   }, []);
 
   const getGreeting = () => {
@@ -87,136 +299,248 @@ const HomeScreen = ({ navigation }) => {
     transform: [{
       translateY: anim.interpolate({
         inputRange: [0, 1],
-        outputRange: [15, 0],
+        outputRange: [25, 0],
+      }),
+    }, {
+      scale: anim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.9, 1],
       }),
     }],
   });
 
-  const createSlideStyle = (anim) => ({
-    opacity: anim,
-    transform: [{
-      translateX: anim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [-20, 0],
-      }),
-    }],
+  const floatTranslateY = floatAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -8],
+  });
+
+  const sparkleRotate = sparkleAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const glowOpacity = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.7],
   });
 
   return (
     <View style={styles.container}>
-      {/* Background Glow */}
-      <View style={styles.backgroundGlow} />
+      {/* Background Gradient - Diagonal */}
+      <LinearGradient
+        colors={['#FFFFFF', '#fbe5f5', '#ccf9ff', '#FFFFFF']}
+        locations={[0, 0.3, 0.7, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
 
-      {/* Header */}
-      <Animated.View style={[styles.header, createFadeStyle(headerAnim)]}>
-        <View>
-          <Text style={styles.greeting}>{getGreeting()}</Text>
-          <Text style={styles.userName}>Sarah Johnson</Text>
-        </View>
-        <View style={styles.avatarContainer}>
-          <LinearGradient
-            colors={['#E07B5C', '#D06A4C']}
-            style={styles.avatar}
-          >
-            <Text style={styles.avatarText}>SJ</Text>
-          </LinearGradient>
-        </View>
+      {/* Floating Decorative Elements */}
+      <Animated.View style={[styles.floatingSparkle1, {
+        transform: [{ rotate: sparkleRotate }, { translateY: floatTranslateY }],
+        opacity: glowOpacity
+      }]}>
+        <SparkleIcon size={20} color="#ca9ad6" />
+      </Animated.View>
+      <Animated.View style={[styles.floatingSparkle2, {
+        transform: [{ rotate: sparkleRotate }, { translateY: floatTranslateY }],
+        opacity: glowOpacity
+      }]}>
+        <SparkleIcon size={14} color="#70d0dd" />
       </Animated.View>
 
       <ScrollView
-        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Stats Row */}
-        <View style={styles.statsRow}>
-          <Animated.View style={[styles.statBox, createFadeStyle(statsAnims[0])]}>
-            <Text style={[styles.statNum, { color: '#E07B5C' }]}>12</Text>
-            <Text style={styles.statLabel}>Upcoming</Text>
-          </Animated.View>
-          <Animated.View style={[styles.statBox, createFadeStyle(statsAnims[1])]}>
-            <Text style={[styles.statNum, { color: '#6B7FD7' }]}>48</Text>
-            <Text style={styles.statLabel}>Contacts</Text>
-          </Animated.View>
-          <Animated.View style={[styles.statBox, createFadeStyle(statsAnims[2])]}>
-            <Text style={[styles.statNum, { color: '#4CAF78' }]}>23</Text>
-            <Text style={styles.statLabel}>Gifts</Text>
-          </Animated.View>
-        </View>
-
-        {/* Section Header */}
-        <Animated.View style={[styles.sectionHeader, createFadeStyle(sectionAnim)]}>
-          <Text style={styles.sectionTitle}>Upcoming Events</Text>
-          <TouchableOpacity>
-            <Text style={styles.seeAllBtn}>See all</Text>
-          </TouchableOpacity>
+        {/* Header with float animation */}
+        <Animated.View style={[
+          styles.header,
+          createFadeStyle(headerAnim),
+          { transform: [{ translateY: floatTranslateY }] }
+        ]}>
+          <Text style={styles.homeLabel}>HOME</Text>
+          <MaskedView
+            maskElement={
+              <Text style={styles.greetingMask}>{getGreeting()}, {userName || 'there'}!</Text>
+            }
+          >
+            <LinearGradient
+              colors={['#330c54', '#6b3a8a']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Text style={[styles.greetingMask, { opacity: 0 }]}>{getGreeting()}, {userName || 'there'}!</Text>
+            </LinearGradient>
+          </MaskedView>
         </Animated.View>
 
-        {/* Event Cards */}
-        <View style={styles.eventsList}>
-          {upcomingEvents.map((event, index) => (
+        {/* Stats Row with enhanced animations */}
+        <View style={styles.statsRow}>
+          {[
+            { icon: UsersIcon, value: String(stats.contactsCount), label: 'Contacts', colors: ['#fbe5f5', '#f4cae8', '#ccf9ff'] },
+            { icon: CalendarIcon, value: String(stats.upcomingEventsCount), label: 'Events', colors: ['#ccf9ff', '#a8e6f0', '#fbe5f5'] },
+            { icon: GiftIcon, value: String(stats.giftsGivenCount), label: 'Gifts', colors: ['#fbe5f5', '#f4cae8', '#ccf9ff'] },
+          ].map((stat, index) => (
             <Animated.View
-              key={event.id}
-              style={[styles.eventCard, createSlideStyle(eventAnims[index])]}
+              key={index}
+              style={[
+                styles.statCardContainer,
+                createFadeStyle(statsAnims[index]),
+                { transform: [{ scale: breatheAnim }] }
+              ]}
             >
-              <TouchableOpacity style={styles.eventCardInner} activeOpacity={0.8}>
-                <View style={[
-                  styles.eventIcon,
-                  { backgroundColor: event.type === 'birthday' ? '#FEF3F0' : '#F0F4FE' }
+              <LinearGradient
+                colors={stat.colors}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.statCard}
+              >
+                {/* Glow effect */}
+                <Animated.View style={[styles.statGlow, { opacity: glowOpacity }]} />
+
+                <Animated.View style={[
+                  styles.statIcon,
+                  { transform: [{ scale: pulseAnim }] }
                 ]}>
-                  <Text style={styles.eventEmoji}>{event.emoji}</Text>
-                </View>
-                <View style={styles.eventInfo}>
-                  <Text style={styles.eventName}>{event.name}</Text>
-                  <Text style={styles.eventDate}>{event.date}</Text>
-                </View>
-                {event.daysUntil <= 5 ? (
-                  <LinearGradient
-                    colors={['#E07B5C', '#D06A4C']}
-                    style={styles.eventBadgeSoon}
-                  >
-                    <Text style={styles.eventBadgeSoonText}>{event.daysUntil} days</Text>
-                  </LinearGradient>
-                ) : (
-                  <View style={styles.eventBadgeLater}>
-                    <Text style={styles.eventBadgeLaterText}>{event.daysUntil} days</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+                  <stat.icon size={20} color="#ca9ad6" />
+                </Animated.View>
+                <Text style={styles.statValue}>{stat.value}</Text>
+                <Text style={styles.statLabel}>{stat.label}</Text>
+              </LinearGradient>
             </Animated.View>
           ))}
         </View>
 
-        {/* Quick Actions */}
-        <Animated.View style={[styles.quickActionsSection, createFadeStyle(sectionAnim)]}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActionsRow}>
-            <TouchableOpacity style={styles.quickActionBtn} activeOpacity={0.8}>
+        {/* Section Header */}
+        <Animated.View style={[styles.sectionHeader, createFadeStyle(sectionAnim)]}>
+          <Text style={styles.sectionLabel}>Upcoming events</Text>
+          <TouchableOpacity style={styles.seeAllBtn} onPress={() => navigation.navigate('Calendar')}>
+            <MaskedView
+              maskElement={
+                <Text style={styles.seeAllMask}>See all →</Text>
+              }
+            >
               <LinearGradient
-                colors={['#E07B5C', '#D06A4C']}
-                style={styles.quickActionIcon}
+                colors={['#ca9ad6', '#70d0dd']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
               >
-                <Ionicons name="add" size={24} color="#FFFFFF" />
+                <Text style={[styles.seeAllMask, { opacity: 0 }]}>See all →</Text>
               </LinearGradient>
-              <Text style={styles.quickActionText}>Add Event</Text>
+            </MaskedView>
+          </TouchableOpacity>
+        </Animated.View>
+
+        {/* Event Cards with premium styling */}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#ca9ad6" />
+          </View>
+        ) : upcomingEvents.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No upcoming events</Text>
+            <Text style={styles.emptySubtext}>Add events to see them here</Text>
+          </View>
+        ) : (
+          upcomingEvents.slice(0, 5).map((event, index) => {
+            const avatarStyle = getAvatarStyle(index);
+            const daysUntil = getDaysUntil(event.event_date || event.eventDate);
+            const badgeInfo = getBadgeInfo(daysUntil);
+            const contactName = event.contact_name || event.title || 'Event';
+
+            return (
+              <Animated.View
+                key={event.id}
+                style={[styles.birthdayCard, createFadeStyle(cardAnims[index] || cardAnims[0])]}
+              >
+                <TouchableOpacity
+                  style={styles.birthdayCardInner}
+                  activeOpacity={0.7}
+                  onPress={() => navigation.navigate('Calendar')}
+                >
+                  {/* Card glow effect */}
+                  <Animated.View style={[
+                    styles.cardGlow,
+                    {
+                      backgroundColor: avatarStyle.colorType === 'pink' ? '#fbe5f5' : '#ccf9ff',
+                      opacity: glowOpacity
+                    }
+                  ]} />
+
+                  <Animated.View style={[
+                    styles.birthdayAvatar,
+                    { backgroundColor: avatarStyle.bg },
+                    { transform: [{ scale: pulseAnim }] }
+                  ]}>
+                    <Text style={[styles.birthdayAvatarText, { color: avatarStyle.color }]}>
+                      {getInitials(contactName)}
+                    </Text>
+                  </Animated.View>
+                  <View style={styles.birthdayInfo}>
+                    <Text style={styles.birthdayName}>{contactName}</Text>
+                    <Text style={styles.birthdayRelation}>{event.event_type || event.eventType || 'Event'}</Text>
+                  </View>
+                  <View style={styles.birthdayDateInfo}>
+                    <Text style={styles.birthdayDate}>{formatEventDate(event.event_date || event.eventDate)}</Text>
+                    {badgeInfo.type === 'urgent' ? (
+                      <LinearGradient
+                        colors={['#f4cae8', '#70d0dd']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.badgeUrgent}
+                      >
+                        <Text style={styles.badgeUrgentText}>{badgeInfo.text}</Text>
+                      </LinearGradient>
+                    ) : (
+                      <LinearGradient
+                        colors={['#fbe5f5', '#ccf9ff']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.badgeSoon}
+                      >
+                        <Text style={styles.badgeSoonText}>{badgeInfo.text}</Text>
+                      </LinearGradient>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              </Animated.View>
+            );
+          })
+        )}
+
+        {/* Quick Actions with premium styling */}
+        <Animated.View style={[styles.quickSection, createFadeStyle(quickAnim)]}>
+          <Text style={styles.quickTitle}>Quick actions</Text>
+          <View style={styles.quickRow}>
+            <TouchableOpacity style={styles.quickBtnContainer} activeOpacity={0.8} onPress={() => navigation.navigate('AddContact')}>
+              <Animated.View style={{ transform: [{ scale: breatheAnim }] }}>
+                <LinearGradient
+                  colors={['#fbe5f5', '#f4cae8', '#ccf9ff']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.quickBtn}
+                >
+                  <Text style={styles.quickBtnIcon}>👤</Text>
+                  <Text style={styles.quickBtnTextPink}>Add Contact</Text>
+                </LinearGradient>
+              </Animated.View>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.quickActionBtn} activeOpacity={0.8}>
-              <View style={[styles.quickActionIconOutline, { borderColor: '#6B7FD7' }]}>
-                <Ionicons name="people-outline" size={22} color="#6B7FD7" />
-              </View>
-              <Text style={styles.quickActionText}>New Circle</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickActionBtn} activeOpacity={0.8}>
-              <View style={[styles.quickActionIconOutline, { borderColor: '#4CAF78' }]}>
-                <Ionicons name="gift-outline" size={22} color="#4CAF78" />
-              </View>
-              <Text style={styles.quickActionText}>Find Gift</Text>
+            <TouchableOpacity style={styles.quickBtnContainer} activeOpacity={0.8} onPress={() => navigation.navigate('AddEvent')}>
+              <Animated.View style={{ transform: [{ scale: breatheAnim }] }}>
+                <LinearGradient
+                  colors={['#ccf9ff', '#a8e6f0', '#fbe5f5']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.quickBtn}
+                >
+                  <Text style={styles.quickBtnIcon}>🎁</Text>
+                  <Text style={styles.quickBtnTextBlue}>Add Event</Text>
+                </LinearGradient>
+              </Animated.View>
             </TouchableOpacity>
           </View>
         </Animated.View>
-
-        {/* Bottom spacing for tab bar */}
-        <View style={{ height: 100 }} />
       </ScrollView>
     </View>
   );
@@ -225,222 +549,272 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-  backgroundGlow: {
-    position: 'absolute',
-    top: -40,
-    right: -40,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: 'rgba(224, 123, 92, 0.12)',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-  },
-  greeting: {
-    fontSize: 14,
-    color: '#888888',
-    marginBottom: 4,
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  avatarContainer: {
-    shadowColor: '#E07B5C',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  scrollView: {
-    flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
+    paddingTop: 50,
+    paddingBottom: 120,
   },
-  // Stats
+  floatingSparkle1: {
+    position: 'absolute',
+    top: 100,
+    right: 30,
+    zIndex: 1,
+  },
+  floatingSparkle2: {
+    position: 'absolute',
+    top: 180,
+    left: 25,
+    zIndex: 1,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  homeLabel: {
+    fontSize: 11,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  greetingMask: {
+    fontSize: 26,
+    fontFamily: 'Handlee_400Regular',
+    letterSpacing: 0.5,
+  },
   statsRow: {
     flexDirection: 'row',
+    justifyContent: 'center',
     gap: 12,
     marginBottom: 28,
   },
-  statBox: {
+  statCardContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    paddingVertical: 18,
-    paddingHorizontal: 14,
+  },
+  statCard: {
     alignItems: 'center',
-    shadowColor: '#000',
+    padding: 16,
+    borderRadius: 22,
+    overflow: 'hidden',
+    shadowColor: '#ca9ad6',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.25,
     shadowRadius: 16,
+    elevation: 8,
+  },
+  statGlow: {
+    position: 'absolute',
+    top: -20,
+    left: -20,
+    right: -20,
+    bottom: -20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 50,
+  },
+  statIcon: {
+    width: 48,
+    height: 48,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+    shadowColor: '#ca9ad6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
     elevation: 4,
   },
-  statNum: {
+  statValue: {
     fontSize: 28,
-    fontWeight: '700',
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
   },
   statLabel: {
-    fontSize: 12,
-    color: '#888888',
-    marginTop: 4,
+    fontSize: 11,
+    fontFamily: 'Handlee_400Regular',
+    color: '#4a1a6b',
+    letterSpacing: 0.3,
+    marginTop: 2,
   },
-  // Section
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  sectionTitle: {
+  sectionLabel: {
     fontSize: 18,
-    fontWeight: '600',
-    color: colors.textPrimary,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    letterSpacing: 0.3,
   },
   seeAllBtn: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#E07B5C',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
   },
-  // Events
-  eventsList: {
-    marginBottom: 28,
+  seeAllMask: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
   },
-  eventCard: {
+  birthdayCard: {
     marginBottom: 12,
   },
-  eventCardInner: {
+  birthdayCardInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 16,
-    gap: 14,
-    shadowColor: '#000',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: 20,
+    padding: 14,
+    gap: 12,
+    shadowColor: '#6b3a8a',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 6,
+    overflow: 'hidden',
   },
-  eventIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
+  cardGlow: {
+    position: 'absolute',
+    top: -50,
+    right: -50,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  birthdayAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  eventEmoji: {
-    fontSize: 26,
-  },
-  eventInfo: {
-    flex: 1,
-  },
-  eventName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 4,
-  },
-  eventDate: {
-    fontSize: 13,
-    color: '#888888',
-  },
-  eventBadgeSoon: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    shadowColor: '#E07B5C',
+    shadowColor: '#ca9ad6',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
-  eventBadgeSoonText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#FFFFFF',
+  birthdayAvatarText: {
+    fontSize: 16,
+    fontFamily: 'Handlee_400Regular',
   },
-  eventBadgeLater: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: '#F0F4FE',
-  },
-  eventBadgeLaterText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#5B7FD7',
-  },
-  // Quick Actions
-  quickActionsSection: {
-    marginBottom: 20,
-  },
-  quickActionsRow: {
-    flexDirection: 'row',
-    marginTop: 16,
-    gap: 12,
-  },
-  quickActionBtn: {
+  birthdayInfo: {
     flex: 1,
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    paddingVertical: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 3,
   },
-  quickActionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-    shadowColor: '#E07B5C',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
+  birthdayName: {
+    fontSize: 16,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    letterSpacing: 0.3,
+  },
+  birthdayRelation: {
+    fontSize: 12,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    marginTop: 2,
+  },
+  birthdayDateInfo: {
+    alignItems: 'flex-end',
+  },
+  birthdayDate: {
+    fontSize: 12,
+    fontFamily: 'Handlee_400Regular',
+    color: '#4a1a6b',
+  },
+  badgeUrgent: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 12,
+    marginTop: 4,
+    shadowColor: '#f4cae8',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
     elevation: 4,
   },
-  quickActionIconOutline: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    borderWidth: 2,
+  badgeUrgentText: {
+    fontSize: 11,
+    fontFamily: 'Handlee_400Regular',
+    color: '#FFFFFF',
+  },
+  badgeSoon: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 12,
+    marginTop: 4,
+  },
+  badgeSoonText: {
+    fontSize: 11,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+  },
+  quickSection: {
+    marginTop: 20,
+  },
+  quickTitle: {
+    fontSize: 18,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    marginBottom: 12,
+    letterSpacing: 0.3,
+  },
+  quickRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  quickBtnContainer: {
+    flex: 1,
+  },
+  quickBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
-    backgroundColor: '#FAFAFA',
+    padding: 16,
+    borderRadius: 18,
+    gap: 8,
+    shadowColor: '#ca9ad6',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
-  quickActionText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.textPrimary,
+  quickBtnIcon: {
+    fontSize: 20,
+  },
+  quickBtnTextPink: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+  },
+  quickBtnTextBlue: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#4a8a9a',
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    padding: 30,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+  },
+  emptySubtext: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#999',
+    marginTop: 4,
   },
 });
 

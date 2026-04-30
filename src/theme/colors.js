@@ -1,72 +1,85 @@
 // GiftBox4you Color Palette
-// Warm Cream + Rich Coral - Celebration Theme
+// Pink & Blue - Modern Celebration Theme
 
 export const colors = {
-  // Primary Colors - Rich Coral
-  primary: '#E07B5C',            // Rich coral - main brand
-  primaryLight: '#F5E6DA',       // Light cream coral tint
-  primaryDark: '#D06A4C',        // Deep coral
+  // Primary Colors - Pink
+  primary: '#ca9ad6',              // Pink dark - main brand
+  primaryLight: '#fbe5f5',         // Pink soft/light
+  primaryAccent: '#f4cae8',        // Pink accent
+  primaryBg: '#f4cae8',            // Pink background
 
-  // Secondary Colors - Warm Gold
-  secondary: '#C4956A',          // Warm caramel gold
-  secondaryLight: '#F5EDE4',     // Light cream
-  secondaryDark: '#A67B52',      // Deep gold
-
-  // Accent Colors for slides
-  accentPurple: '#6B7FD7',       // Purple for slide 2
-  accentGreen: '#4CAF78',        // Green for slide 3
-  accentGold: '#F5A623',         // Gold for slide 4
+  // Secondary Colors - Blue
+  secondary: '#70d0dd',            // Blue accent
+  secondaryLight: '#ccf9ff',       // Blue light
+  secondaryBg: '#99f3ff',          // Blue background
 
   // Background Colors
-  background: '#FDF8F3',         // Warm cream
-  backgroundCard: '#FFFFFF',     // White cards
-  backgroundDark: '#F8EEE4',     // Soft warm tint
+  background: '#FFFFFF',           // White main
+  backgroundGradientStart: '#FDEEF3',  // Gradient start
+  backgroundGradientMid: '#EBF5FB',    // Gradient mid
+  backgroundGradientEnd: '#FBDCE9',    // Gradient end
+  backgroundCard: '#FFFFFF',       // White cards
+  backgroundGray: '#F8F9FA',       // Gray background
 
   // Text Colors
-  textPrimary: '#3D3D3D',        // Dark gray
-  textSecondary: '#777777',      // Medium gray
-  textLight: '#AAAAAA',          // Light gray
-  textWhite: '#FFFFFF',          // White
+  textDark: '#330c54',             // Dark purple
+  textMedium: '#4a1a6b',           // Medium purple
+  textLight: '#6b3a8a',            // Light purple
+  textPrimary: '#330c54',          // Same as dark
+  textSecondary: '#6b3a8a',        // Same as light
+  textWhite: '#FFFFFF',            // White
 
   // Status Colors
-  success: '#4CAF78',            // Soft green
-  warning: '#F5A623',            // Warm amber
-  error: '#E07B5C',              // Coral red
-  info: '#6B7FD7',               // Soft blue
+  success: '#4CAF78',              // Green
+  warning: '#F5A623',              // Amber
+  error: '#E57373',                // Soft red
+  info: '#70d0dd',                 // Blue
 
   // Event Type Colors
-  birthday: '#E07B5C',           // Coral
-  wedding: '#D4A088',            // Rose gold
-  babyShower: '#6B7FD7',         // Soft blue
-  anniversary: '#C4956A',        // Gold
-  custom: '#4CAF78',             // Green
+  birthday: '#ca9ad6',             // Pink
+  wedding: '#f4cae8',              // Light pink
+  babyShower: '#70d0dd',           // Blue
+  anniversary: '#ca9ad6',          // Pink
+  custom: '#70d0dd',               // Blue
 
   // Badge Colors
-  badgeUrgent: '#E07B5C',        // Coral
-  badgeSoon: '#F5A623',          // Gold
-  badgeLater: '#4CAF78',         // Green
+  badgeUrgent: '#ca9ad6',          // Pink
+  badgeSoon: '#70d0dd',            // Blue
+  badgeLater: '#fbe5f5',           // Light pink
 
   // Gradient Colors
-  gradientStart: '#E07B5C',      // Rich Coral
-  gradientEnd: '#D06A4C',        // Deep Coral
+  gradientPinkStart: '#f4cae8',    // Pink accent
+  gradientPinkEnd: '#ca9ad6',      // Pink dark
+  gradientBlueStart: '#70d0dd',    // Blue accent
+  gradientBlueEnd: '#99f3ff',      // Blue bg
+  gradientMixStart: '#f4cae8',     // Pink to blue gradient
+  gradientMixEnd: '#70d0dd',
 
   // Border & Divider
-  border: '#F5E6DA',             // Warm light border
-  divider: '#EDE5DD',            // Warm divider
+  border: '#f4cae8',               // Pink border
+  divider: '#fbe5f5',              // Light pink divider
 
   // Overlay
-  overlay: 'rgba(61, 61, 61, 0.5)',
+  overlay: 'rgba(51, 12, 84, 0.5)', // Dark purple overlay
 
   // Input
   inputBackground: '#FFFFFF',
-  inputBorder: '#F5E6DA',
-  inputFocusBorder: '#E07B5C',
-  placeholder: '#AAAAAA',
+  inputBorder: '#f4cae8',
+  inputFocusBorder: '#ca9ad6',
+  placeholder: '#6b3a8a',
 
   // Tab Bar
   tabBarBackground: '#FFFFFF',
-  tabBarActive: '#E07B5C',
-  tabBarInactive: '#AAAAAA',
+  tabBarActive: '#ca9ad6',
+  tabBarInactive: '#6b3a8a',
+
+  // Relation Tags
+  tagFamily: '#fbe5f5',
+  tagFamilyText: '#ca9ad6',
+  tagFriend: '#ccf9ff',
+  tagFriendText: '#70d0dd',
+  tagWork: '#E8F5E9',
+  tagWorkText: '#43A047',
 };
 
 export default colors;

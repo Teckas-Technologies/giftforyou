@@ -1,11 +1,20 @@
 // GiftBox4you Typography System
 
 export const typography = {
-  // Font Families (using system fonts)
+  // Font Families
   fontFamily: {
-    regular: 'System',
-    medium: 'System',
-    bold: 'System',
+    // Logo font (Style Script)
+    logo: 'StyleScript_400Regular',
+    // App content font (Handlee)
+    regular: 'Handlee_400Regular',
+    // Fallback to Outfit for components not yet migrated
+    outfit: {
+      light: 'Outfit_300Light',
+      regular: 'Outfit_400Regular',
+      medium: 'Outfit_500Medium',
+      semibold: 'Outfit_600SemiBold',
+      bold: 'Outfit_700Bold',
+    },
   },
 
   // Font Sizes

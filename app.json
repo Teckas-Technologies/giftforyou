@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FFF5F8"
+      "backgroundColor": "#FDEEF3"
     },
     "ios": {
       "supportsTablet": true,
@@ -19,13 +19,23 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFF5F8"
+        "backgroundColor": "#FDEEF3"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.giftbox4you.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FDEEF3",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200
+        }
+      ]
+    ]
   }
 }

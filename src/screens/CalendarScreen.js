@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,53 +6,310 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
+  Easing,
+  Dimensions,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import MaskedView from '@react-native-masked-view/masked-view';
+import Svg, { Path } from 'react-native-svg';
+import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme';
+import { getEventDates, getUpcomingEvents } from '../services/api';
 
-const DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+// Plus Icon for FAB
+const PlusIcon = ({ size = 24, color = '#FFFFFF' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 5v14M5 12h14"
+      stroke={color}
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const { width } = Dimensions.get('window');
+
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-// Mock events
-const eventsData = {
-  5: { name: "Dad's Birthday", type: 'birthday' },
-  12: { name: 'Today', type: 'today' },
-  15: { name: "Mom's Birthday", type: 'birthday' },
-  20: { name: 'Anniversary', type: 'anniversary' },
+// Helper to get event emoji based on type
+const getEventEmoji = (eventType) => {
+  const emojis = {
+    'Birthday': '🎂',
+    'Anniversary': '💍',
+    'Wedding': '💒',
+    'Graduation': '🎓',
+    'Holiday': '🎉',
+    'Other': '🎁',
+  };
+  return emojis[eventType] || '🎁';
 };
 
+// Helper to get days until event
+const getDaysUntil = (dateStr) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const eventDate = new Date(dateStr);
+  eventDate.setHours(0, 0, 0, 0);
+  const diffTime = eventDate - today;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Tomorrow';
+  if (diffDays < 0) return `${Math.abs(diffDays)} days ago`;
+  return `In ${diffDays} days`;
+};
+
+// Helper to format date for display
+const formatEventDate = (dateStr) => {
+  const date = new Date(dateStr);
+  return `${MONTHS[date.getMonth()].substring(0, 3)} ${date.getDate()}`;
+};
+
+// Sparkle decoration component
+const Sparkle = ({ style, size = 8, color = '#f4cae8' }) => (
+  <Animated.View style={[styles.sparkle, style]}>
+    <View style={[styles.sparkleInner, { width: size, height: size, backgroundColor: color }]} />
+  </Animated.View>
+);
+
 const CalendarScreen = ({ navigation }) => {
-  const [currentMonth, setCurrentMonth] = useState(11); // December
-  const [currentYear, setCurrentYear] = useState(2024);
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [eventDates, setEventDates] = useState({});
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const today = new Date().getDate();
+  const currentMonthNow = new Date().getMonth();
+  const currentYearNow = new Date().getFullYear();
+
+  // Fetch event dates for calendar and upcoming events
+  const fetchEvents = useCallback(async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
+      const [datesRes, upcomingRes] = await Promise.all([
+        getEventDates(currentYear, currentMonth + 1).catch(() => ({ dates: [] })),
+        getUpcomingEvents(5).catch(() => ({ events: [] })),
+      ]);
+
+      // Convert dates array to object with day as key
+      const datesObj = {};
+      if (datesRes.dates && Array.isArray(datesRes.dates)) {
+        datesRes.dates.forEach(date => {
+          const day = new Date(date.date || date).getDate();
+          datesObj[day] = date;
+        });
+      }
+      setEventDates(datesObj);
+
+      // Transform upcoming events
+      const events = (upcomingRes.events || []).map(event => ({
+        id: event.id || event._id,
+        title: event.title,
+        eventType: event.eventType,
+        eventDate: event.eventDate,
+        date: formatEventDate(event.eventDate),
+        emoji: getEventEmoji(event.eventType),
+        desc: getDaysUntil(event.eventDate),
+      }));
+      setUpcomingEvents(events);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [currentMonth, currentYear]);
+
+  // Auto-refresh when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchEvents();
+    }, [fetchEvents])
+  );
+
+  const onRefresh = useCallback(() => {
+    fetchEvents(true);
+  }, [fetchEvents]);
 
   // Animations
   const headerAnim = useRef(new Animated.Value(0)).current;
   const calendarAnim = useRef(new Animated.Value(0)).current;
-  const upcomingAnim = useRef(new Animated.Value(0)).current;
+  const eventsAnim = useRef(new Animated.Value(0)).current;
+
+  // Premium animations
+  const floatAnim = useRef(new Animated.Value(0)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const sparkleAnim1 = useRef(new Animated.Value(0)).current;
+  const sparkleAnim2 = useRef(new Animated.Value(0)).current;
+  const sparkleAnim3 = useRef(new Animated.Value(0)).current;
+  const todayPulse = useRef(new Animated.Value(1)).current;
+  const fabScale = useRef(new Animated.Value(0)).current;
+  const fabRotate = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Entry animations
     Animated.sequence([
       Animated.timing(headerAnim, {
         toValue: 1,
         duration: 400,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-      Animated.spring(calendarAnim, {
+      Animated.timing(calendarAnim, {
         toValue: 1,
-        friction: 8,
-        tension: 40,
+        duration: 350,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-      Animated.timing(upcomingAnim, {
+      Animated.timing(eventsAnim, {
         toValue: 1,
-        duration: 400,
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
     ]).start();
+
+    // Floating animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, {
+          toValue: 1,
+          duration: 3000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim, {
+          toValue: 0,
+          duration: 3000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    // Glow animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 2000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0,
+          duration: 2000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    // Nav button pulse
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.08,
+          duration: 1500,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    // Today cell pulse
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(todayPulse, {
+          toValue: 1.15,
+          duration: 1200,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(todayPulse, {
+          toValue: 1,
+          duration: 1200,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    // Sparkle animations
+    const createSparkleAnimation = (anim, delay) => {
+      setTimeout(() => {
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(anim, {
+              toValue: 1,
+              duration: 2500,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+            Animated.timing(anim, {
+              toValue: 0,
+              duration: 2500,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+          ])
+        ).start();
+      }, delay);
+    };
+
+    createSparkleAnimation(sparkleAnim1, 0);
+    createSparkleAnimation(sparkleAnim2, 800);
+    createSparkleAnimation(sparkleAnim3, 1600);
+
+    // FAB entry animation
+    setTimeout(() => {
+      Animated.spring(fabScale, {
+        toValue: 1,
+        friction: 5,
+        tension: 80,
+        useNativeDriver: true,
+      }).start();
+    }, 600);
+
+    // FAB pulse animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(fabRotate, {
+          toValue: 1,
+          duration: 3000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(fabRotate, {
+          toValue: 0,
+          duration: 3000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
   }, []);
 
   const createFadeStyle = (anim) => ({
@@ -60,7 +317,7 @@ const CalendarScreen = ({ navigation }) => {
     transform: [{
       translateY: anim.interpolate({
         inputRange: [0, 1],
-        outputRange: [15, 0],
+        outputRange: [20, 0],
       }),
     }],
   });
@@ -68,32 +325,27 @@ const CalendarScreen = ({ navigation }) => {
   const getDaysInMonth = () => {
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const prevMonthDays = new Date(currentYear, currentMonth, 0).getDate();
 
     const days = [];
 
-    // Previous month days
-    for (let i = firstDay - 1; i >= 0; i--) {
-      days.push({ day: prevMonthDays - i, muted: true });
+    // Empty cells for days before the 1st
+    for (let i = 0; i < firstDay; i++) {
+      days.push({ day: '', empty: true });
     }
 
     // Current month days
     for (let i = 1; i <= daysInMonth; i++) {
+      const isToday = i === today && currentMonth === currentMonthNow && currentYear === currentYearNow;
+      const hasEvent = eventDates[i] !== undefined;
       days.push({
         day: i,
-        muted: false,
-        isToday: i === 12 && currentMonth === 11,
-        hasEvent: eventsData[i] !== undefined,
+        empty: false,
+        isToday,
+        hasEvent,
       });
     }
 
-    // Fill remaining cells
-    const remaining = 35 - days.length;
-    for (let i = 1; i <= remaining; i++) {
-      days.push({ day: i, muted: true });
-    }
-
-    return days.slice(0, 35); // Show 5 weeks
+    return days;
   };
 
   const goToPrevMonth = () => {
@@ -114,130 +366,310 @@ const CalendarScreen = ({ navigation }) => {
     }
   };
 
-  const upcomingEvents = [
-    { id: '1', name: "Mom's Birthday", date: 'Dec 15', days: 3, color: '#E07B5C' },
-    { id: '2', name: 'Anniversary', date: 'Dec 20', days: 8, color: '#5B7FD7' },
-  ];
+  // Sparkle styles
+  const sparkle1Style = {
+    opacity: sparkleAnim1,
+    transform: [
+      {
+        translateY: floatAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -12],
+        }),
+      },
+      {
+        rotate: sparkleAnim1.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['0deg', '180deg'],
+        }),
+      },
+      {
+        scale: sparkleAnim1.interpolate({
+          inputRange: [0, 0.5, 1],
+          outputRange: [0.8, 1.2, 0.8],
+        }),
+      },
+    ],
+  };
+
+  const sparkle2Style = {
+    opacity: sparkleAnim2,
+    transform: [
+      {
+        translateY: floatAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -15],
+        }),
+      },
+      {
+        rotate: sparkleAnim2.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['45deg', '225deg'],
+        }),
+      },
+      {
+        scale: sparkleAnim2.interpolate({
+          inputRange: [0, 0.5, 1],
+          outputRange: [0.6, 1, 0.6],
+        }),
+      },
+    ],
+  };
+
+  const sparkle3Style = {
+    opacity: sparkleAnim3,
+    transform: [
+      {
+        translateY: floatAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -10],
+        }),
+      },
+      {
+        rotate: sparkleAnim3.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['90deg', '270deg'],
+        }),
+      },
+      {
+        scale: sparkleAnim3.interpolate({
+          inputRange: [0, 0.5, 1],
+          outputRange: [1, 0.7, 1],
+        }),
+      },
+    ],
+  };
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <Animated.View style={[styles.header, createFadeStyle(headerAnim)]}>
-        <Text style={styles.headerTitle}>Calendar</Text>
-        <TouchableOpacity style={styles.todayBtn} activeOpacity={0.8}>
-          <Text style={styles.todayBtnText}>Today</Text>
-        </TouchableOpacity>
-      </Animated.View>
+      {/* Background Gradient - Diagonal */}
+      <LinearGradient
+        colors={['#FFFFFF', '#fbe5f5', '#ccf9ff', '#FFFFFF']}
+        locations={[0, 0.3, 0.7, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* Floating Sparkles */}
+      <Sparkle style={[{ top: 60, right: 25 }, sparkle1Style]} size={10} color="#f4cae8" />
+      <Sparkle style={[{ top: 120, left: 20 }, sparkle2Style]} size={7} color="#70d0dd" />
+      <Sparkle style={[{ top: 90, right: 80 }, sparkle3Style]} size={8} color="#ca9ad6" />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#ca9ad6']}
+            tintColor="#ca9ad6"
+          />
+        }
       >
-        {/* Calendar Box */}
-        <Animated.View style={[
-          styles.calendarBox,
-          {
-            opacity: calendarAnim,
-            transform: [{
-              scale: calendarAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.95, 1],
-              }),
-            }],
-          },
-        ]}>
-          {/* Gradient Header with Month */}
-          <LinearGradient
-            colors={['#E07B5C', '#C4956A']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.calendarHeader}
+        {/* Header */}
+        <Animated.View style={[styles.header, createFadeStyle(headerAnim)]}>
+          {/* Gradient Month Text */}
+          <MaskedView
+            maskElement={
+              <Text style={styles.monthTextMask}>{MONTHS[currentMonth]}</Text>
+            }
           >
-            {/* Month Navigation */}
-            <View style={styles.monthRow}>
-              <TouchableOpacity onPress={goToPrevMonth} style={styles.monthNavBtn}>
-                <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
-              </TouchableOpacity>
-              <Text style={styles.monthLabel}>{MONTHS[currentMonth]} {currentYear}</Text>
-              <TouchableOpacity onPress={goToNextMonth} style={styles.monthNavBtn}>
-                <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
+            <LinearGradient
+              colors={['#ca9ad6', '#70d0dd']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Text style={[styles.monthTextMask, { opacity: 0 }]}>{MONTHS[currentMonth]}</Text>
+            </LinearGradient>
+          </MaskedView>
 
-            {/* Weekday Headers */}
-            <View style={styles.weekdaysRow}>
-              {DAYS.map((day, index) => (
-                <View key={index} style={styles.weekdayCell}>
-                  <Text style={styles.weekdayText}>{day}</Text>
-                </View>
-              ))}
-            </View>
-          </LinearGradient>
+          <Animated.Text style={[
+            styles.yearText,
+            {
+              opacity: glowAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.8, 1],
+              }),
+            }
+          ]}>
+            {currentYear}
+          </Animated.Text>
 
-          {/* Days Grid */}
-          <View style={styles.daysGrid}>
-            {getDaysInMonth().map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.dayCell}
-                activeOpacity={0.7}
-              >
-                {item.isToday ? (
-                  <LinearGradient
-                    colors={['#E07B5C', '#D06A4C']}
-                    style={styles.todayCell}
-                  >
-                    <Text style={styles.todayText}>{item.day}</Text>
-                    {item.hasEvent && <View style={styles.eventDotWhite} />}
-                  </LinearGradient>
-                ) : (
-                  <View style={styles.dayCellInner}>
-                    <Text style={[
-                      styles.dayText,
-                      item.muted && styles.mutedDay,
-                    ]}>
-                      {item.day}
-                    </Text>
-                    {item.hasEvent && !item.muted && <View style={styles.eventDot} />}
-                  </View>
-                )}
+          {/* Navigation Buttons with pulse */}
+          <View style={styles.navRow}>
+            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+              <TouchableOpacity onPress={goToPrevMonth} activeOpacity={0.8}>
+                <LinearGradient
+                  colors={['#fbe5f5', '#ccf9ff']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.navBtn}
+                >
+                  <Text style={styles.navBtnText}>‹</Text>
+                </LinearGradient>
               </TouchableOpacity>
-            ))}
+            </Animated.View>
+            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+              <TouchableOpacity onPress={goToNextMonth} activeOpacity={0.8}>
+                <LinearGradient
+                  colors={['#ccf9ff', '#fbe5f5']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.navBtn}
+                >
+                  <Text style={styles.navBtnText}>›</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
           </View>
         </Animated.View>
 
-        {/* Upcoming Section */}
-        <Animated.View style={[styles.upcomingSection, createFadeStyle(upcomingAnim)]}>
-          <Text style={styles.sectionTitle}>Upcoming Events</Text>
+        {/* Calendar */}
+        <Animated.View style={[styles.calendarSection, createFadeStyle(calendarAnim)]}>
+          {/* Calendar Card with shadow */}
+          <View style={styles.calendarCard}>
+            {/* Week Header */}
+            <View style={styles.weekHeader}>
+              {DAYS.map((day, index) => (
+                <View key={index} style={styles.weekDayCell}>
+                  <Text style={styles.weekDayText}>{day}</Text>
+                </View>
+              ))}
+            </View>
 
-          {upcomingEvents.map((event) => (
-            <TouchableOpacity key={event.id} style={styles.upcomingItem} activeOpacity={0.8}>
-              <View style={[styles.upcomingDot, { backgroundColor: event.color }]} />
-              <View style={styles.upcomingInfo}>
-                <Text style={styles.upcomingName}>{event.name}</Text>
-                <Text style={styles.upcomingDate}>{event.date}</Text>
-              </View>
-              <View style={[styles.daysTag, { backgroundColor: `${event.color}15` }]}>
-                <Text style={[styles.upcomingDays, { color: event.color }]}>
-                  {event.days} days
-                </Text>
-              </View>
-            </TouchableOpacity>
+            {/* Days Grid */}
+            <View style={styles.daysGrid}>
+              {getDaysInMonth().map((item, index) => (
+                <View key={index} style={styles.dayCell}>
+                  {!item.empty && (
+                    <TouchableOpacity
+                      style={styles.dayCellInner}
+                      activeOpacity={0.7}
+                    >
+                      {item.isToday ? (
+                        <Animated.View style={[
+                          styles.todayCellWrapper,
+                          {
+                            transform: [{ scale: todayPulse }],
+                          }
+                        ]}>
+                          <LinearGradient
+                            colors={['#ca9ad6', '#70d0dd']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.todayCell}
+                          >
+                            <Text style={styles.todayText}>{item.day}</Text>
+                            {item.hasEvent && (
+                              <View style={styles.eventDotWhite} />
+                            )}
+                          </LinearGradient>
+                        </Animated.View>
+                      ) : (
+                        <View style={styles.normalCell}>
+                          <Text style={styles.dayText}>{item.day}</Text>
+                          {item.hasEvent && (
+                            <LinearGradient
+                              colors={['#f4cae8', '#70d0dd']}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 0 }}
+                              style={styles.eventDot}
+                            />
+                          )}
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
+            </View>
+          </View>
+        </Animated.View>
+
+        {/* Events Section */}
+        <Animated.View style={[styles.eventsSection, createFadeStyle(eventsAnim)]}>
+          <MaskedView
+            maskElement={
+              <Text style={styles.eventsTitleMask}>Upcoming Events</Text>
+            }
+          >
+            <LinearGradient
+              colors={['#ca9ad6', '#70d0dd']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Text style={[styles.eventsTitleMask, { opacity: 0 }]}>Upcoming Events</Text>
+            </LinearGradient>
+          </MaskedView>
+
+          {loading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#ca9ad6" />
+            </View>
+          )}
+
+          {!loading && upcomingEvents.length === 0 && (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No upcoming events</Text>
+              <Text style={styles.emptySubtext}>Add an event using the + button</Text>
+            </View>
+          )}
+
+          {!loading && upcomingEvents.map((event, index) => (
+            <View key={event.id || index} style={styles.eventItem}>
+              <TouchableOpacity style={styles.eventItemInner} activeOpacity={0.8}>
+                <Text style={styles.eventTime}>{event.date}</Text>
+                <LinearGradient
+                  colors={['#f4cae8', '#70d0dd']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.eventDotLarge}
+                />
+                <View style={styles.eventContent}>
+                  <Text style={styles.eventTitle}>{event.title} {event.emoji}</Text>
+                  <Text style={styles.eventDesc}>{event.desc}</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
           ))}
         </Animated.View>
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 180 }} />
       </ScrollView>
 
-      {/* FAB */}
-      <TouchableOpacity style={styles.fab} activeOpacity={0.9}>
-        <LinearGradient
-          colors={['#E07B5C', '#D06A4C']}
-          style={styles.fabGradient}
+      {/* FAB - Add Event */}
+      <Animated.View
+        style={[
+          styles.fabContainer,
+          {
+            transform: [
+              { scale: fabScale },
+              {
+                rotate: fabRotate.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0deg', '5deg'],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        <TouchableOpacity
+          onPress={() => navigation.navigate('AddEvent')}
+          activeOpacity={0.85}
+          style={styles.fabTouchable}
         >
-          <Ionicons name="add" size={28} color="#FFFFFF" />
-        </LinearGradient>
-      </TouchableOpacity>
+          <LinearGradient
+            colors={['#ca9ad6', '#70d0dd']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.fab}
+          >
+            <PlusIcon size={28} color="#FFFFFF" />
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 };
@@ -245,132 +677,136 @@ const CalendarScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  todayBtn: {
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
   },
-  todayBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#E07B5C',
+  sparkle: {
+    position: 'absolute',
+    zIndex: 10,
+  },
+  sparkleInner: {
+    borderRadius: 50,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-  },
-  calendarBox: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    overflow: 'hidden',
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    elevation: 5,
-  },
-  calendarHeader: {
-    paddingTop: 20,
-    paddingBottom: 16,
     paddingHorizontal: 16,
+    paddingTop: 50,
+    paddingBottom: 20,
   },
-  monthRow: {
+  header: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  monthTextMask: {
+    fontSize: 28,
+    fontFamily: 'Handlee_400Regular',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
+  yearText: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    marginBottom: 12,
+  },
+  navRow: {
     flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  navBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 18,
+    shadowColor: '#ca9ad6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  monthNavBtn: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
+  navBtnText: {
+    fontSize: 22,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
   },
-  monthLabel: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginHorizontal: 16,
-    textShadowColor: 'rgba(0,0,0,0.1)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+  calendarSection: {
+    marginBottom: 24,
   },
-  weekdaysRow: {
+  calendarCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  weekHeader: {
     flexDirection: 'row',
+    marginBottom: 8,
   },
-  weekdayCell: {
+  weekDayCell: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 8,
   },
-  weekdayText: {
+  weekDayText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.9)',
+    fontFamily: 'Handlee_400Regular',
+    color: '#ca9ad6',
   },
   daysGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    padding: 12,
   },
   dayCell: {
     width: `${100 / 7}%`,
     aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 2,
   },
   dayCellInner: {
-    width: '85%',
-    height: '85%',
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
+  },
+  normalCell: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 100,
   },
   dayText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.textPrimary,
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
   },
-  mutedDay: {
-    color: '#CCCCCC',
-  },
-  todayCell: {
-    width: '85%',
-    height: '85%',
+  todayCellWrapper: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
-    shadowColor: '#E07B5C',
+  },
+  todayCell: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#ca9ad6',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.4,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 6,
   },
   todayText: {
-    fontSize: 15,
-    fontWeight: '600',
     color: '#FFFFFF',
+    fontFamily: 'Handlee_400Regular',
+    fontSize: 14,
   },
   eventDot: {
     position: 'absolute',
@@ -378,82 +814,103 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: '#E07B5C',
   },
   eventDotWhite: {
     position: 'absolute',
-    bottom: 4,
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    bottom: 3,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: '#FFFFFF',
   },
-  upcomingSection: {
-    marginBottom: 20,
+  eventsSection: {
+    marginTop: 8,
   },
-  sectionTitle: {
+  eventsTitleMask: {
     fontSize: 18,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 14,
+    fontFamily: 'Handlee_400Regular',
+    marginBottom: 16,
   },
-  upcomingItem: {
+  eventItem: {
+    marginBottom: 12,
+  },
+  eventItemInner: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
+    padding: 14,
+    gap: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
     elevation: 3,
   },
-  upcomingDot: {
+  eventTime: {
+    fontSize: 12,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    width: 50,
+  },
+  eventDotLarge: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    marginRight: 14,
   },
-  upcomingInfo: {
+  eventContent: {
     flex: 1,
   },
-  upcomingName: {
+  eventTitle: {
     fontSize: 15,
-    fontWeight: '600',
-    color: colors.textPrimary,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
   },
-  upcomingDate: {
-    fontSize: 13,
-    color: '#888888',
+  eventDesc: {
+    fontSize: 12,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
     marginTop: 2,
   },
-  daysTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  upcomingDays: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  fab: {
+  fabContainer: {
     position: 'absolute',
     bottom: 100,
     right: 20,
-    shadowColor: '#E07B5C',
-    shadowOffset: { width: 0, height: 8 },
+    zIndex: 100,
+  },
+  fabTouchable: {
+    borderRadius: 30,
+    shadowColor: '#ca9ad6',
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
-    elevation: 8,
+    elevation: 10,
   },
-  fabGradient: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
+  fab: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  loadingContainer: {
+    paddingVertical: 30,
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    paddingVertical: 30,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    marginBottom: 4,
+  },
+  emptySubtext: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
   },
 });
 

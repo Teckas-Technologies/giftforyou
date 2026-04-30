@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -8,23 +8,25 @@ import {
   Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import MaskedView from '@react-native-masked-view/masked-view';
+import * as SplashScreen from 'expo-splash-screen';
+import { colors } from '../theme';
+import { GiftBoxIcon } from '../components';
+import { initializeUser, hasSeenOnboardingLocal, getUserCredentials } from '../services/api';
 
 const { width, height } = Dimensions.get('window');
 
-const SplashScreen = ({ navigation }) => {
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
+
+const SplashScreenComponent = ({ navigation }) => {
+  const [nextScreen, setNextScreen] = useState(null); // null until determined
+  const [isReady, setIsReady] = useState(false);
+
   // Animation refs
   const logoScale = useRef(new Animated.Value(0)).current;
-  const logoRotate = useRef(new Animated.Value(-10)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
-
-  // Ring animations
-  const ringScale1 = useRef(new Animated.Value(0.8)).current;
-  const ringScale2 = useRef(new Animated.Value(0.8)).current;
-  const ringScale3 = useRef(new Animated.Value(0.8)).current;
-  const ringOpacity1 = useRef(new Animated.Value(0.6)).current;
-  const ringOpacity2 = useRef(new Animated.Value(0.6)).current;
-  const ringOpacity3 = useRef(new Animated.Value(0.6)).current;
+  const glowPulse = useRef(new Animated.Value(1)).current;
 
   // Text animations
   const textOpacity = useRef(new Animated.Value(0)).current;
@@ -32,21 +34,50 @@ const SplashScreen = ({ navigation }) => {
   const taglineOpacity = useRef(new Animated.Value(0)).current;
   const taglineSlide = useRef(new Animated.Value(20)).current;
 
-  // Loader animations
-  const loaderOpacity = useRef(new Animated.Value(0)).current;
-  const loaderWidth = useRef(new Animated.Value(0)).current;
-
-  // Confetti animations
-  const confetti1 = useRef(new Animated.Value(0)).current;
-  const confetti2 = useRef(new Animated.Value(0)).current;
-  const confetti3 = useRef(new Animated.Value(0)).current;
-  const confetti4 = useRef(new Animated.Value(0)).current;
-
-  // Glow pulse
-  const glowPulse = useRef(new Animated.Value(1)).current;
+  // Dots animation
+  const dot1 = useRef(new Animated.Value(0.6)).current;
+  const dot2 = useRef(new Animated.Value(0.6)).current;
+  const dot3 = useRef(new Animated.Value(0.6)).current;
 
   // Fade out
   const fadeOut = useRef(new Animated.Value(1)).current;
+
+  // Initialize user and check onboarding status
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // First, initialize user (load or create unique ID)
+        await initializeUser();
+
+        // Check local storage for onboarding status (faster than API)
+        const hasSeenOnboarding = await hasSeenOnboardingLocal();
+
+        if (hasSeenOnboarding) {
+          // User has seen onboarding, check if profile is setup
+          const credentials = getUserCredentials();
+          if (credentials.name) {
+            setNextScreen('MainApp');
+          } else {
+            setNextScreen('ProfileSetup');
+          }
+        } else {
+          setNextScreen('Onboarding');
+        }
+      } catch (error) {
+        console.log('Initialization error:', error.message);
+        setNextScreen('Onboarding');
+      } finally {
+        setIsReady(true);
+      }
+    };
+
+    initializeApp();
+  }, []);
+
+  // Hide native splash screen when layout is ready
+  const onLayoutRootView = useCallback(async () => {
+    await SplashScreen.hideAsync();
+  }, []);
 
   useEffect(() => {
     // Glow pulse animation (continuous)
@@ -67,69 +98,29 @@ const SplashScreen = ({ navigation }) => {
       ])
     ).start();
 
-    // Ring expansion animations (continuous)
-    const ringAnimation = (scale, opacity, delay) => {
-      return Animated.loop(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.parallel([
-            Animated.timing(scale, {
-              toValue: 2.5,
-              duration: 2000,
-              easing: Easing.out(Easing.ease),
-              useNativeDriver: true,
-            }),
-            Animated.timing(opacity, {
-              toValue: 0,
-              duration: 2000,
-              easing: Easing.out(Easing.ease),
-              useNativeDriver: true,
-            }),
-          ]),
-          Animated.parallel([
-            Animated.timing(scale, {
-              toValue: 0.8,
-              duration: 0,
-              useNativeDriver: true,
-            }),
-            Animated.timing(opacity, {
-              toValue: 0.6,
-              duration: 0,
-              useNativeDriver: true,
-            }),
-          ]),
-        ])
-      );
-    };
+    // Dots animation - first dot stays at 1, others pulse
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(dot1, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.timing(dot1, { toValue: 0.6, duration: 300, useNativeDriver: true }),
+      ])
+    ).start();
 
-    ringAnimation(ringScale1, ringOpacity1, 0).start();
-    ringAnimation(ringScale2, ringOpacity2, 700).start();
-    ringAnimation(ringScale3, ringOpacity3, 1400).start();
+    Animated.loop(
+      Animated.sequence([
+        Animated.delay(200),
+        Animated.timing(dot2, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.timing(dot2, { toValue: 0.6, duration: 300, useNativeDriver: true }),
+      ])
+    ).start();
 
-    // Confetti animation (continuous)
-    const confettiAnimation = (anim, delay) => {
-      return Animated.loop(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.timing(anim, {
-            toValue: 1,
-            duration: 2500,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(anim, {
-            toValue: 0,
-            duration: 0,
-            useNativeDriver: true,
-          }),
-        ])
-      );
-    };
-
-    confettiAnimation(confetti1, 0).start();
-    confettiAnimation(confetti2, 500).start();
-    confettiAnimation(confetti3, 1000).start();
-    confettiAnimation(confetti4, 1500).start();
+    Animated.loop(
+      Animated.sequence([
+        Animated.delay(400),
+        Animated.timing(dot3, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.timing(dot3, { toValue: 0.6, duration: 300, useNativeDriver: true }),
+      ])
+    ).start();
 
     // Main animation sequence
     Animated.sequence([
@@ -139,12 +130,6 @@ const SplashScreen = ({ navigation }) => {
           toValue: 1,
           friction: 5,
           tension: 80,
-          useNativeDriver: true,
-        }),
-        Animated.timing(logoRotate, {
-          toValue: 0,
-          duration: 600,
-          easing: Easing.out(Easing.back(1.5)),
           useNativeDriver: true,
         }),
         Animated.timing(logoOpacity, {
@@ -181,253 +166,103 @@ const SplashScreen = ({ navigation }) => {
           useNativeDriver: true,
         }),
       ]),
-      // Loader appears
-      Animated.timing(loaderOpacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
     ]).start();
 
-    // Loader bar fill
-    setTimeout(() => {
-      Animated.timing(loaderWidth, {
-        toValue: 1,
-        duration: 2200,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: false,
-      }).start();
-    }, 1500);
-
-    // Navigate after 4.5 seconds
+    // Navigate after 3.5 seconds, but only if ready
     const timer = setTimeout(() => {
-      Animated.timing(fadeOut, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: true,
-      }).start(() => {
-        navigation.replace('Onboarding');
-      });
-    }, 4500);
+      if (isReady && nextScreen) {
+        Animated.timing(fadeOut, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }).start(() => {
+          navigation.replace(nextScreen);
+        });
+      }
+    }, 3500);
 
     return () => clearTimeout(timer);
-  }, []);
-
-  const logoRotateInterpolate = logoRotate.interpolate({
-    inputRange: [-10, 0],
-    outputRange: ['-10deg', '0deg'],
-  });
+  }, [isReady, nextScreen]);
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeOut }]}>
-      <View style={styles.background}>
-        {/* Gradient background */}
-        <LinearGradient
-          colors={['#FDF8F3', '#F8EEE4', '#FDF8F3']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
+    <Animated.View
+      style={[styles.container, { opacity: fadeOut }]}
+      onLayout={onLayoutRootView}
+    >
+      <LinearGradient
+        colors={['#FDEEF3', '#E8F4FD', '#FBDCE9', '#D6EAF8']}
+        locations={[0, 0.4, 0.7, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
 
-        {/* Coral glow - top right */}
+      {/* Main content */}
+      <View style={styles.content}>
+        {/* Logo */}
         <Animated.View
           style={[
-            styles.glow,
-            styles.glowTopRight,
-            { transform: [{ scale: glowPulse }] },
-          ]}
-        />
-
-        {/* Gold glow - bottom left */}
-        <Animated.View
-          style={[
-            styles.glow,
-            styles.glowBottomLeft,
-            { transform: [{ scale: glowPulse }] },
-          ]}
-        />
-
-        {/* Confetti particles */}
-        <Animated.View
-          style={[
-            styles.confetti,
-            styles.confetti1,
+            styles.logoContainer,
             {
-              opacity: confetti1.interpolate({
-                inputRange: [0, 0.2, 0.8, 1],
-                outputRange: [0, 0.7, 0.7, 0],
-              }),
+              opacity: logoOpacity,
               transform: [
-                {
-                  translateY: confetti1.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 40],
-                  }),
-                },
+                { scale: logoScale },
+                { scale: glowPulse },
               ],
             },
           ]}
-        />
-        <Animated.View
-          style={[
-            styles.confetti,
-            styles.confetti2,
-            {
-              opacity: confetti2.interpolate({
-                inputRange: [0, 0.2, 0.8, 1],
-                outputRange: [0, 0.7, 0.7, 0],
-              }),
-              transform: [
-                {
-                  translateY: confetti2.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 35],
-                  }),
-                },
-              ],
-            },
-          ]}
-        />
-        <Animated.View
-          style={[
-            styles.confetti,
-            styles.confetti3,
-            {
-              opacity: confetti3.interpolate({
-                inputRange: [0, 0.2, 0.8, 1],
-                outputRange: [0, 0.7, 0.7, 0],
-              }),
-              transform: [
-                {
-                  translateY: confetti3.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 45],
-                  }),
-                },
-              ],
-            },
-          ]}
-        />
-        <Animated.View
-          style={[
-            styles.confetti,
-            styles.confetti4,
-            {
-              opacity: confetti4.interpolate({
-                inputRange: [0, 0.2, 0.8, 1],
-                outputRange: [0, 0.7, 0.7, 0],
-              }),
-              transform: [
-                {
-                  translateY: confetti4.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 38],
-                  }),
-                },
-              ],
-            },
-          ]}
-        />
+        >
+          <View style={styles.logoBox}>
+            <GiftBoxIcon size={70} />
+          </View>
+        </Animated.View>
 
-        {/* Expanding rings */}
+        {/* App name with gradient "Box" */}
         <Animated.View
           style={[
-            styles.ring,
+            styles.textContainer,
             {
-              opacity: ringOpacity1,
-              transform: [{ scale: ringScale1 }],
+              opacity: textOpacity,
+              transform: [{ translateY: textSlide }],
             },
           ]}
-        />
-        <Animated.View
-          style={[
-            styles.ring,
-            {
-              opacity: ringOpacity2,
-              transform: [{ scale: ringScale2 }],
-            },
-          ]}
-        />
-        <Animated.View
-          style={[
-            styles.ring,
-            {
-              opacity: ringOpacity3,
-              transform: [{ scale: ringScale3 }],
-            },
-          ]}
-        />
-
-        {/* Main content */}
-        <View style={styles.content}>
-          {/* Logo */}
-          <Animated.View
-            style={[
-              styles.logoContainer,
-              {
-                opacity: logoOpacity,
-                transform: [
-                  { scale: logoScale },
-                  { rotate: logoRotateInterpolate },
-                ],
-              },
-            ]}
+        >
+          <Text style={styles.appName}>Gift</Text>
+          <MaskedView
+            maskElement={
+              <Text style={styles.appNameMask}>Box</Text>
+            }
           >
             <LinearGradient
-              colors={['#E07B5C', '#D06A4C']}
+              colors={['#ca9ad6', '#70d0dd']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={styles.logoGradient}
             >
-              <Ionicons name="gift" size={48} color="#FFFFFF" />
+              <Text style={[styles.appNameMask, { opacity: 0 }]}>Box</Text>
             </LinearGradient>
-          </Animated.View>
-
-          {/* App name */}
-          <Animated.View
-            style={[
-              styles.textContainer,
-              {
-                opacity: textOpacity,
-                transform: [{ translateY: textSlide }],
-              },
-            ]}
-          >
-            <Text style={styles.appName}>GiftBox</Text>
-            <Text style={styles.appNameAccent}>4you</Text>
-          </Animated.View>
-
-          {/* Tagline */}
-          <Animated.Text
-            style={[
-              styles.tagline,
-              {
-                opacity: taglineOpacity,
-                transform: [{ translateY: taglineSlide }],
-              },
-            ]}
-          >
-            Perfect gifts, every time
-          </Animated.Text>
-        </View>
-
-        {/* Loading bar */}
-        <Animated.View style={[styles.loaderContainer, { opacity: loaderOpacity }]}>
-          <View style={styles.loaderBg}>
-            <Animated.View
-              style={[
-                styles.loaderFill,
-                {
-                  width: loaderWidth.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['0%', '100%'],
-                  }),
-                },
-              ]}
-            />
-          </View>
-          <Text style={styles.loaderText}>Loading...</Text>
+          </MaskedView>
+          <Text style={styles.appName}>4you</Text>
         </Animated.View>
+
+        {/* Tagline */}
+        <Animated.Text
+          style={[
+            styles.tagline,
+            {
+              opacity: taglineOpacity,
+              transform: [{ translateY: taglineSlide }],
+            },
+          ]}
+        >
+          Never miss a birthday
+        </Animated.Text>
+
+        {/* Loading dots - centered below tagline */}
+        <View style={styles.dotsContainer}>
+          <Animated.View style={[styles.dot, { opacity: dot1 }]} />
+          <Animated.View style={[styles.dot, { opacity: dot2 }]} />
+          <Animated.View style={[styles.dot, { opacity: dot3 }]} />
+        </View>
       </View>
     </Animated.View>
   );
@@ -437,134 +272,61 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  background: {
+  content: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  glow: {
-    position: 'absolute',
-    borderRadius: 1000,
-  },
-  glowTopRight: {
-    width: 250,
-    height: 250,
-    backgroundColor: '#E07B5C',
-    top: -80,
-    right: -80,
-    opacity: 0.25,
-  },
-  glowBottomLeft: {
-    width: 220,
-    height: 220,
-    backgroundColor: '#C4956A',
-    bottom: -60,
-    left: -60,
-    opacity: 0.2,
-  },
-  confetti: {
-    position: 'absolute',
-    width: 12,
-    height: 12,
-    borderRadius: 3,
-  },
-  confetti1: {
-    backgroundColor: '#E07B5C',
-    top: '18%',
-    left: '15%',
-    transform: [{ rotate: '15deg' }],
-  },
-  confetti2: {
-    backgroundColor: '#C4956A',
-    top: '22%',
-    right: '18%',
-    transform: [{ rotate: '-20deg' }],
-  },
-  confetti3: {
-    backgroundColor: '#E07B5C',
-    bottom: '28%',
-    left: '20%',
-    transform: [{ rotate: '45deg' }],
-  },
-  confetti4: {
-    backgroundColor: '#C4956A',
-    bottom: '32%',
-    right: '15%',
-    transform: [{ rotate: '-10deg' }],
-  },
-  ring: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderWidth: 3,
-    borderColor: '#E07B5C',
-    borderRadius: 60,
-  },
-  content: {
-    alignItems: 'center',
-  },
   logoContainer: {
-    marginBottom: 28,
-    shadowColor: '#E07B5C',
-    shadowOffset: { width: 0, height: 20 },
+    marginBottom: 20,
+    shadowColor: colors.textDark,
+    shadowOffset: { width: 0, height: 15 },
     shadowOpacity: 0.4,
-    shadowRadius: 30,
+    shadowRadius: 40,
     elevation: 20,
   },
-  logoGradient: {
-    width: 110,
-    height: 110,
-    borderRadius: 32,
+  logoBox: {
+    width: 100,
+    height: 100,
+    backgroundColor: '#330c54',
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
   },
   textContainer: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   appName: {
-    fontSize: 40,
-    fontWeight: '800',
-    color: '#3D3D3D',
-    letterSpacing: -1,
+    fontSize: 38,
+    fontFamily: 'StyleScript_400Regular',
+    color: colors.textDark,
+    letterSpacing: 0.5,
   },
-  appNameAccent: {
-    fontSize: 40,
-    fontWeight: '300',
-    color: '#E07B5C',
-    letterSpacing: -1,
+  appNameMask: {
+    fontSize: 38,
+    fontFamily: 'StyleScript_400Regular',
+    letterSpacing: 0.5,
   },
   tagline: {
     fontSize: 15,
-    color: '#888888',
-    fontWeight: '500',
+    color: colors.primary,
+    fontFamily: 'Handlee_400Regular',
     letterSpacing: 1,
+    marginTop: 8,
   },
-  loaderContainer: {
-    position: 'absolute',
-    bottom: 90,
-    alignItems: 'center',
+  dotsContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 50,
   },
-  loaderBg: {
-    width: 130,
-    height: 5,
-    backgroundColor: 'rgba(224, 123, 92, 0.2)',
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginBottom: 14,
-  },
-  loaderFill: {
-    height: '100%',
-    backgroundColor: '#E07B5C',
-    borderRadius: 3,
-  },
-  loaderText: {
-    fontSize: 11,
-    color: '#AAAAAA',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.primaryAccent,
   },
 });
 
-export default SplashScreen;
+export default SplashScreenComponent;

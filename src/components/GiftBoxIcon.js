@@ -1,0 +1,114 @@
+import React from 'react';
+import Svg, { Path, Rect, G } from 'react-native-svg';
+
+// Exact copy of appicon (2).svg structure
+const GiftBoxIcon = ({ size = 70, style }) => {
+  return (
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 1024 1024"
+      style={style}
+    >
+      <G>
+        {/* Outer bow - left (st4: fill #99f3ff, stroke #99f3ff) */}
+        <Path
+          d="M293.15,304.49s-100.59-65.63-81.56-126.4c27.36-87.36,154.41-84.91,220.21,6.08,80.2,110.9,80.2,120.32,80.2,120.32h-218.85Z"
+          fill="#99f3ff"
+          stroke="#99f3ff"
+          strokeWidth={40}
+          strokeMiterlimit={10}
+        />
+        {/* Outer bow - right (st4) */}
+        <Path
+          d="M730.85,304.49s100.59-65.63,81.56-126.4c-27.36-87.36-154.41-84.91-220.21,6.08-80.2,110.9-80.2,120.32-80.2,120.32h218.85Z"
+          fill="#99f3ff"
+          stroke="#99f3ff"
+          strokeWidth={40}
+          strokeMiterlimit={10}
+        />
+
+        {/* Inner bow - left (st1: fill #330c54, stroke #99f3ff) */}
+        <Path
+          d="M342.78,304.49s-77.78-50.75-63.06-97.73c21.15-67.55,119.4-65.66,170.27,4.7,62.01,85.75,62.01,93.04,62.01,93.04h-169.22Z"
+          fill="#330c54"
+          stroke="#99f3ff"
+          strokeWidth={40}
+          strokeMiterlimit={10}
+        />
+        {/* Inner bow - right (st1) */}
+        <Path
+          d="M681.22,304.49s77.78-50.75,63.06-97.73c-21.15-67.55-119.4-65.66-170.27,4.7-62.01,85.75-62.01,93.04-62.01,93.04h169.22Z"
+          fill="#330c54"
+          stroke="#99f3ff"
+          strokeWidth={40}
+          strokeMiterlimit={10}
+        />
+
+        {/* Ribbon knot center fill (st2: fill #ca9ad6, NO stroke) */}
+        <Path
+          d="M492.74,324.34c-9.63,0-17.89-6.86-19.66-16.32l-13.97-74.71c-1.09-5.85.47-11.88,4.27-16.45s9.44-7.22,15.39-7.22h64.38c5.95,0,11.59,2.65,15.39,7.22,3.8,4.58,5.37,10.61,4.27,16.45l-13.97,74.71c-1.77,9.46-10.03,16.32-19.66,16.32h-36.44Z"
+          fill="#ca9ad6"
+        />
+        {/* Ribbon knot outline (st6: fill #99f3ff, NO stroke) */}
+        <Path
+          d="M543.15,229.63l-13.97,74.71h-36.44l-13.97-74.71h64.38M543.15,189.63h-64.38c-11.9,0-23.17,5.29-30.77,14.45-7.6,9.15-10.73,21.21-8.54,32.91l13.97,74.71c3.54,18.93,20.06,32.65,39.32,32.65h36.44c19.26,0,35.78-13.72,39.32-32.65l13.97-74.71c2.19-11.69-.94-23.75-8.54-32.91-7.6-9.15-18.88-14.45-30.77-14.45h0Z"
+          fill="#99f3ff"
+        />
+
+        {/* Gift box body (st5: fill #e8c9e6, stroke #99f3ff) */}
+        <Rect
+          x={163.31}
+          y={323.52}
+          width={697.38}
+          height={577.77}
+          rx={21.58}
+          ry={21.58}
+          fill="#e8c9e6"
+          stroke="#99f3ff"
+          strokeWidth={40}
+          strokeMiterlimit={10}
+        />
+
+        {/* Gift box lid (st5) */}
+        <Rect
+          x={143.64}
+          y={295.13}
+          width={736.73}
+          height={208.29}
+          rx={21.58}
+          ry={21.58}
+          fill="#e8c9e6"
+          stroke="#99f3ff"
+          strokeWidth={40}
+          strokeMiterlimit={10}
+        />
+
+        {/* Vertical ribbon top (st3: fill #ca9ad6, stroke #99f3ff, round join) */}
+        <Rect
+          x={406.53}
+          y={292.48}
+          width={210.94}
+          height={210.94}
+          fill="#ca9ad6"
+          stroke="#99f3ff"
+          strokeWidth={40}
+          strokeLinejoin="round"
+        />
+        {/* Vertical ribbon bottom (st3) */}
+        <Rect
+          x={418.35}
+          y={503.43}
+          width={187.29}
+          height={406.36}
+          fill="#ca9ad6"
+          stroke="#99f3ff"
+          strokeWidth={40}
+          strokeLinejoin="round"
+        />
+      </G>
+    </Svg>
+  );
+};
+
+export default GiftBoxIcon;
