@@ -16,7 +16,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
-import { addToCircle, sendInvitation } from '../services/api';
+import { addToCircle, updateCircle } from '../services/api';
 import { CustomAlert } from '../components';
 import useAlert from '../hooks/useAlert';
 
@@ -93,18 +93,21 @@ const getDaysInMonth = (month, year) => {
   return new Date(year, month + 1, 0).getDate();
 };
 
-const AddContactScreen = ({ navigation }) => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [birthday, setBirthday] = useState(null);
+const AddContactScreen = ({ navigation, route }) => {
+  // Check if editing existing contact
+  const editContact = route?.params?.contact;
+  const isEditMode = !!editContact;
+
+  const [name, setName] = useState(editContact?.name || '');
+  const [email, setEmail] = useState(editContact?.email || '');
+  const [birthday, setBirthday] = useState(editContact?.birthday ? new Date(editContact.birthday) : null);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-  const [selectedDay, setSelectedDay] = useState(new Date().getDate());
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear() - 25);
-  const [relationship, setRelationship] = useState('friend');
-  const [nickname, setNickname] = useState('');
-  const [notes, setNotes] = useState('');
-  const [shouldSendInvitation, setShouldSendInvitation] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState(editContact?.birthday ? new Date(editContact.birthday).getMonth() : new Date().getMonth());
+  const [selectedDay, setSelectedDay] = useState(editContact?.birthday ? new Date(editContact.birthday).getDate() : new Date().getDate());
+  const [selectedYear, setSelectedYear] = useState(editContact?.birthday ? new Date(editContact.birthday).getFullYear() : new Date().getFullYear() - 25);
+  const [relationship, setRelationship] = useState(editContact?.relationship?.toLowerCase() || 'friend');
+  const [nickname, setNickname] = useState(editContact?.nickname || '');
+  const [notes, setNotes] = useState(editContact?.notes || '');
   const [saving, setSaving] = useState(false);
 
   // Custom alert hook
@@ -196,30 +199,42 @@ const AddContactScreen = ({ navigation }) => {
         'other': 'Other',
       };
 
-      const contactData = {
-        guestName: name.trim(),
-        guestEmail: email.trim(),
-        relationship: relationshipMap[relationship] || 'Friend',
-        nickname: nickname.trim() || undefined,
-        notes: notes.trim() || undefined,
-        guestBirthday: birthday ? birthday.toISOString().split('T')[0] : undefined,
-      };
-
-      // Add contact to circle
-      await addToCircle(contactData);
-
-      // Send invitation if email is provided and option is selected
-      if (email && shouldSendInvitation) {
-        await sendInvitation({
-          inviteeName: name,
-          inviteeEmail: email,
-          relationship: relationshipMap[relationship] || 'Friend',
-        });
+      // Format birthday in local timezone
+      let formattedBirthday;
+      if (birthday) {
+        const year = birthday.getFullYear();
+        const month = String(birthday.getMonth() + 1).padStart(2, '0');
+        const day = String(birthday.getDate()).padStart(2, '0');
+        formattedBirthday = `${year}-${month}-${day}`;
       }
 
-      showSuccess('Contact added successfully!', () => navigation.goBack());
+      if (isEditMode) {
+        // Update existing contact
+        const updateData = {
+          relationship: relationshipMap[relationship] || 'Friend',
+          nickname: nickname.trim() || undefined,
+          notes: notes.trim() || undefined,
+          guestBirthday: formattedBirthday,
+        };
+
+        await updateCircle(editContact.id, updateData);
+        showSuccess('Contact updated successfully!', () => navigation.goBack());
+      } else {
+        // Add new contact
+        const contactData = {
+          guestName: name.trim(),
+          guestEmail: email.trim(),
+          relationship: relationshipMap[relationship] || 'Friend',
+          nickname: nickname.trim() || undefined,
+          notes: notes.trim() || undefined,
+          guestBirthday: formattedBirthday,
+        };
+
+        await addToCircle(contactData);
+        showSuccess('Contact added successfully!', () => navigation.goBack());
+      }
     } catch (error) {
-      showError(error.message || 'Failed to add contact');
+      showError(error.message || `Failed to ${isEditMode ? 'update' : 'add'} contact`);
     } finally {
       setSaving(false);
     }
@@ -280,7 +295,7 @@ const AddContactScreen = ({ navigation }) => {
         </TouchableOpacity>
         <MaskedView
           maskElement={
-            <Text style={styles.headerTitleMask}>Add Contact</Text>
+            <Text style={styles.headerTitleMask}>{isEditMode ? 'Edit Contact' : 'Add Contact'}</Text>
           }
         >
           <LinearGradient
@@ -288,7 +303,7 @@ const AddContactScreen = ({ navigation }) => {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Text style={[styles.headerTitleMask, { opacity: 0 }]}>Add Contact</Text>
+            <Text style={[styles.headerTitleMask, { opacity: 0 }]}>{isEditMode ? 'Edit Contact' : 'Add Contact'}</Text>
           </LinearGradient>
         </MaskedView>
         <View style={{ width: 44 }} />
@@ -422,36 +437,6 @@ const AddContactScreen = ({ navigation }) => {
             />
           </Animated.View>
 
-          {/* Send Invitation Toggle */}
-          {email.length > 0 && (
-            <Animated.View style={[styles.inputSection, createSlideStyle(inputAnims[5])]}>
-              <TouchableOpacity
-                style={styles.toggleRow}
-                onPress={() => setShouldSendInvitation(!shouldSendInvitation)}
-              >
-                <View style={styles.toggleContent}>
-                  <MailIcon size={20} color="#ca9ad6" />
-                  <View style={styles.toggleTextContainer}>
-                    <Text style={styles.toggleTitle}>Send Gift Questionnaire</Text>
-                    <Text style={styles.toggleSubtitle}>Invite them to share their preferences</Text>
-                  </View>
-                </View>
-                <View style={[styles.toggle, shouldSendInvitation && styles.toggleActive]}>
-                  {shouldSendInvitation && (
-                    <LinearGradient
-                      colors={['#ca9ad6', '#70d0dd']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.toggleGradient}
-                    >
-                      <View style={styles.toggleKnob} />
-                    </LinearGradient>
-                  )}
-                  {!shouldSendInvitation && <View style={styles.toggleKnobInactive} />}
-                </View>
-              </TouchableOpacity>
-            </Animated.View>
-          )}
         </Animated.View>
 
         <View style={{ height: 120 }} />
@@ -486,7 +471,7 @@ const AddContactScreen = ({ navigation }) => {
             ) : (
               <>
                 <CheckIcon size={22} color="#FFFFFF" />
-                <Text style={styles.saveButtonText}>Save Contact</Text>
+                <Text style={styles.saveButtonText}>{isEditMode ? 'Update Contact' : 'Save Contact'}</Text>
               </>
             )}
           </LinearGradient>
@@ -792,81 +777,13 @@ const styles = StyleSheet.create({
     minHeight: 100,
     textAlignVertical: 'top',
   },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  toggleContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: 12,
-  },
-  toggleTextContainer: {
-    flex: 1,
-  },
-  toggleTitle: {
-    fontSize: 14,
-    fontFamily: 'Handlee_400Regular',
-    color: '#330c54',
-  },
-  toggleSubtitle: {
-    fontSize: 12,
-    fontFamily: 'Handlee_400Regular',
-    color: '#6b3a8a',
-    marginTop: 2,
-  },
-  toggle: {
-    width: 52,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#e0e0e0',
-    padding: 2,
-    justifyContent: 'center',
-  },
-  toggleActive: {
-    backgroundColor: 'transparent',
-  },
-  toggleGradient: {
-    flex: 1,
-    borderRadius: 13,
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    paddingHorizontal: 2,
-  },
-  toggleKnob: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  toggleKnobInactive: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    marginLeft: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
-  },
   saveButtonContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     paddingHorizontal: 16,
-    paddingBottom: 34,
+    paddingBottom: 50,
     paddingTop: 16,
     backgroundColor: 'transparent',
   },

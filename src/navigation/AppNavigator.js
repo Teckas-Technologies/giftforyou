@@ -41,12 +41,12 @@ const TabIcon = ({ focused, iconName, color }) => {
           colors={[colors.primaryAccent, colors.secondary]}
           style={styles.activeIconBg}
         >
-          <Ionicons name={iconName} size={22} color="#FFFFFF" />
+          <Ionicons name={iconName} size={18} color="#FFFFFF" />
         </LinearGradient>
       </View>
     );
   }
-  return <Ionicons name={iconName} size={24} color={color} />;
+  return <Ionicons name={iconName} size={22} color={color} />;
 };
 
 // Bottom Tab Navigator
@@ -92,15 +92,17 @@ const MainTabNavigator = () => {
   );
 };
 
-// Auth Stack Navigator
+// Auth Stack Navigator (includes Splash and Onboarding)
 const AuthStack = () => {
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
       }}
-      initialRouteName="Login"
+      initialRouteName="Splash"
     >
+      <Stack.Screen name="Splash" component={SplashScreen} />
+      <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="SignUp" component={SignUpScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
@@ -177,9 +179,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     backgroundColor: '#FFFFFF',
     borderTopWidth: 0,
-    height: 110,
-    paddingTop: 14,
-    paddingBottom: 45,
+    height: 95,
+    paddingTop: 10,
+    paddingBottom: 30,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     elevation: 10,
@@ -190,24 +192,25 @@ const styles = StyleSheet.create({
   },
   tabBarLabel: {
     fontSize: 11,
-    fontWeight: '500',
+    fontFamily: 'Handlee_400Regular',
     marginTop: 4,
+    marginBottom: 4,
   },
   activeIconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   activeIconBg: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
 });
 

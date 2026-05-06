@@ -214,32 +214,50 @@ const ContactDetailScreen = ({ navigation, route }) => {
         avatar: memberPhoto || null,
         hasQuestionnaire: !!preferencesData?.preferences,
         preferences: preferencesData?.preferences ? {
-          activities: preferencesData.preferences.favoriteActivities || [],
+          activities: Array.isArray(preferencesData.preferences.favoriteActivities)
+            ? preferencesData.preferences.favoriteActivities
+            : preferencesData.preferences.favoriteActivities ? [preferencesData.preferences.favoriteActivities] : [],
           activityDetails: preferencesData.preferences.activityDetails || '',
-          style: preferencesData.preferences.personalStyle || [],
-          colors: preferencesData.preferences.favoriteColors || [],
+          style: Array.isArray(preferencesData.preferences.personalStyle)
+            ? preferencesData.preferences.personalStyle
+            : preferencesData.preferences.personalStyle ? [preferencesData.preferences.personalStyle] : [],
+          colors: Array.isArray(preferencesData.preferences.favoriteColors)
+            ? preferencesData.preferences.favoriteColors
+            : preferencesData.preferences.favoriteColors ? [preferencesData.preferences.favoriteColors] : [],
           sizes: preferencesData.preferences.clothingSizes || {},
-          giftTypes: preferencesData.preferences.giftTypes || [],
+          giftTypes: Array.isArray(preferencesData.preferences.giftTypes)
+            ? preferencesData.preferences.giftTypes
+            : preferencesData.preferences.giftTypes ? [preferencesData.preferences.giftTypes] : [],
           giftDetails: preferencesData.preferences.giftDetails || '',
-          causes: preferencesData.preferences.causesValues || [],
+          causes: Array.isArray(preferencesData.preferences.causesValues)
+            ? preferencesData.preferences.causesValues
+            : preferencesData.preferences.causesValues ? [preferencesData.preferences.causesValues] : [],
           flower: preferencesData.preferences.favoriteFlower || '',
           flowerDetails: preferencesData.preferences.flowerDetails || '',
-          cuisines: preferencesData.preferences.favoriteCuisines || [],
+          cuisines: Array.isArray(preferencesData.preferences.favoriteCuisines)
+            ? preferencesData.preferences.favoriteCuisines
+            : preferencesData.preferences.favoriteCuisines ? [preferencesData.preferences.favoriteCuisines] : [],
           restaurant: preferencesData.preferences.favoriteRestaurant || '',
-          desserts: preferencesData.preferences.favoriteDesserts || [],
-          movieGenre: preferencesData.preferences.movieGenre || [],
+          desserts: Array.isArray(preferencesData.preferences.favoriteDesserts)
+            ? preferencesData.preferences.favoriteDesserts
+            : preferencesData.preferences.favoriteDesserts ? [preferencesData.preferences.favoriteDesserts] : [],
+          movieGenre: Array.isArray(preferencesData.preferences.movieGenre)
+            ? preferencesData.preferences.movieGenre
+            : preferencesData.preferences.movieGenre ? [preferencesData.preferences.movieGenre] : [],
           favoriteMovies: preferencesData.preferences.favoriteMovies || '',
-          musicGenre: preferencesData.preferences.musicGenre || [],
+          musicGenre: Array.isArray(preferencesData.preferences.musicGenre)
+            ? preferencesData.preferences.musicGenre
+            : preferencesData.preferences.musicGenre ? [preferencesData.preferences.musicGenre] : [],
           favoriteArtists: preferencesData.preferences.favoriteArtists || '',
-          likesSurprises: preferencesData.preferences.likesSurprises,
+          likesSurprises: preferencesData.preferences.likesSurprises === 'Yes' || preferencesData.preferences.likesSurprises === true,
           wishlistText: preferencesData.preferences.wishlistText || '',
         } : emptyContact.preferences,
-        upcomingEvents: (rawContact.upcomingEvents || []).map(event => ({
+        upcomingEvents: (preferencesData?.upcomingEvents || rawContact.upcomingEvents || []).map(event => ({
           id: event._id || event.id,
-          name: event.title || event.eventType,
-          date: new Date(event.eventDate),
-          type: event.eventType?.toLowerCase() || 'event',
-          daysUntil: Math.ceil((new Date(event.eventDate) - new Date()) / (1000 * 60 * 60 * 24)),
+          name: event.title || event.event_type || event.eventType,
+          date: new Date(event.event_date || event.eventDate),
+          type: (event.event_type || event.eventType)?.toLowerCase() || 'event',
+          daysUntil: Math.ceil((new Date(event.event_date || event.eventDate) - new Date()) / (1000 * 60 * 60 * 24)),
         })),
       };
 
@@ -320,7 +338,15 @@ const ContactDetailScreen = ({ navigation, route }) => {
   });
 
   const handleSendInvitation = () => {
-    navigation.navigate('Invitations');
+    // Navigate to Invitations screen with contact info for auto-fill
+    navigation.navigate('Invitations', {
+      contact: {
+        id: contact.id,
+        name: contact.name,
+        email: contact.email,
+        relationship: getRelationshipLabel(contact.relationship),
+      },
+    });
   };
 
   // Questionnaire is handled via web form only - commented for potential future use
@@ -410,7 +436,10 @@ const ContactDetailScreen = ({ navigation, route }) => {
             <Text style={[styles.headerTitleMask, { opacity: 0 }]}>Contact</Text>
           </LinearGradient>
         </MaskedView>
-        <TouchableOpacity style={styles.editButton}>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => navigation.navigate('AddContact', { contact: contact })}
+        >
           <EditIcon size={20} color="#6b3a8a" />
         </TouchableOpacity>
       </Animated.View>

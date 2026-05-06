@@ -245,13 +245,13 @@ const OnboardingScreen = ({ navigation }) => {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
     } else {
       await markOnboardingSeenLocal();
-      navigation.replace('ProfileSetup');
+      navigation.replace('SignUp');
     }
   };
 
   const skipToLogin = async () => {
     await markOnboardingSeenLocal();
-    navigation.replace('ProfileSetup');
+    navigation.replace('SignUp');
   };
 
   const bellRotate = bellShake.interpolate({
@@ -547,8 +547,16 @@ const OnboardingScreen = ({ navigation }) => {
         scrollEventThrottle={16}
         onViewableItemsChanged={viewableItemsChanged}
         viewabilityConfig={viewConfig}
-        style={styles.flatList}
-        contentContainerStyle={styles.flatListContent}
+        decelerationRate="fast"
+        snapToInterval={width}
+        snapToAlignment="center"
+        getItemLayout={(data, index) => ({
+          length: width,
+          offset: width * index,
+          index,
+        })}
+        initialScrollIndex={0}
+        removeClippedSubviews={false}
       />
     </Animated.View>
   );
@@ -557,16 +565,11 @@ const OnboardingScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  flatList: {
-    flex: 1,
-  },
-  flatListContent: {
-    flexGrow: 1,
+    backgroundColor: '#FFFFFF',
   },
   slide: {
     width,
-    flex: 1,
+    height: '100%',
   },
   gradientBg: {
     position: 'absolute',

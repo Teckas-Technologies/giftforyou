@@ -16,7 +16,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
-import { createEvent } from '../services/api';
+import { createEvent, getCircles } from '../services/api';
+import { scheduleEventReminder } from '../services/notifications';
 import { CustomAlert } from '../components';
 import useAlert from '../hooks/useAlert';
 
@@ -121,9 +122,14 @@ const AddEventScreen = ({ navigation, route }) => {
   const [isRecurring, setIsRecurring] = useState(true);
   const [selectedReminders, setSelectedReminders] = useState(['1_week']);
   const [notes, setNotes] = useState('');
-  const [associatedContact, setAssociatedContact] = useState(contact?.name || '');
   const [showTypeSelector, setShowTypeSelector] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Contact selection
+  const [contacts, setContacts] = useState([]);
+  const [selectedContact, setSelectedContact] = useState(contact || null);
+  const [showContactPicker, setShowContactPicker] = useState(false);
+  const [loadingContacts, setLoadingContacts] = useState(false);
 
   // Custom alert hook
   const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
@@ -135,7 +141,28 @@ const AddEventScreen = ({ navigation, route }) => {
   const inputAnims = useRef([...Array(6)].map(() => new Animated.Value(0))).current;
   const modalAnim = useRef(new Animated.Value(0)).current;
 
+  // Fetch contacts for picker
+  const fetchContacts = async () => {
+    try {
+      setLoadingContacts(true);
+      const response = await getCircles();
+      const contactsList = response.circles || response.contacts || [];
+      const transformedContacts = contactsList.map(c => ({
+        id: c.id,
+        name: c.member?.name || c.guest_name || c.guestName || c.memberName || 'Unknown',
+        memberId: c.member_id || c.memberId || c.member?.id,
+      }));
+      setContacts(transformedContacts);
+    } catch (error) {
+      console.error('Error fetching contacts:', error);
+    } finally {
+      setLoadingContacts(false);
+    }
+  };
+
   useEffect(() => {
+    fetchContacts();
+
     Animated.sequence([
       Animated.timing(headerAnim, {
         toValue: 1,
@@ -201,15 +228,15 @@ const AddEventScreen = ({ navigation, route }) => {
     try {
       setSaving(true);
 
-      // Format event type for API (backend expects lowercase)
+      // Format event type for API (must match database constraint)
       const eventTypeMap = {
         'birthday': 'birthday',
         'anniversary': 'anniversary',
-        'holiday': 'custom',
-        'graduation': 'custom',
+        'holiday': 'holiday',
+        'graduation': 'graduation',
         'wedding': 'wedding',
         'baby_shower': 'baby_shower',
-        'other': 'custom',
+        'other': 'other',
       };
 
       // Get reminder days from selected reminders
@@ -218,19 +245,35 @@ const AddEventScreen = ({ navigation, route }) => {
         return option?.value || 7;
       });
 
+      // Format date in local timezone (avoid UTC conversion issues)
+      const year = eventDate.getFullYear();
+      const month = String(eventDate.getMonth() + 1).padStart(2, '0');
+      const day = String(eventDate.getDate()).padStart(2, '0');
+
       const eventData = {
         title: eventName,
         eventType: eventTypeMap[selectedType] || 'custom',
-        eventDate: eventDate.toISOString().split('T')[0],
+        eventDate: `${year}-${month}-${day}`,
         description: notes || undefined,
         isRecurring: isRecurring,
         reminderDays: reminderDays.length > 0 ? reminderDays : [7],
-        circleId: contact?.id || undefined,
+        circleId: selectedContact?.id || undefined,
+        contactId: selectedContact?.memberId || undefined,
       };
 
-      await createEvent(eventData);
+      const response = await createEvent(eventData);
 
-      showSuccess('Event created successfully!', () => navigation.goBack());
+      // Schedule local notification reminders
+      for (const days of reminderDays) {
+        await scheduleEventReminder({
+          eventId: response?.event?.id || Date.now().toString(),
+          eventTitle: eventName,
+          eventDate: eventDate,
+          daysBefore: days,
+        });
+      }
+
+      showSuccess('Event created with reminders!', () => navigation.goBack());
     } catch (error) {
       showError(error.message || 'Failed to create event');
     } finally {
@@ -409,15 +452,25 @@ const AddEventScreen = ({ navigation, route }) => {
           <Animated.View style={[styles.inputSection, createSlideStyle(inputAnims[3])]}>
             <View style={styles.labelContainer}>
               <UserIcon size={18} color="#ca9ad6" />
-              <Text style={styles.label}>Associated Contact</Text>
+              <Text style={styles.label}>For Whom? (Contact)</Text>
             </View>
-            <TextInput
-              style={styles.input}
-              value={associatedContact}
-              onChangeText={setAssociatedContact}
-              placeholder="Link to a contact (optional)"
-              placeholderTextColor="#999"
-            />
+            <TouchableOpacity
+              style={styles.selector}
+              onPress={() => setShowContactPicker(true)}
+            >
+              <Text style={[styles.selectorText, !selectedContact && { color: '#999' }]}>
+                {selectedContact ? selectedContact.name : 'Select a contact (optional)'}
+              </Text>
+              <ChevronDownIcon size={20} color="#6b3a8a" />
+            </TouchableOpacity>
+            {selectedContact && (
+              <TouchableOpacity
+                style={styles.clearContact}
+                onPress={() => setSelectedContact(null)}
+              >
+                <Text style={styles.clearContactText}>Clear selection</Text>
+              </TouchableOpacity>
+            )}
           </Animated.View>
 
           {/* Recurring Toggle */}
@@ -501,7 +554,7 @@ const AddEventScreen = ({ navigation, route }) => {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* Save Button */}
+      {/* Save Button - Enhanced UI */}
       <Animated.View style={[
         styles.saveButtonContainer,
         {
@@ -518,9 +571,10 @@ const AddEventScreen = ({ navigation, route }) => {
           style={[styles.saveButton, (!isValid || saving) && styles.saveButtonDisabled]}
           onPress={handleSave}
           disabled={!isValid || saving}
+          activeOpacity={0.8}
         >
           <LinearGradient
-            colors={isValid && !saving ? ['#ca9ad6', '#70d0dd'] : ['#ccc', '#ccc']}
+            colors={isValid && !saving ? ['#6b3a8a', '#ca9ad6', '#70d0dd'] : ['#ccc', '#ddd', '#ccc']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.saveButtonGradient}
@@ -529,7 +583,9 @@ const AddEventScreen = ({ navigation, route }) => {
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <>
-                <CalendarIcon size={22} color="#FFFFFF" />
+                <View style={styles.saveButtonIconWrapper}>
+                  <Text style={styles.saveButtonEmoji}>🎉</Text>
+                </View>
                 <Text style={styles.saveButtonText}>Create Event</Text>
               </>
             )}
@@ -666,6 +722,74 @@ const AddEventScreen = ({ navigation, route }) => {
               </TouchableOpacity>
             </LinearGradient>
           </Animated.View>
+        </View>
+      </Modal>
+
+      {/* Contact Picker Modal */}
+      <Modal
+        visible={showContactPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowContactPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            onPress={() => setShowContactPicker(false)}
+            activeOpacity={1}
+          />
+          <View style={styles.contactPickerContainer}>
+            <LinearGradient
+              colors={['#FFFFFF', '#fbe5f5']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.contactPickerContent}
+            >
+              <View style={styles.datePickerHeader}>
+                <Text style={styles.datePickerTitle}>Select Contact</Text>
+                <TouchableOpacity onPress={() => setShowContactPicker(false)} style={styles.closeButton}>
+                  <XIcon size={24} color="#6b3a8a" />
+                </TouchableOpacity>
+              </View>
+
+              {loadingContacts ? (
+                <View style={styles.contactLoadingContainer}>
+                  <ActivityIndicator size="large" color="#ca9ad6" />
+                </View>
+              ) : contacts.length === 0 ? (
+                <View style={styles.contactEmptyContainer}>
+                  <Text style={styles.contactEmptyText}>No contacts found</Text>
+                  <Text style={styles.contactEmptySubtext}>Add contacts first to link events</Text>
+                </View>
+              ) : (
+                <ScrollView style={styles.contactList} showsVerticalScrollIndicator={false}>
+                  {contacts.map((c) => (
+                    <TouchableOpacity
+                      key={c.id}
+                      style={[
+                        styles.contactItem,
+                        selectedContact?.id === c.id && styles.contactItemSelected,
+                      ]}
+                      onPress={() => {
+                        setSelectedContact(c);
+                        setShowContactPicker(false);
+                      }}
+                    >
+                      <View style={styles.contactAvatar}>
+                        <Text style={styles.contactAvatarText}>
+                          {c.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                        </Text>
+                      </View>
+                      <Text style={styles.contactName}>{c.name}</Text>
+                      {selectedContact?.id === c.id && (
+                        <CheckIcon size={20} color="#ca9ad6" />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+            </LinearGradient>
+          </View>
         </View>
       </Modal>
 
@@ -902,7 +1026,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 16,
-    paddingBottom: 34,
+    paddingBottom: 50,
     paddingTop: 16,
     backgroundColor: 'transparent',
   },
@@ -923,12 +1047,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 18,
-    gap: 10,
+    gap: 12,
+  },
+  saveButtonIconWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveButtonEmoji: {
+    fontSize: 18,
   },
   saveButtonText: {
-    fontSize: 17,
+    fontSize: 18,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
   modalOverlay: {
     flex: 1,
@@ -1021,6 +1157,82 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
+  },
+  // Contact picker styles
+  clearContact: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  clearContactText: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#ca9ad6',
+  },
+  contactPickerContainer: {
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '70%',
+  },
+  contactPickerContent: {
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  contactLoadingContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  contactEmptyContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  contactEmptyText: {
+    fontSize: 16,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+  },
+  contactEmptySubtext: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#999',
+    marginTop: 4,
+  },
+  contactList: {
+    maxHeight: 300,
+  },
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    gap: 12,
+  },
+  contactItemSelected: {
+    backgroundColor: '#fbe5f5',
+  },
+  contactAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#ca9ad6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contactAvatarText: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#FFFFFF',
+  },
+  contactName: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
   },
 });
 

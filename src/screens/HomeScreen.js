@@ -432,7 +432,7 @@ const HomeScreen = ({ navigation }) => {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Event Cards with premium styling */}
+        {/* Event Cards with premium styling - Horizontal Scroll */}
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="small" color="#ca9ad6" />
@@ -443,7 +443,12 @@ const HomeScreen = ({ navigation }) => {
             <Text style={styles.emptySubtext}>Add events to see them here</Text>
           </View>
         ) : (
-          upcomingEvents.slice(0, 5).map((event, index) => {
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.eventsScrollContent}
+          >
+          {upcomingEvents.slice(0, 5).map((event, index) => {
             const avatarStyle = getAvatarStyle(index);
             const daysUntil = getDaysUntil(event.event_date || event.eventDate);
             const badgeInfo = getBadgeInfo(daysUntil);
@@ -457,7 +462,16 @@ const HomeScreen = ({ navigation }) => {
                 <TouchableOpacity
                   style={styles.birthdayCardInner}
                   activeOpacity={0.7}
-                  onPress={() => navigation.navigate('Calendar')}
+                  onPress={() => {
+                    // If event has a linked contact, navigate to contact detail
+                    if (event.circleId || event.circle_id) {
+                      navigation.navigate('ContactDetail', {
+                        contactId: event.circleId || event.circle_id
+                      });
+                    } else {
+                      navigation.navigate('Calendar');
+                    }
+                  }}
                 >
                   {/* Card glow effect */}
                   <Animated.View style={[
@@ -506,7 +520,8 @@ const HomeScreen = ({ navigation }) => {
                 </TouchableOpacity>
               </Animated.View>
             );
-          })
+          })}
+          </ScrollView>
         )}
 
         {/* Quick Actions with premium styling */}
@@ -660,8 +675,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Handlee_400Regular',
   },
+  eventsScrollContent: {
+    paddingRight: 16,
+    gap: 12,
+  },
   birthdayCard: {
-    marginBottom: 12,
+    width: 280,
+    marginRight: 0,
   },
   birthdayCardInner: {
     flexDirection: 'row',

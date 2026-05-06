@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Animated,
   Dimensions,
 } from 'react-native';
@@ -114,17 +115,18 @@ const CustomAlert = ({
 
   return (
     <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
-      <Animated.View style={[styles.overlay, { opacity: opacityAnim }]}>
-        <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} activeOpacity={1} />
-        <Animated.View
-          style={[
-            styles.alertContainer,
-            {
-              transform: [{ scale: scaleAnim }],
-              opacity: opacityAnim,
-            },
-          ]}
-        >
+      <TouchableWithoutFeedback onPress={onClose}>
+        <Animated.View style={[styles.overlay, { opacity: opacityAnim }]}>
+          <TouchableWithoutFeedback>
+            <Animated.View
+              style={[
+                styles.alertContainer,
+                {
+                  transform: [{ scale: scaleAnim }],
+                  opacity: opacityAnim,
+                },
+              ]}
+            >
           <LinearGradient
             colors={getGradientColors()}
             start={{ x: 0, y: 0 }}
@@ -143,8 +145,10 @@ const CustomAlert = ({
                     index === buttons.length - 1 && styles.primaryButton,
                     buttons.length === 1 && styles.singleButton,
                   ]}
-                  onPress={() => {
-                    button.onPress?.();
+                  onPress={async () => {
+                    if (button.onPress) {
+                      await button.onPress();
+                    }
                     onClose?.();
                   }}
                 >
@@ -163,9 +167,11 @@ const CustomAlert = ({
                 </TouchableOpacity>
               ))}
             </View>
-          </LinearGradient>
+            </LinearGradient>
+            </Animated.View>
+          </TouchableWithoutFeedback>
         </Animated.View>
-      </Animated.View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
@@ -214,26 +220,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
   },
   button: {
     flex: 1,
+    minHeight: 48,
     paddingVertical: 14,
+    paddingHorizontal: 16,
     borderRadius: 14,
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(202, 154, 214, 0.3)',
   },
   primaryButton: {
     padding: 0,
     overflow: 'hidden',
     backgroundColor: 'transparent',
+    borderWidth: 0,
   },
   singleButton: {
     flex: 1,
+    maxWidth: 200,
   },
   buttonGradient: {
     width: '100%',
+    minHeight: 48,
     paddingVertical: 14,
+    paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 14,

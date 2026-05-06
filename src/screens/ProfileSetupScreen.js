@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect, Line, Polyline } from 'react-native-svg';
-import { setupProfile, setUserCredentials, getUserCredentials } from '../services/api';
+import { setupProfile, setUserCredentials, getUserCredentials, getProfile } from '../services/api';
 import { CustomAlert } from '../components';
 import useAlert from '../hooks/useAlert';
 
@@ -76,9 +76,13 @@ const getDaysInMonth = (month, year) => {
   return new Date(year, month + 1, 0).getDate();
 };
 
-const ProfileSetupScreen = ({ navigation }) => {
+const ProfileSetupScreen = ({ navigation, route }) => {
+  // Check if editing from Settings
+  const isEditMode = route?.params?.editMode || false;
+  const [profileLoaded, setProfileLoaded] = useState(false);
+
   const [name, setName] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState(0); // January
+  const [selectedMonth, setSelectedMonth] = useState(0);
   const [selectedDay, setSelectedDay] = useState(1);
   const [selectedYear, setSelectedYear] = useState(2000);
   const [selectedAvatar, setSelectedAvatar] = useState('turtle');
@@ -86,6 +90,7 @@ const ProfileSetupScreen = ({ navigation }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const [nameFocused, setNameFocused] = useState(false);
+  const [loading, setLoading] = useState(isEditMode);
 
   // Custom alert hook
   const { alertConfig, showSuccess, showError, showWarning, hideAlert } = useAlert();
@@ -100,12 +105,51 @@ const ProfileSetupScreen = ({ navigation }) => {
   const years = Array.from({ length: currentYear - 1920 + 1 }, (_, i) => currentYear - i);
   const daysInMonth = getDaysInMonth(selectedMonth, selectedYear);
 
+  // Load profile data on mount
   useEffect(() => {
-    // Pre-fill name from credentials if available
-    const credentials = getUserCredentials();
-    if (credentials.name) {
-      setName(credentials.name);
-    }
+    const loadProfile = async () => {
+      if (isEditMode && !profileLoaded) {
+        try {
+          setLoading(true);
+          const response = await getProfile();
+          const profile = response.user || response.profile || response;
+
+          if (profile) {
+            if (profile.name) setName(profile.name);
+            if (profile.birthday) {
+              const date = new Date(profile.birthday);
+              setSelectedMonth(date.getMonth());
+              setSelectedDay(date.getDate());
+              setSelectedYear(date.getFullYear());
+            }
+            if (profile.avatarType || profile.avatar_type) {
+              setSelectedAvatar(profile.avatarType || profile.avatar_type);
+            }
+            if (profile.showBirthYear !== undefined || profile.show_birth_year !== undefined) {
+              setShowBirthYear(profile.showBirthYear ?? profile.show_birth_year ?? true);
+            }
+          }
+          setProfileLoaded(true);
+        } catch (error) {
+          console.error('Error loading profile:', error);
+          // Try to get name from credentials as fallback
+          const credentials = getUserCredentials();
+          if (credentials?.name) {
+            setName(credentials.name);
+          }
+        } finally {
+          setLoading(false);
+        }
+      } else if (!isEditMode && !name) {
+        // Pre-fill from credentials for new setup
+        const credentials = getUserCredentials();
+        if (credentials?.name) {
+          setName(credentials.name);
+        }
+      }
+    };
+
+    loadProfile();
 
     Animated.stagger(150, [
       Animated.spring(headerAnim, {
@@ -159,27 +203,35 @@ const ProfileSetupScreen = ({ navigation }) => {
     try {
       setSaving(true);
 
-      const birthday = new Date(selectedYear, selectedMonth, selectedDay);
+      // Format date in local timezone to avoid UTC conversion issues
+      const year = selectedYear;
+      const month = String(selectedMonth + 1).padStart(2, '0');
+      const day = String(selectedDay).padStart(2, '0');
+
       const profileData = {
         name: name.trim(),
-        birthday: birthday.toISOString().split('T')[0],
+        birthday: `${year}-${month}-${day}`,
         avatarType: selectedAvatar,
         showBirthYear,
       };
 
-      // Try to save profile to API (may fail if backend not reachable)
+      // Try to save profile to API
       try {
         await setupProfile(profileData);
       } catch (apiError) {
         console.log('API save failed, continuing with local save:', apiError.message);
       }
 
-      // Update local credentials with name (this is the important part)
+      // Update local credentials with name
       const credentials = getUserCredentials();
       await setUserCredentials(credentials.userId, credentials.email, name.trim());
 
-      // Navigate to main app
-      navigation.replace('MainApp');
+      // Navigate based on mode
+      if (isEditMode) {
+        navigation.goBack();
+      } else {
+        navigation.replace('MainApp');
+      }
     } catch (error) {
       console.error('Error setting up profile:', error);
       showError('Failed to save profile. Please try again.');
@@ -217,102 +269,6 @@ const ProfileSetupScreen = ({ navigation }) => {
     }
   };
 
-  const DatePickerModal = () => (
-    <Modal
-      visible={showDatePicker}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setShowDatePicker(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Select Your Birthday</Text>
-
-          <View style={styles.pickerContainer}>
-            {/* Month Picker */}
-            <View style={styles.pickerColumn}>
-              <Text style={styles.pickerLabel}>Month</Text>
-              <TouchableOpacity
-                style={styles.pickerArrow}
-                onPress={() => adjustValue('month', -1)}
-              >
-                <ChevronUpIcon size={24} color="#ca9ad6" />
-              </TouchableOpacity>
-              <View style={styles.pickerValue}>
-                <Text style={styles.pickerValueText}>{months[selectedMonth].slice(0, 3)}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.pickerArrow}
-                onPress={() => adjustValue('month', 1)}
-              >
-                <ChevronDownIcon size={24} color="#ca9ad6" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Day Picker */}
-            <View style={styles.pickerColumn}>
-              <Text style={styles.pickerLabel}>Day</Text>
-              <TouchableOpacity
-                style={styles.pickerArrow}
-                onPress={() => adjustValue('day', -1)}
-              >
-                <ChevronUpIcon size={24} color="#ca9ad6" />
-              </TouchableOpacity>
-              <View style={styles.pickerValue}>
-                <Text style={styles.pickerValueText}>{selectedDay}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.pickerArrow}
-                onPress={() => adjustValue('day', 1)}
-              >
-                <ChevronDownIcon size={24} color="#ca9ad6" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Year Picker */}
-            <View style={styles.pickerColumn}>
-              <Text style={styles.pickerLabel}>Year</Text>
-              <TouchableOpacity
-                style={styles.pickerArrow}
-                onPress={() => adjustValue('year', 1)}
-              >
-                <ChevronUpIcon size={24} color="#ca9ad6" />
-              </TouchableOpacity>
-              <View style={styles.pickerValue}>
-                <Text style={styles.pickerValueText}>{selectedYear}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.pickerArrow}
-                onPress={() => adjustValue('year', -1)}
-              >
-                <ChevronDownIcon size={24} color="#ca9ad6" />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={styles.modalCancelButton}
-              onPress={() => setShowDatePicker(false)}
-            >
-              <Text style={styles.modalCancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-              <LinearGradient
-                colors={['#ca9ad6', '#70d0dd']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.modalConfirmButton}
-              >
-                <Text style={styles.modalConfirmText}>Done</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -326,6 +282,14 @@ const ProfileSetupScreen = ({ navigation }) => {
         style={StyleSheet.absoluteFill}
       />
 
+      {/* Loading Overlay for Edit Mode */}
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#ca9ad6" />
+          <Text style={styles.loadingText}>Loading profile...</Text>
+        </View>
+      )}
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -333,7 +297,7 @@ const ProfileSetupScreen = ({ navigation }) => {
       >
         {/* Header */}
         <Animated.View style={[styles.header, createSlideStyle(headerAnim)]}>
-          <Text style={styles.title}>Complete Your Profile</Text>
+          <Text style={styles.title}>{isEditMode ? 'Edit Profile' : 'Complete Your Profile'}</Text>
           <Text style={styles.subtitle}>
             Tell us a bit about yourself so we can personalize your experience
           </Text>
@@ -433,14 +397,110 @@ const ProfileSetupScreen = ({ navigation }) => {
 
           <TouchableOpacity
             style={styles.skipButton}
-            onPress={() => navigation.replace('Main')}
+            onPress={() => isEditMode ? navigation.goBack() : navigation.replace('Main')}
           >
-            <Text style={styles.skipText}>Skip for now</Text>
+            <Text style={styles.skipText}>{isEditMode ? 'Cancel' : 'Skip for now'}</Text>
           </TouchableOpacity>
         </Animated.View>
       </ScrollView>
 
-      <DatePickerModal />
+      {/* Date Picker Modal */}
+      <Modal
+        visible={showDatePicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDatePicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Your Birthday</Text>
+
+            <View style={styles.pickerContainer}>
+              {/* Month Picker */}
+              <View style={styles.pickerColumn}>
+                <Text style={styles.pickerLabel}>Month</Text>
+                <TouchableOpacity
+                  style={styles.pickerArrow}
+                  onPress={() => adjustValue('month', -1)}
+                >
+                  <ChevronUpIcon size={24} color="#ca9ad6" />
+                </TouchableOpacity>
+                <View style={styles.pickerValue}>
+                  <Text style={styles.pickerValueText}>{months[selectedMonth].slice(0, 3)}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.pickerArrow}
+                  onPress={() => adjustValue('month', 1)}
+                >
+                  <ChevronDownIcon size={24} color="#ca9ad6" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Day Picker */}
+              <View style={styles.pickerColumn}>
+                <Text style={styles.pickerLabel}>Day</Text>
+                <TouchableOpacity
+                  style={styles.pickerArrow}
+                  onPress={() => adjustValue('day', -1)}
+                >
+                  <ChevronUpIcon size={24} color="#ca9ad6" />
+                </TouchableOpacity>
+                <View style={styles.pickerValue}>
+                  <Text style={styles.pickerValueText}>{selectedDay}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.pickerArrow}
+                  onPress={() => adjustValue('day', 1)}
+                >
+                  <ChevronDownIcon size={24} color="#ca9ad6" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Year Picker */}
+              <View style={styles.pickerColumn}>
+                <Text style={styles.pickerLabel}>Year</Text>
+                <TouchableOpacity
+                  style={styles.pickerArrow}
+                  onPress={() => adjustValue('year', 1)}
+                >
+                  <ChevronUpIcon size={24} color="#ca9ad6" />
+                </TouchableOpacity>
+                <View style={styles.pickerValue}>
+                  <Text style={styles.pickerValueText}>{selectedYear}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.pickerArrow}
+                  onPress={() => adjustValue('year', -1)}
+                >
+                  <ChevronDownIcon size={24} color="#ca9ad6" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => setShowDatePicker(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalConfirmWrapper}
+                onPress={() => setShowDatePicker(false)}
+              >
+                <LinearGradient
+                  colors={['#ca9ad6', '#70d0dd']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.modalConfirmButton}
+                >
+                  <Text style={styles.modalConfirmText}>Done</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Custom Alert */}
       <CustomAlert {...alertConfig} onClose={hideAlert} />
@@ -452,6 +512,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
   },
   scrollContent: {
     paddingHorizontal: 24,
@@ -691,26 +764,37 @@ const styles = StyleSheet.create({
   modalButtons: {
     flexDirection: 'row',
     gap: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalCancelButton: {
     flex: 1,
+    minHeight: 50,
     paddingVertical: 14,
     borderRadius: 14,
     borderWidth: 2,
-    borderColor: '#f0f0f0',
+    borderColor: '#e0e0e0',
+    backgroundColor: '#f8f9fa',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   modalCancelText: {
     fontSize: 16,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
-  modalConfirmButton: {
+  modalConfirmWrapper: {
     flex: 1,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  modalConfirmButton: {
+    minHeight: 50,
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 14,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   modalConfirmText: {
     fontSize: 16,

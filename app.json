@@ -22,7 +22,9 @@
         "backgroundColor": "#FDEEF3"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.giftbox4you.app"
+      "package": "com.giftbox4you.app",
+      "usesCleartextTraffic": true,
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -35,7 +37,20 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 200
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#ca9ad6"
+        }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4b765adc-af4c-4925-bad7-debcb3ecfb98"
+      }
+    },
+    "owner": "sathishteckas"
   }
 }

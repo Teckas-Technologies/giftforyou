@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,13 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
-import Svg, { Path, Circle, Polyline, Line, Rect } from 'react-native-svg';
+import Svg, { Path, Circle, Polyline, Rect, Line } from 'react-native-svg';
+import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme';
 import { getProfile, getDashboardStats, clearUserCredentials } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import { CustomAlert } from '../components';
+import useAlert from '../hooks/useAlert';
 
 const { width } = Dimensions.get('window');
 
@@ -32,15 +36,6 @@ const BellIcon = ({ size = 20, color = '#ca9ad6' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
     <Path d="M13.73 21a2 2 0 0 1-3.46 0" />
-  </Svg>
-);
-
-// Help Circle Icon SVG
-const HelpIcon = ({ size = 20, color = '#ca9ad6' }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <Circle cx="12" cy="12" r="10" />
-    <Path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-    <Line x1="12" y1="17" x2="12.01" y2="17" />
   </Svg>
 );
 
@@ -91,7 +86,6 @@ const menuItems = [
   { id: '2', icon: MailIcon, title: 'Invite Friends', route: 'Invitations' },
   { id: '3', icon: CalendarPlusIcon, title: 'Add Event', route: 'AddEvent' },
   { id: '4', icon: SettingsIcon, title: 'Settings', route: 'Settings' },
-  { id: '5', icon: HelpIcon, title: 'Help & Support', route: null },
 ];
 
 // Gradient Text Component for stat values
@@ -121,6 +115,17 @@ const GradientStatValue = ({ value, glowAnim }) => (
 );
 
 const ProfileScreen = ({ navigation }) => {
+  const { signOut } = useAuth();
+  const scrollViewRef = useRef(null);
+  const { alertConfig, showAlert, hideAlert } = useAlert();
+
+  // Scroll to top when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+    }, [])
+  );
+
   // State for API data
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState({
@@ -134,6 +139,32 @@ const ProfileScreen = ({ navigation }) => {
     upcomingEventsCount: 0,
     giftsGivenCount: 0,
   });
+
+  // Handle logout
+  const handleLogout = () => {
+    showAlert({
+      type: 'warning',
+      title: 'Log Out',
+      message: 'Are you sure you want to log out?',
+      buttons: [
+        {
+          text: 'Cancel',
+          onPress: () => {}
+        },
+        {
+          text: 'Log Out',
+          onPress: async () => {
+            try {
+              await clearUserCredentials();
+              await signOut();
+            } catch (error) {
+              console.log('Logout error:', error);
+            }
+          }
+        },
+      ],
+    });
+  };
 
   // Animation values
   const cardAnim = useRef(new Animated.Value(0)).current;
@@ -423,6 +454,7 @@ const ProfileScreen = ({ navigation }) => {
       )}
 
       <ScrollView
+        ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
@@ -577,7 +609,7 @@ const ProfileScreen = ({ navigation }) => {
             }],
           }
         ]}>
-          <TouchableOpacity activeOpacity={0.7}>
+          <TouchableOpacity activeOpacity={0.7} onPress={handleLogout}>
             <LinearGradient
               colors={['#fbe5f5', '#f4cae8']}
               start={{ x: 0, y: 0 }}
@@ -591,6 +623,9 @@ const ProfileScreen = ({ navigation }) => {
 
         <View style={{ height: 120 }} />
       </ScrollView>
+
+      {/* Custom Alert */}
+      <CustomAlert {...alertConfig} onClose={hideAlert} />
     </View>
   );
 };

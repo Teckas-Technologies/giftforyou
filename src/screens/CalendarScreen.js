@@ -16,7 +16,7 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme';
-import { getEventDates, getUpcomingEvents } from '../services/api';
+import { getEventDates, getUpcomingEvents, getEventsByDate } from '../services/api';
 
 // Plus Icon for FAB
 const PlusIcon = ({ size = 24, color = '#FFFFFF' }) => (
@@ -83,9 +83,12 @@ const Sparkle = ({ style, size = 8, color = '#f4cae8' }) => (
 const CalendarScreen = ({ navigation }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [selectedDate, setSelectedDate] = useState(null); // Selected date for filtering
   const [eventDates, setEventDates] = useState({});
   const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [selectedDateEvents, setSelectedDateEvents] = useState([]); // Events for selected date
   const [loading, setLoading] = useState(true);
+  const [loadingDateEvents, setLoadingDateEvents] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const today = new Date().getDate();
@@ -125,6 +128,8 @@ const CalendarScreen = ({ navigation }) => {
         date: formatEventDate(event.eventDate),
         emoji: getEventEmoji(event.eventType),
         desc: getDaysUntil(event.eventDate),
+        circleId: event.circleId || event.circle_id,
+        contactName: event.contact?.name,
       }));
       setUpcomingEvents(events);
     } catch (error) {
@@ -337,11 +342,13 @@ const CalendarScreen = ({ navigation }) => {
     for (let i = 1; i <= daysInMonth; i++) {
       const isToday = i === today && currentMonth === currentMonthNow && currentYear === currentYearNow;
       const hasEvent = eventDates[i] !== undefined;
+      const isSelected = selectedDate === i;
       days.push({
         day: i,
         empty: false,
         isToday,
         hasEvent,
+        isSelected,
       });
     }
 
@@ -355,6 +362,8 @@ const CalendarScreen = ({ navigation }) => {
     } else {
       setCurrentMonth(currentMonth - 1);
     }
+    setSelectedDate(null); // Reset selection on month change
+    setSelectedDateEvents([]); // Clear selected date events
   };
 
   const goToNextMonth = () => {
@@ -364,7 +373,47 @@ const CalendarScreen = ({ navigation }) => {
     } else {
       setCurrentMonth(currentMonth + 1);
     }
+    setSelectedDate(null); // Reset selection on month change
+    setSelectedDateEvents([]); // Clear selected date events
   };
+
+  // Handle date selection - fetch events from API
+  const handleDateSelect = async (day) => {
+    if (selectedDate === day) {
+      setSelectedDate(null); // Deselect if same date clicked
+      setSelectedDateEvents([]);
+    } else {
+      setSelectedDate(day);
+
+      // Fetch events for the selected date from API
+      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      try {
+        setLoadingDateEvents(true);
+        const response = await getEventsByDate(dateStr);
+        const events = (response.events || []).map(event => ({
+          id: event.id || event._id,
+          title: event.title,
+          eventType: event.eventType || event.event_type,
+          eventDate: event.eventDate || event.event_date,
+          date: formatEventDate(event.eventDate || event.event_date),
+          emoji: getEventEmoji(event.eventType || event.event_type),
+          desc: getDaysUntil(event.eventDate || event.event_date),
+          circleId: event.circleId || event.circle_id,
+          contactName: event.contact?.name,
+        }));
+        setSelectedDateEvents(events);
+      } catch (error) {
+        console.error('Error fetching events for date:', error);
+        setSelectedDateEvents([]);
+      } finally {
+        setLoadingDateEvents(false);
+      }
+    }
+  };
+
+  // Get events to display - selected date events or upcoming events
+  const displayedEvents = selectedDate ? selectedDateEvents : upcomingEvents;
+  const isLoadingEvents = selectedDate ? loadingDateEvents : loading;
 
   // Sparkle styles
   const sparkle1Style = {
@@ -455,6 +504,64 @@ const CalendarScreen = ({ navigation }) => {
       <Sparkle style={[{ top: 120, left: 20 }, sparkle2Style]} size={7} color="#70d0dd" />
       <Sparkle style={[{ top: 90, right: 80 }, sparkle3Style]} size={8} color="#ca9ad6" />
 
+      {/* Header - Fixed at top */}
+      <Animated.View style={[styles.header, createFadeStyle(headerAnim)]}>
+        {/* Gradient Month Text */}
+        <MaskedView
+          maskElement={
+            <Text style={styles.monthTextMask}>{MONTHS[currentMonth]}</Text>
+          }
+        >
+          <LinearGradient
+            colors={['#ca9ad6', '#70d0dd']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Text style={[styles.monthTextMask, { opacity: 0 }]}>{MONTHS[currentMonth]}</Text>
+          </LinearGradient>
+        </MaskedView>
+
+        <Animated.Text style={[
+          styles.yearText,
+          {
+            opacity: glowAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.8, 1],
+            }),
+          }
+        ]}>
+          {currentYear}
+        </Animated.Text>
+
+        {/* Navigation Buttons with pulse */}
+        <View style={styles.navRow}>
+          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            <TouchableOpacity onPress={goToPrevMonth} activeOpacity={0.8}>
+              <LinearGradient
+                colors={['#fbe5f5', '#ccf9ff']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.navBtn}
+              >
+                <Text style={styles.navBtnText}>‹</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            <TouchableOpacity onPress={goToNextMonth} activeOpacity={0.8}>
+              <LinearGradient
+                colors={['#ccf9ff', '#fbe5f5']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.navBtn}
+              >
+                <Text style={styles.navBtnText}>›</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      </Animated.View>
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -467,64 +574,6 @@ const CalendarScreen = ({ navigation }) => {
           />
         }
       >
-        {/* Header */}
-        <Animated.View style={[styles.header, createFadeStyle(headerAnim)]}>
-          {/* Gradient Month Text */}
-          <MaskedView
-            maskElement={
-              <Text style={styles.monthTextMask}>{MONTHS[currentMonth]}</Text>
-            }
-          >
-            <LinearGradient
-              colors={['#ca9ad6', '#70d0dd']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Text style={[styles.monthTextMask, { opacity: 0 }]}>{MONTHS[currentMonth]}</Text>
-            </LinearGradient>
-          </MaskedView>
-
-          <Animated.Text style={[
-            styles.yearText,
-            {
-              opacity: glowAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.8, 1],
-              }),
-            }
-          ]}>
-            {currentYear}
-          </Animated.Text>
-
-          {/* Navigation Buttons with pulse */}
-          <View style={styles.navRow}>
-            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-              <TouchableOpacity onPress={goToPrevMonth} activeOpacity={0.8}>
-                <LinearGradient
-                  colors={['#fbe5f5', '#ccf9ff']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.navBtn}
-                >
-                  <Text style={styles.navBtnText}>‹</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
-            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-              <TouchableOpacity onPress={goToNextMonth} activeOpacity={0.8}>
-                <LinearGradient
-                  colors={['#ccf9ff', '#fbe5f5']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.navBtn}
-                >
-                  <Text style={styles.navBtnText}>›</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
-          </View>
-        </Animated.View>
-
         {/* Calendar */}
         <Animated.View style={[styles.calendarSection, createFadeStyle(calendarAnim)]}>
           {/* Calendar Card with shadow */}
@@ -546,6 +595,7 @@ const CalendarScreen = ({ navigation }) => {
                     <TouchableOpacity
                       style={styles.dayCellInner}
                       activeOpacity={0.7}
+                      onPress={() => handleDateSelect(item.day)}
                     >
                       {item.isToday ? (
                         <Animated.View style={[
@@ -566,6 +616,20 @@ const CalendarScreen = ({ navigation }) => {
                             )}
                           </LinearGradient>
                         </Animated.View>
+                      ) : item.isSelected ? (
+                        <View style={styles.selectedCellWrapper}>
+                          <LinearGradient
+                            colors={['#fbe5f5', '#ccf9ff']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.selectedCell}
+                          >
+                            <Text style={styles.selectedText}>{item.day}</Text>
+                            {item.hasEvent && (
+                              <View style={styles.eventDotSelected} />
+                            )}
+                          </LinearGradient>
+                        </View>
                       ) : (
                         <View style={styles.normalCell}>
                           <Text style={styles.dayText}>{item.day}</Text>
@@ -589,36 +653,62 @@ const CalendarScreen = ({ navigation }) => {
 
         {/* Events Section */}
         <Animated.View style={[styles.eventsSection, createFadeStyle(eventsAnim)]}>
-          <MaskedView
-            maskElement={
-              <Text style={styles.eventsTitleMask}>Upcoming Events</Text>
-            }
-          >
-            <LinearGradient
-              colors={['#ca9ad6', '#70d0dd']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+          <View style={styles.eventsSectionHeader}>
+            <MaskedView
+              maskElement={
+                <Text style={styles.eventsTitleMask}>
+                  {selectedDate ? `Events on ${MONTHS[currentMonth].substring(0, 3)} ${selectedDate}` : 'Upcoming Events'}
+                </Text>
+              }
             >
-              <Text style={[styles.eventsTitleMask, { opacity: 0 }]}>Upcoming Events</Text>
-            </LinearGradient>
-          </MaskedView>
+              <LinearGradient
+                colors={['#ca9ad6', '#70d0dd']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={[styles.eventsTitleMask, { opacity: 0 }]}>
+                  {selectedDate ? `Events on ${MONTHS[currentMonth].substring(0, 3)} ${selectedDate}` : 'Upcoming Events'}
+                </Text>
+              </LinearGradient>
+            </MaskedView>
+            {selectedDate && (
+              <TouchableOpacity
+                style={styles.clearDateBtn}
+                onPress={() => setSelectedDate(null)}
+              >
+                <Text style={styles.clearDateText}>Clear</Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
-          {loading && (
+          {isLoadingEvents && (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="small" color="#ca9ad6" />
             </View>
           )}
 
-          {!loading && upcomingEvents.length === 0 && (
+          {!isLoadingEvents && displayedEvents.length === 0 && (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No upcoming events</Text>
-              <Text style={styles.emptySubtext}>Add an event using the + button</Text>
+              <Text style={styles.emptyText}>
+                {selectedDate ? 'No events on this date' : 'No upcoming events'}
+              </Text>
+              <Text style={styles.emptySubtext}>
+                {selectedDate ? 'Select another date or add an event' : 'Add an event using the + button'}
+              </Text>
             </View>
           )}
 
-          {!loading && upcomingEvents.map((event, index) => (
+          {!isLoadingEvents && displayedEvents.map((event, index) => (
             <View key={event.id || index} style={styles.eventItem}>
-              <TouchableOpacity style={styles.eventItemInner} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={styles.eventItemInner}
+                activeOpacity={0.8}
+                onPress={() => {
+                  if (event.circleId) {
+                    navigation.navigate('ContactDetail', { contactId: event.circleId });
+                  }
+                }}
+              >
                 <Text style={styles.eventTime}>{event.date}</Text>
                 <LinearGradient
                   colors={['#f4cae8', '#70d0dd']}
@@ -629,13 +719,16 @@ const CalendarScreen = ({ navigation }) => {
                 <View style={styles.eventContent}>
                   <Text style={styles.eventTitle}>{event.title} {event.emoji}</Text>
                   <Text style={styles.eventDesc}>{event.desc}</Text>
+                  {event.contactName && (
+                    <Text style={styles.eventContact}>For: {event.contactName}</Text>
+                  )}
                 </View>
               </TouchableOpacity>
             </View>
           ))}
         </Animated.View>
 
-        <View style={{ height: 180 }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
 
       {/* FAB - Add Event */}
@@ -688,12 +781,15 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 50,
+    paddingTop: 10,
     paddingBottom: 20,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 20,
+    paddingTop: 50,
+    paddingBottom: 10,
+    paddingHorizontal: 16,
+    backgroundColor: 'transparent',
   },
   monthTextMask: {
     fontSize: 28,
@@ -791,6 +887,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  selectedCellWrapper: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedCell: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#ca9ad6',
+  },
+  selectedText: {
+    color: '#6b3a8a',
+    fontFamily: 'Handlee_400Regular',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  eventDotSelected: {
+    position: 'absolute',
+    bottom: 2,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#ca9ad6',
+  },
   todayCell: {
     width: 38,
     height: 38,
@@ -826,10 +951,26 @@ const styles = StyleSheet.create({
   eventsSection: {
     marginTop: 8,
   },
+  eventsSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   eventsTitleMask: {
     fontSize: 18,
     fontFamily: 'Handlee_400Regular',
-    marginBottom: 16,
+  },
+  clearDateBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#fbe5f5',
+    borderRadius: 12,
+  },
+  clearDateText: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#ca9ad6',
   },
   eventItem: {
     marginBottom: 12,
@@ -872,9 +1013,15 @@ const styles = StyleSheet.create({
     color: '#6b3a8a',
     marginTop: 2,
   },
+  eventContact: {
+    fontSize: 11,
+    fontFamily: 'Handlee_400Regular',
+    color: '#ca9ad6',
+    marginTop: 4,
+  },
   fabContainer: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 140,
     right: 20,
     zIndex: 100,
   },

@@ -49,6 +49,58 @@ export const clearLocalStorage = async () => {
 };
 
 /**
+ * Clear user credentials and local storage on logout
+ */
+export const clearUserCredentials = async () => {
+  try {
+    // Clear all app-specific data
+    await AsyncStorage.multiRemove([
+      STORAGE_KEYS.HAS_SEEN_ONBOARDING,
+    ]);
+  } catch (error) {
+    console.error('Error clearing user credentials:', error);
+    // Don't throw - logout should still proceed
+  }
+};
+
+// In-memory credentials cache (for synchronous access)
+let _cachedCredentials = { userId: null, email: null, name: null };
+
+/**
+ * Get user credentials (synchronous - returns cached values)
+ */
+export const getUserCredentials = () => {
+  return _cachedCredentials;
+};
+
+/**
+ * Set user credentials (updates cache)
+ */
+export const setUserCredentials = async (userId, email, name) => {
+  _cachedCredentials = { userId, email, name };
+  return _cachedCredentials;
+};
+
+/**
+ * Initialize credentials from Supabase session
+ */
+export const initUserCredentials = async () => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      _cachedCredentials = {
+        userId: session.user.id,
+        email: session.user.email,
+        name: session.user.user_metadata?.name || null,
+      };
+    }
+  } catch (error) {
+    console.log('Error initializing credentials:', error);
+  }
+  return _cachedCredentials;
+};
+
+/**
  * Get auth headers with Supabase JWT token
  */
 const getHeaders = async () => {
@@ -536,7 +588,7 @@ export const deleteNotification = (id) =>
  * @param {string} token - Push notification token
  */
 export const registerPushToken = (token) =>
-  apiRequest('/api/notifications/push-token', {
+  apiRequest('/api/users/me/push-token', {
     method: 'POST',
     body: JSON.stringify({ token }),
   });
@@ -567,6 +619,10 @@ export default {
   hasSeenOnboardingLocal,
   markOnboardingSeenLocal,
   clearLocalStorage,
+  clearUserCredentials,
+  getUserCredentials,
+  setUserCredentials,
+  initUserCredentials,
 
   // Health
   checkHealth,

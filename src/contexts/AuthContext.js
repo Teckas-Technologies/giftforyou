@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '../config/supabase';
+import { registerForPushNotifications } from '../services/notifications';
 
 const AuthContext = createContext({});
 
@@ -37,6 +38,20 @@ export const AuthProvider = ({ children }) => {
       subscription?.unsubscribe();
     };
   }, []);
+
+  // Register push token when user is authenticated
+  useEffect(() => {
+    if (session && user) {
+      // User is authenticated, register push token
+      registerForPushNotifications().then(token => {
+        if (token) {
+          console.log('Push token registered for user:', user.id);
+        }
+      }).catch(err => {
+        console.log('Push registration error:', err);
+      });
+    }
+  }, [session, user]);
 
   // Sign up with email and password
   const signUp = async (email, password, name) => {
@@ -98,12 +113,19 @@ export const AuthProvider = ({ children }) => {
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      // Always clear local state regardless of Supabase response
       setUser(null);
       setSession(null);
+      if (error) {
+        console.log('Supabase signOut error (local state cleared):', error);
+      }
       return { error: null };
     } catch (error) {
-      return { error };
+      // Even if there's an error, clear local state
+      setUser(null);
+      setSession(null);
+      console.log('SignOut exception (local state cleared):', error);
+      return { error: null };
     }
   };
 

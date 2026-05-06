@@ -1,7 +1,13 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import {
+  registerForPushNotifications,
+  addNotificationReceivedListener,
+  addNotificationResponseListener,
+} from './src/services/notifications';
+import { supabase } from './src/config/supabase';
 import {
   useFonts,
   Outfit_300Light,
@@ -20,6 +26,48 @@ import { AppNavigator } from './src/navigation';
 SplashScreen.preventAutoHideAsync();
 
 export default function App() {
+  const notificationListener = useRef();
+  const responseListener = useRef();
+
+  // Initialize notifications and register push token
+  useEffect(() => {
+    // Register push notifications if user is authenticated
+    const initPushNotifications = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          console.log('App start: User authenticated, registering push token...');
+          const token = await registerForPushNotifications();
+          console.log('App start: Push token result:', token ? 'Success' : 'Failed');
+        }
+      } catch (error) {
+        console.log('App start: Push notification error:', error);
+      }
+    };
+
+    initPushNotifications();
+
+    // Listen for notifications received while app is foregrounded
+    notificationListener.current = addNotificationReceivedListener(notification => {
+      console.log('Notification received:', notification);
+    });
+
+    // Listen for user interaction with notification
+    responseListener.current = addNotificationResponseListener(response => {
+      const data = response.notification.request.content.data;
+      console.log('Notification tapped:', data);
+    });
+
+    return () => {
+      if (notificationListener.current) {
+        notificationListener.current.remove();
+      }
+      if (responseListener.current) {
+        responseListener.current.remove();
+      }
+    };
+  }, []);
+
   const [fontsLoaded] = useFonts({
     // Logo font
     StyleScript_400Regular,

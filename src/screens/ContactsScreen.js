@@ -11,6 +11,8 @@ import {
   Dimensions,
   ActivityIndicator,
   RefreshControl,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
@@ -193,7 +195,6 @@ const ContactsScreen = ({ navigation }) => {
   const sparkleAnim2 = useRef(new Animated.Value(0)).current;
   const sparkleAnim3 = useRef(new Animated.Value(0)).current;
   const shimmerAnim = useRef(new Animated.Value(0)).current;
-  const searchGlowAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Entry animations with spring physics
@@ -309,14 +310,6 @@ const ContactsScreen = ({ navigation }) => {
     ).start();
   }, []);
 
-  // Search focus animation
-  useEffect(() => {
-    Animated.timing(searchGlowAnim, {
-      toValue: searchFocused ? 1 : 0,
-      duration: 200,
-      useNativeDriver: false,
-    }).start();
-  }, [searchFocused]);
 
   const createFadeStyle = (anim) => ({
     opacity: anim,
@@ -329,7 +322,7 @@ const ContactsScreen = ({ navigation }) => {
   });
 
   const filteredContacts = contacts.filter(contact =>
-    contact.name.toLowerCase().includes(searchText.toLowerCase())
+    contact.name && contact.name.toLowerCase().includes(searchText.toLowerCase())
   );
 
   // Sparkle float transforms
@@ -405,14 +398,12 @@ const ContactsScreen = ({ navigation }) => {
     ],
   };
 
-  // Dynamic search bar shadow
-  const searchShadowOpacity = searchGlowAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.1, 0.35],
-  });
-
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={0}
+    >
       {/* Background Gradient - Diagonal */}
       <LinearGradient
         colors={['#FFFFFF', '#ccf9ff', '#fbe5f5', '#FFFFFF']}
@@ -455,26 +446,12 @@ const ContactsScreen = ({ navigation }) => {
         </Animated.Text>
       </Animated.View>
 
-      {/* Search Bar with glow effect */}
-      <Animated.View style={[
+      {/* Search Bar */}
+      <View style={[
         styles.searchBar,
-        createFadeStyle(searchAnim),
-        {
-          shadowOpacity: searchShadowOpacity,
-          borderColor: searchFocused ? '#ca9ad6' : 'transparent',
-          borderWidth: 1.5,
-        }
+        searchFocused && styles.searchBarFocused,
       ]}>
-        <Animated.View style={{
-          transform: [{
-            scale: searchGlowAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [1, 1.1],
-            }),
-          }],
-        }}>
-          <SearchIcon size={18} color={searchFocused ? '#ca9ad6' : '#6b3a8a'} />
-        </Animated.View>
+        <SearchIcon size={18} color={searchFocused ? '#ca9ad6' : '#6b3a8a'} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search contacts..."
@@ -486,9 +463,10 @@ const ContactsScreen = ({ navigation }) => {
           returnKeyType="search"
           autoCorrect={false}
           autoCapitalize="none"
-          clearButtonMode="while-editing"
+          blurOnSubmit={true}
+          underlineColorAndroid="transparent"
         />
-      </Animated.View>
+      </View>
 
       {/* Discover People Card - Hide when searching */}
       {!searchText && (
@@ -661,7 +639,7 @@ const ContactsScreen = ({ navigation }) => {
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -704,9 +682,17 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     gap: 12,
     shadowColor: '#ca9ad6',
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 15,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  searchBarFocused: {
+    borderColor: '#ca9ad6',
+    shadowOpacity: 0.25,
+    elevation: 6,
   },
   discoverCard: {
     marginHorizontal: 16,

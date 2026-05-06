@@ -12,7 +12,7 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import * as SplashScreen from 'expo-splash-screen';
 import { colors } from '../theme';
 import { GiftBoxIcon } from '../components';
-import { initializeUser, hasSeenOnboardingLocal, getUserCredentials } from '../services/api';
+import { initializeUser, hasSeenOnboardingLocal } from '../services/api';
 
 const { width, height } = Dimensions.get('window');
 
@@ -53,14 +53,10 @@ const SplashScreenComponent = ({ navigation }) => {
         const hasSeenOnboarding = await hasSeenOnboardingLocal();
 
         if (hasSeenOnboarding) {
-          // User has seen onboarding, check if profile is setup
-          const credentials = getUserCredentials();
-          if (credentials.name) {
-            setNextScreen('MainApp');
-          } else {
-            setNextScreen('ProfileSetup');
-          }
+          // User has seen onboarding, go to Login (auth required)
+          setNextScreen('Login');
         } else {
+          // Show onboarding for new users
           setNextScreen('Onboarding');
         }
       } catch (error) {

@@ -8,15 +8,19 @@ import {
   Animated,
   Easing,
   Switch,
-  Alert,
   ActivityIndicator,
+  Linking,
+  Share,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { updateSettings, deleteAccount, clearUserCredentials } from '../services/api';
-import { CustomAlert } from '../components';
+import { CustomAlert, GiftBoxIcon } from '../components';
 import useAlert from '../hooks/useAlert';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../config/supabase';
+import APP_CONFIG from '../config/constants';
 
 // Icons
 const BackIcon = ({ size = 24, color = '#6b3a8a' }) => (
@@ -46,19 +50,6 @@ const UserIcon = ({ size = 22, color = '#ca9ad6' }) => (
   </Svg>
 );
 
-const MoonIcon = ({ size = 22, color = '#ca9ad6' }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <Path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-  </Svg>
-);
-
-const GlobeIcon = ({ size = 22, color = '#ca9ad6' }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <Circle cx="12" cy="12" r="10" />
-    <Line x1="2" y1="12" x2="22" y2="12" />
-    <Path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-  </Svg>
-);
 
 const HelpCircleIcon = ({ size = 22, color = '#ca9ad6' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -112,16 +103,17 @@ const ChevronRightIcon = ({ size = 20, color = '#ca9ad6' }) => (
 );
 
 const SettingsScreen = ({ navigation }) => {
+  const { signOut } = useAuth();
+
   const [notifications, setNotifications] = useState({
     eventReminders: true,
     invitations: true,
     questionnaires: true,
     marketing: false,
   });
-  const [darkMode, setDarkMode] = useState(false);
 
   // Custom alert hook
-  const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
+  const { alertConfig, showAlert, showSuccess, showError, showConfirm, showOptions, showInfo, hideAlert } = useAlert();
 
   // Animations
   const headerAnim = useRef(new Animated.Value(0)).current;
@@ -163,56 +155,142 @@ const SettingsScreen = ({ navigation }) => {
   });
 
   const handleLogout = () => {
-    Alert.alert(
-      'Log Out',
-      'Are you sure you want to log out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
+    showAlert({
+      type: 'warning',
+      title: 'Log Out',
+      message: 'Are you sure you want to log out?',
+      buttons: [
+        {
+          text: 'Cancel',
+          onPress: () => {}
+        },
         {
           text: 'Log Out',
-          style: 'destructive',
-          onPress: () => {
-            // Clear user credentials
-            clearUserCredentials();
-            // Navigate to login (for now just go back to home)
-            showSuccess('You have been logged out successfully');
+          onPress: async () => {
+            try {
+              await clearUserCredentials();
+              await signOut();
+            } catch (error) {
+              console.log('Logout error:', error);
+            }
           }
         },
-      ]
-    );
+      ],
+    });
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'This action cannot be undone. All your data will be permanently deleted. Type "DELETE" to confirm.',
-      [
-        { text: 'Cancel', style: 'cancel' },
+    showAlert({
+      type: 'warning',
+      title: 'Delete Account',
+      message: 'This action cannot be undone. All your data will be permanently deleted.',
+      buttons: [
+        {
+          text: 'Cancel',
+          onPress: () => {}
+        },
         {
           text: 'Delete',
-          style: 'destructive',
           onPress: async () => {
             try {
               await deleteAccount('DELETE');
-              clearUserCredentials();
-              showSuccess('Your account has been deleted successfully');
+              await clearUserCredentials();
+              // Show success briefly before signing out
+              showSuccess('Account deleted successfully');
+              setTimeout(async () => {
+                await signOut();
+              }, 1000);
             } catch (error) {
+              console.error('Delete account error:', error);
               showError(error.message || 'Failed to delete account');
             }
           }
         },
-      ]
-    );
+      ],
+    });
   };
 
   const handleNotificationToggle = async (key, value) => {
     setNotifications(prev => ({ ...prev, [key]: value }));
-    // Optionally save to API
+    showSuccess('Notification preference updated');
+  };
+
+  const handleChangePassword = () => {
+    showConfirm(
+      'Change Password',
+      'We will send a password reset link to your email address.',
+      async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user?.email) {
+            const { error } = await supabase.auth.resetPasswordForEmail(user.email);
+            if (error) throw error;
+            showSuccess('Password reset link sent to your email!');
+          } else {
+            showError('Could not find your email address');
+          }
+        } catch (error) {
+          showError(error.message || 'Failed to send reset link');
+        }
+      },
+      null,
+      'Send Link',
+      'Cancel'
+    );
+  };
+
+
+  const handleHelpCenter = () => {
+    showOptions(
+      'Help Center',
+      'How can we help you?',
+      [
+        {
+          text: 'FAQs',
+          onPress: () => Linking.openURL(APP_CONFIG.faqUrl).catch(() => showError('Could not open link'))
+        },
+        {
+          text: 'Email Support',
+          onPress: () => handleContactSupport()
+        },
+        { text: 'Close', style: 'cancel' },
+      ]
+    );
+  };
+
+  const handleContactSupport = () => {
+    const subject = `${APP_CONFIG.appName} App Support`;
+    const body = 'Hi, I need help with...';
+    const mailtoUrl = `mailto:${APP_CONFIG.supportEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    Linking.openURL(mailtoUrl).catch(() => {
+      showInfo('Contact Support', `Email us at: ${APP_CONFIG.supportEmail}`);
+    });
+  };
+
+  const handleRateApp = () => {
+    showConfirm(
+      `Rate ${APP_CONFIG.appName}`,
+      'Enjoying the app? Please rate us on the Play Store!',
+      () => {
+        Linking.openURL(APP_CONFIG.playStoreUrl).catch(() => {
+          showSuccess('Thank you for your support!');
+        });
+      },
+      null,
+      'Rate Now',
+      'Maybe Later'
+    );
+  };
+
+  const handleShare = async () => {
     try {
-      // Settings API doesn't have individual notification toggles,
-      // but we keep the state locally for UI purposes
+      await Share.share({
+        message: `${APP_CONFIG.shareMessage} ${APP_CONFIG.downloadUrl}`,
+        title: `Share ${APP_CONFIG.appName}`,
+      });
     } catch (error) {
-      console.error('Error updating settings:', error);
+      showError('Could not share the app');
     }
   };
 
@@ -298,18 +376,12 @@ const SettingsScreen = ({ navigation }) => {
           <SettingRow
             icon={UserIcon}
             label="Edit Profile"
-            onPress={() => navigation.navigate('Profile')}
+            onPress={() => navigation.navigate('ProfileSetup', { editMode: true })}
           />
           <SettingRow
             icon={LockIcon}
             label="Change Password"
-            onPress={() => console.log('Change password')}
-          />
-          <SettingRow
-            icon={GlobeIcon}
-            label="Language"
-            value="English"
-            onPress={() => console.log('Language')}
+            onPress={handleChangePassword}
           />
         </Animated.View>
 
@@ -346,40 +418,28 @@ const SettingsScreen = ({ navigation }) => {
           />
         </Animated.View>
 
-        {/* Appearance Section */}
-        <Animated.View style={[styles.section, createSlideStyle(sectionAnims[2])]}>
-          <Text style={styles.sectionTitle}>Appearance</Text>
-          <SettingRow
-            icon={MoonIcon}
-            label="Dark Mode"
-            hasToggle
-            isEnabled={darkMode}
-            onToggle={setDarkMode}
-          />
-        </Animated.View>
-
         {/* Support Section */}
         <Animated.View style={[styles.section, createSlideStyle(sectionAnims[3])]}>
           <Text style={styles.sectionTitle}>Support</Text>
           <SettingRow
             icon={HelpCircleIcon}
             label="Help Center"
-            onPress={() => console.log('Help Center')}
+            onPress={handleHelpCenter}
           />
           <SettingRow
             icon={MessageCircleIcon}
             label="Contact Support"
-            onPress={() => console.log('Contact Support')}
+            onPress={handleContactSupport}
           />
           <SettingRow
             icon={StarIcon}
             label="Rate App"
-            onPress={() => console.log('Rate App')}
+            onPress={handleRateApp}
           />
           <SettingRow
             icon={ShareIcon}
             label="Share with Friends"
-            onPress={() => console.log('Share')}
+            onPress={handleShare}
           />
         </Animated.View>
 
@@ -401,17 +461,12 @@ const SettingsScreen = ({ navigation }) => {
 
         {/* App Info */}
         <Animated.View style={[styles.appInfo, { opacity: contentAnim }]}>
-          <LinearGradient
-            colors={['#fbe5f5', '#ccf9ff']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.logoContainer}
-          >
-            <Text style={styles.logoEmoji}>🎁</Text>
-          </LinearGradient>
-          <Text style={styles.appName}>GiftBox4you</Text>
-          <Text style={styles.appVersion}>Version 1.0.0</Text>
-          <Text style={styles.copyright}>Made with 💜 for thoughtful gifters</Text>
+          <View style={styles.logoContainer}>
+            <GiftBoxIcon size={40} />
+          </View>
+          <Text style={styles.appName}>{APP_CONFIG.appName}</Text>
+          <Text style={styles.appVersion}>Version {APP_CONFIG.version}</Text>
+          <Text style={styles.copyright}>Made with love for thoughtful gifters</Text>
         </Animated.View>
 
         <View style={{ height: 40 }} />
@@ -525,17 +580,15 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 20,
+    backgroundColor: '#330c54',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
-    shadowColor: '#ca9ad6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  logoEmoji: {
-    fontSize: 32,
+    shadowColor: '#330c54',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
   },
   appName: {
     fontSize: 24,

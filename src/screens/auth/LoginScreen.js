@@ -11,13 +11,16 @@ import {
   Animated,
   Easing,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line } from 'react-native-svg';
 import { useAuth } from '../../contexts/AuthContext';
-import { CustomAlert } from '../../components';
+import { CustomAlert, GiftBoxIcon } from '../../components';
 import useAlert from '../../hooks/useAlert';
+
+const { height } = Dimensions.get('window');
 
 // Icons
 const MailIcon = ({ size = 20, color = '#6b3a8a' }) => (
@@ -103,7 +106,6 @@ const LoginScreen = ({ navigation }) => {
     if (error) {
       showError(error.message || 'Failed to sign in. Please check your credentials.');
     }
-    // Success is handled by AuthContext - user state changes and navigation updates
   };
 
   return (
@@ -112,8 +114,8 @@ const LoginScreen = ({ navigation }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <LinearGradient
-        colors={['#FFFFFF', '#fbe5f5', '#ccf9ff', '#FFFFFF']}
-        locations={[0, 0.3, 0.7, 1]}
+        colors={['#FDEEF3', '#E8F4FD', '#FBDCE9', '#D6EAF8']}
+        locations={[0, 0.4, 0.7, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
@@ -137,28 +139,27 @@ const LoginScreen = ({ navigation }) => {
             }],
           }
         ]}>
-          <LinearGradient
-            colors={['#fbe5f5', '#ccf9ff']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.logoContainer}
-          >
-            <Text style={styles.logoEmoji}>🎁</Text>
-          </LinearGradient>
-          <MaskedView
-            maskElement={
-              <Text style={styles.appNameMask}>GiftBox4you</Text>
-            }
-          >
-            <LinearGradient
-              colors={['#ca9ad6', '#70d0dd']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+          <View style={styles.logoBox}>
+            <GiftBoxIcon size={60} />
+          </View>
+          <View style={styles.appNameContainer}>
+            <Text style={styles.appName}>Gift</Text>
+            <MaskedView
+              maskElement={
+                <Text style={styles.appNameMask}>Box</Text>
+              }
             >
-              <Text style={[styles.appNameMask, { opacity: 0 }]}>GiftBox4you</Text>
-            </LinearGradient>
-          </MaskedView>
-          <Text style={styles.tagline}>Never forget a special moment</Text>
+              <LinearGradient
+                colors={['#ca9ad6', '#70d0dd']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={[styles.appNameMask, { opacity: 0 }]}>Box</Text>
+              </LinearGradient>
+            </MaskedView>
+            <Text style={styles.appName}>4you</Text>
+          </View>
+          <Text style={styles.tagline}>Never miss a birthday</Text>
         </Animated.View>
 
         {/* Form Section */}
@@ -232,9 +233,9 @@ const LoginScreen = ({ navigation }) => {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Login Button */}
+        {/* Footer Section */}
         <Animated.View style={[
-          styles.buttonSection,
+          styles.footerSection,
           {
             opacity: buttonAnim,
             transform: [{ scale: buttonAnim }],
@@ -283,54 +284,66 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 80,
-    paddingBottom: 40,
+    paddingTop: 60,
+    paddingBottom: 50,
+    justifyContent: 'space-between',
   },
   logoSection: {
     alignItems: 'center',
-    marginBottom: 50,
+    marginBottom: 40,
   },
-  logoContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 30,
+  logoBox: {
+    width: 90,
+    height: 90,
+    backgroundColor: '#330c54',
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
-    shadowColor: '#ca9ad6',
-    shadowOffset: { width: 0, height: 8 },
+    marginBottom: 16,
+    shadowColor: '#330c54',
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowRadius: 20,
+    elevation: 10,
   },
-  logoEmoji: {
-    fontSize: 48,
+  appNameContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 6,
+  },
+  appName: {
+    fontSize: 34,
+    fontFamily: 'StyleScript_400Regular',
+    color: '#330c54',
+    letterSpacing: 0.5,
   },
   appNameMask: {
-    fontSize: 36,
+    fontSize: 34,
     fontFamily: 'StyleScript_400Regular',
-    textAlign: 'center',
+    letterSpacing: 0.5,
   },
   tagline: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
-    marginTop: 8,
+    letterSpacing: 1,
   },
   formSection: {
-    marginBottom: 30,
+    flex: 1,
+    justifyContent: 'center',
+    marginBottom: 20,
   },
   welcomeText: {
-    fontSize: 28,
+    fontSize: 26,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   subtitleText: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
-    marginBottom: 30,
+    marginBottom: 28,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -339,7 +352,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 2,
     borderColor: '#f0f0f0',
-    marginBottom: 16,
+    marginBottom: 14,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -355,25 +368,27 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: 15,
     paddingRight: 16,
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
   eyeButton: {
-    padding: 16,
+    padding: 15,
   },
   forgotButton: {
     alignSelf: 'flex-end',
+    marginTop: 4,
   },
   forgotText: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Handlee_400Regular',
     color: '#ca9ad6',
   },
-  buttonSection: {
-    marginTop: 'auto',
+  footerSection: {
+    paddingTop: 20,
+    paddingBottom: 20,
   },
   loginButton: {
     borderRadius: 16,
@@ -385,27 +400,27 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   loginButtonGradient: {
-    paddingVertical: 18,
+    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   loginButtonText: {
-    fontSize: 18,
+    fontSize: 17,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
   signupContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 24,
+    marginTop: 18,
   },
   signupText: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
   signupLink: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Handlee_400Regular',
     color: '#ca9ad6',
   },

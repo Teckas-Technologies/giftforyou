@@ -11,6 +11,7 @@ import {
   RefreshControl,
   Modal,
   ActivityIndicator,
+  Share,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
@@ -89,21 +90,55 @@ const XIcon = ({ size = 24, color = '#6b3a8a' }) => (
   </Svg>
 );
 
+const ShareIcon = ({ size = 18, color = '#6b3a8a' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Circle cx="18" cy="5" r="3" />
+    <Circle cx="6" cy="12" r="3" />
+    <Circle cx="18" cy="19" r="3" />
+    <Line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+    <Line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+  </Svg>
+);
+
+const UserPlusIcon = ({ size = 20, color = '#FFFFFF' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+    <Circle cx="8.5" cy="7" r="4" />
+    <Line x1="20" y1="8" x2="20" y2="14" />
+    <Line x1="23" y1="11" x2="17" y2="11" />
+  </Svg>
+);
+
+const RELATIONSHIPS = [
+  'Friend',
+  'Family',
+  'Colleague',
+  'Partner',
+  'Other',
+];
+
 const getStatusConfig = (status) => {
   switch (status) {
-    case 'accepted':
+    case 'completed':
       return {
         icon: CheckCircleIcon,
         color: '#4caf50',
         bgColor: '#e8f5e9',
         label: 'Completed',
       };
-    case 'declined':
+    case 'opened':
+      return {
+        icon: ClockIcon,
+        color: '#2196f3',
+        bgColor: '#e3f2fd',
+        label: 'Opened',
+      };
+    case 'expired':
       return {
         icon: XCircleIcon,
         color: '#e53935',
         bgColor: '#ffebee',
-        label: 'Declined',
+        label: 'Expired',
       };
     case 'pending':
     default:
@@ -126,16 +161,18 @@ const formatDate = (date) => {
   return date.toLocaleDateString();
 };
 
-const InvitationsScreen = ({ navigation }) => {
+const InvitationsScreen = ({ navigation, route }) => {
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [sending, setSending] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [newEmail, setNewEmail] = useState('');
   const [newName, setNewName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newMessage, setNewMessage] = useState('');
   const [newRelationship, setNewRelationship] = useState('Friend');
   const [filter, setFilter] = useState('all');
+  const [prefillContactId, setPrefillContactId] = useState(null);
 
   // Custom alert hook
   const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
@@ -155,12 +192,14 @@ const InvitationsScreen = ({ navigation }) => {
       // Transform API data
       const transformedInvitations = invitationsList.map(inv => ({
         id: inv.id || inv._id,
-        email: inv.inviteeEmail,
-        name: inv.inviteeName,
+        email: inv.invitee_email || inv.inviteeEmail,
+        name: inv.invitee_name || inv.inviteeName,
         status: inv.status,
-        sent_at: new Date(inv.sentAt || inv.createdAt),
-        completed_at: inv.respondedAt ? new Date(inv.respondedAt) : null,
+        sent_at: new Date(inv.last_sent_at || inv.created_at || inv.sentAt || inv.createdAt),
+        completed_at: inv.completed_at || inv.respondedAt ? new Date(inv.completed_at || inv.respondedAt) : null,
         relationship: inv.relationship,
+        token: inv.token,
+        inviteLink: inv.token ? `https://giftbox-frontend-psi.vercel.app/invite/${inv.token}` : null,
       }));
 
       setInvitations(transformedInvitations);
@@ -175,6 +214,23 @@ const InvitationsScreen = ({ navigation }) => {
   useEffect(() => {
     fetchInvitations();
   }, [fetchInvitations]);
+
+  // Handle auto-fill from route params (when navigating from a contact)
+  useEffect(() => {
+    if (route?.params?.contact) {
+      const { contact } = route.params;
+      setNewName(contact.name || '');
+      setNewEmail(contact.email || '');
+      setNewRelationship(contact.relationship || 'Friend');
+      setPrefillContactId(contact.id || null);
+      // Auto-open the modal with prefilled data
+      setTimeout(() => {
+        openModal();
+      }, 300);
+      // Clear the params to prevent re-opening on back navigation
+      navigation.setParams({ contact: null });
+    }
+  }, [route?.params?.contact]);
 
   // Animations
   const headerAnim = useRef(new Animated.Value(0)).current;
@@ -242,28 +298,59 @@ const InvitationsScreen = ({ navigation }) => {
       useNativeDriver: true,
     }).start(() => {
       setShowModal(false);
-      setNewEmail('');
       setNewName('');
+      setNewEmail('');
+      setNewMessage('');
+      setNewRelationship('Friend');
+      setPrefillContactId(null);
     });
   };
 
+  const handleShareLink = async (inviteLink, inviteeName) => {
+    try {
+      await Share.share({
+        message: `Hey ${inviteeName}! I'd love to give you the perfect gift. Fill out this quick questionnaire so I know what you'd love: ${inviteLink}`,
+        title: 'GiftBox4you Invitation',
+      });
+    } catch (error) {
+      console.log('Share error:', error);
+    }
+  };
+
   const handleSendInvitation = async () => {
-    if (!newEmail.trim()) return;
+    if (!newName.trim() || !newEmail.trim()) return;
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail.trim())) {
+      showError('Please enter a valid email address');
+      return;
+    }
 
     try {
       setSending(true);
-      await sendInvitation({
-        inviteeName: newName.trim() || newEmail.split('@')[0],
-        inviteeEmail: newEmail.trim(),
+      const response = await sendInvitation({
+        inviteeName: newName.trim(),
+        inviteeEmail: newEmail.trim().toLowerCase(),
+        personalMessage: newMessage.trim() || null,
         relationship: newRelationship,
       });
+
+      // Get the invite link from response
+      const inviteLink = response.invitation?.inviteLink;
 
       // Refresh the list
       await fetchInvitations();
       closeModal();
-      showSuccess('Invitation sent successfully!');
+
+      // Open share sheet with the invite link
+      if (inviteLink) {
+        await handleShareLink(inviteLink, newName.trim());
+      }
+
+      showSuccess('Invitation created! Share the link with your friend.');
     } catch (error) {
-      showError(error.message || 'Failed to send invitation');
+      showError(error.message || 'Failed to create invitation');
     } finally {
       setSending(false);
     }
@@ -286,21 +373,20 @@ const InvitationsScreen = ({ navigation }) => {
 
   const filteredInvitations = invitations.filter(inv => {
     if (filter === 'all') return true;
+    if (filter === 'pending') return inv.status === 'pending' || inv.status === 'opened';
     return inv.status === filter;
   });
 
   const stats = {
     total: invitations.length,
-    pending: invitations.filter(i => i.status === 'pending').length,
-    accepted: invitations.filter(i => i.status === 'accepted').length,
-    declined: invitations.filter(i => i.status === 'declined').length,
+    pending: invitations.filter(i => i.status === 'pending' || i.status === 'opened').length,
+    completed: invitations.filter(i => i.status === 'completed').length,
   };
 
   const filterOptions = [
     { key: 'all', label: 'All' },
     { key: 'pending', label: 'Pending' },
-    { key: 'accepted', label: 'Completed' },
-    { key: 'declined', label: 'Declined' },
+    { key: 'completed', label: 'Completed' },
   ];
 
   return (
@@ -381,7 +467,7 @@ const InvitationsScreen = ({ navigation }) => {
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: '#4caf50' }]}>{stats.accepted}</Text>
+                <Text style={[styles.statValue, { color: '#4caf50' }]}>{stats.completed}</Text>
                 <Text style={styles.statLabel}>Completed</Text>
               </View>
             </View>
@@ -431,11 +517,11 @@ const InvitationsScreen = ({ navigation }) => {
               end={{ x: 1, y: 1 }}
               style={styles.emptyIconBg}
             >
-              <MailIcon size={40} color="#ca9ad6" />
+              <UserPlusIcon size={40} color="#ca9ad6" />
             </LinearGradient>
             <Text style={styles.emptyTitle}>No Invitations Yet</Text>
             <Text style={styles.emptySubtitle}>
-              Tap + to invite friends. They'll get an email with a questionnaire about their gift preferences.
+              Tap + to invite friends via WhatsApp, SMS, or any app. They'll fill a questionnaire about their gift preferences.
             </Text>
           </View>
         ) : !loading && (
@@ -473,14 +559,24 @@ const InvitationsScreen = ({ navigation }) => {
                       </View>
                     </View>
                   </View>
-                  {invitation.status === 'pending' && (
-                    <TouchableOpacity
-                      style={styles.resendButton}
-                      onPress={() => handleResend(invitation.id)}
-                    >
-                      <RefreshIcon size={18} color="#6b3a8a" />
-                    </TouchableOpacity>
-                  )}
+                  <View style={styles.cardActions}>
+                    {invitation.status === 'pending' && invitation.inviteLink && (
+                      <TouchableOpacity
+                        style={styles.shareButton}
+                        onPress={() => handleShareLink(invitation.inviteLink, invitation.name)}
+                      >
+                        <ShareIcon size={18} color="#6b3a8a" />
+                      </TouchableOpacity>
+                    )}
+                    {invitation.status === 'pending' && (
+                      <TouchableOpacity
+                        style={styles.resendButton}
+                        onPress={() => handleResend(invitation.id)}
+                      >
+                        <RefreshIcon size={18} color="#6b3a8a" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
               );
             })}
@@ -549,18 +645,18 @@ const InvitationsScreen = ({ navigation }) => {
               style={styles.modalContent}
             >
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Send Invitation</Text>
+                <Text style={styles.modalTitle}>Invite Friend</Text>
                 <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
                   <XIcon size={24} color="#6b3a8a" />
                 </TouchableOpacity>
               </View>
 
               <Text style={styles.modalSubtitle}>
-                They'll receive an email with a questionnaire to share their gift preferences
+                Create an invite link to share via WhatsApp, SMS, or any app
               </Text>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Name</Text>
+                <Text style={styles.inputLabel}>Friend's Name *</Text>
                 <TextInput
                   style={styles.input}
                   value={newName}
@@ -571,31 +667,80 @@ const InvitationsScreen = ({ navigation }) => {
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Email *</Text>
+                <Text style={styles.inputLabel}>Friend's Email *</Text>
                 <TextInput
                   style={styles.input}
                   value={newEmail}
                   onChangeText={setNewEmail}
-                  placeholder="Enter email address"
+                  placeholder="Enter their email"
                   placeholderTextColor="#999"
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
               </View>
 
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Relationship</Text>
+                <View style={styles.relationshipContainer}>
+                  {RELATIONSHIPS.map((rel) => (
+                    <TouchableOpacity
+                      key={rel}
+                      style={[
+                        styles.relationshipChip,
+                        newRelationship === rel && styles.relationshipChipActive,
+                      ]}
+                      onPress={() => setNewRelationship(rel)}
+                    >
+                      {newRelationship === rel ? (
+                        <LinearGradient
+                          colors={['#ca9ad6', '#70d0dd']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={styles.relationshipChipGradient}
+                        >
+                          <Text style={styles.relationshipTextActive}>{rel}</Text>
+                        </LinearGradient>
+                      ) : (
+                        <Text style={styles.relationshipText}>{rel}</Text>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Personal Message (optional)</Text>
+                <TextInput
+                  style={[styles.input, styles.inputMultiline]}
+                  value={newMessage}
+                  onChangeText={setNewMessage}
+                  placeholder="Add a personal note..."
+                  placeholderTextColor="#999"
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                />
+              </View>
+
               <TouchableOpacity
-                style={[styles.sendButton, !newEmail.trim() && styles.sendButtonDisabled]}
+                style={[styles.sendButton, (!newName.trim() || !newEmail.trim()) && styles.sendButtonDisabled]}
                 onPress={handleSendInvitation}
-                disabled={!newEmail.trim()}
+                disabled={!newName.trim() || !newEmail.trim() || sending}
               >
                 <LinearGradient
-                  colors={newEmail.trim() ? ['#ca9ad6', '#70d0dd'] : ['#ccc', '#ccc']}
+                  colors={(newName.trim() && newEmail.trim()) ? ['#ca9ad6', '#70d0dd'] : ['#ccc', '#ccc']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.sendButtonGradient}
                 >
-                  <MailIcon size={20} color="#FFFFFF" />
-                  <Text style={styles.sendButtonText}>Send Invitation</Text>
+                  {sending ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <UserPlusIcon size={20} color="#FFFFFF" />
+                      <Text style={styles.sendButtonText}>Create & Share Link</Text>
+                    </>
+                  )}
                 </LinearGradient>
               </TouchableOpacity>
             </LinearGradient>
@@ -786,6 +931,19 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
     color: '#999',
   },
+  cardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  shareButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#e3f7fa',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   resendButton: {
     width: 40,
     height: 40,
@@ -793,7 +951,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
   },
   fabContainer: {
     position: 'absolute',
@@ -933,6 +1090,40 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 60,
+  },
+  relationshipContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  relationshipChip: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  relationshipChipActive: {},
+  relationshipChipGradient: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  relationshipText: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  relationshipTextActive: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#FFFFFF',
+  },
+  inputMultiline: {
+    height: 80,
+    paddingTop: 14,
   },
 });
 

@@ -57,15 +57,33 @@ const useAlert = () => {
     });
   }, [showAlert]);
 
-  const showConfirm = useCallback((title, message, onConfirm, onCancel) => {
+  const showConfirm = useCallback((title, message, onConfirm, onCancel, confirmText = 'Confirm', cancelText = 'Cancel') => {
     showAlert({
       type: 'warning',
       title,
       message,
       buttons: [
-        { text: 'Cancel', onPress: onCancel },
-        { text: 'Confirm', onPress: onConfirm },
+        { text: cancelText, onPress: onCancel, style: 'cancel' },
+        { text: confirmText, onPress: onConfirm, style: 'destructive' },
       ],
+    });
+  }, [showAlert]);
+
+  const showOptions = useCallback((title, message, options) => {
+    showAlert({
+      type: 'info',
+      title,
+      message,
+      buttons: options,
+    });
+  }, [showAlert]);
+
+  const showInfo = useCallback((title, message, onPress) => {
+    showAlert({
+      type: 'info',
+      title,
+      message,
+      buttons: [{ text: 'OK', onPress }],
     });
   }, [showAlert]);
 
@@ -77,6 +95,8 @@ const useAlert = () => {
     showError,
     showWarning,
     showConfirm,
+    showOptions,
+    showInfo,
   };
 };
 

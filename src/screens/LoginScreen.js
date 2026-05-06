@@ -344,9 +344,10 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingTop: 50,
-    paddingBottom: 40,
+    paddingTop: 40,
+    paddingBottom: 20,
   },
   logoSection: {
     alignItems: 'center',
