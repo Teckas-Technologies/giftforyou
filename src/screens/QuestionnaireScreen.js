@@ -33,8 +33,58 @@ const CheckIcon = ({ size = 20, color = '#FFFFFF' }) => (
   </Svg>
 );
 
-// Question data - Based on API questionnaire (35 questions)
+// Question data - Based on API questionnaire (matches web version)
 const sections = [
+  // Section A - Basic Profile
+  {
+    id: 'basic_info',
+    title: 'Basic Info',
+    subtitle: "Let's get to know you",
+    emoji: '👤',
+    questions: [
+      {
+        id: 'birthday',
+        type: 'date',
+        question: 'When is your birthday?',
+        helperText: "We'll keep the year private — just used for milestone celebrations.",
+      },
+      {
+        id: 'anniversary_1',
+        type: 'date',
+        question: 'Any special anniversary? (Optional)',
+        helperText: 'Wedding, engagement, first date, or any meaningful milestone',
+      },
+      {
+        id: 'anniversary_1_title',
+        type: 'text',
+        question: 'What is this date?',
+        placeholder: 'E.g., Wedding Anniversary, First Date, Engagement...',
+      },
+      {
+        id: 'anniversary_2',
+        type: 'date',
+        question: 'Another special date? (Optional)',
+      },
+      {
+        id: 'anniversary_2_title',
+        type: 'text',
+        question: 'What is this date?',
+        placeholder: 'E.g., Graduation, Job Start, Moving Day...',
+      },
+      {
+        id: 'anniversary_3',
+        type: 'date',
+        question: 'One more special date? (Optional)',
+      },
+      {
+        id: 'anniversary_3_title',
+        type: 'text',
+        question: 'What is this date?',
+        placeholder: 'E.g., Special Memory, Achievement...',
+      },
+    ],
+  },
+  // Section B - Activities
   {
     id: 'activities',
     title: 'Activities',
@@ -64,8 +114,9 @@ const sections = [
       {
         id: 'activity_details',
         type: 'textarea',
-        question: 'Tell us more about your hobbies',
-        placeholder: 'E.g., I love hiking in mountains on weekends with friends...',
+        question: 'Tell us more about what you enjoy',
+        placeholder: 'E.g., I love hiking in mountains on weekends, collecting vintage items...',
+        helperText: 'If you selected "Other", please describe here',
       },
     ],
   },
@@ -132,14 +183,14 @@ const sections = [
   },
   {
     id: 'values',
-    title: 'Values',
-    subtitle: 'Causes you care about',
+    title: 'Values & Causes',
+    subtitle: 'What matters to you',
     emoji: '💝',
     questions: [
       {
         id: 'causes_values',
         type: 'multiselect',
-        question: 'What matters to you?',
+        question: 'Is there a cause or value that matters to you?',
         options: [
           { id: 'eco_friendly', label: 'Eco-friendly', emoji: '🌍' },
           { id: 'handmade', label: 'Handmade', emoji: '🧶' },
@@ -164,8 +215,8 @@ const sections = [
     questions: [
       {
         id: 'favorite_flower',
-        type: 'single',
-        question: 'What is your favorite flower?',
+        type: 'multiselect',
+        question: 'What are your favorite flowers?',
         options: [
           { id: 'rose', label: 'Rose', emoji: '🌹' },
           { id: 'tulip', label: 'Tulip', emoji: '🌷' },
@@ -335,27 +386,67 @@ const sections = [
   },
   {
     id: 'wishlist',
-    title: 'Wishlist & Sizes',
+    title: 'Wishlist & Registry',
     subtitle: 'Your dream items',
     emoji: '⭐',
     questions: [
       {
         id: 'wishlist_text',
         type: 'textarea',
-        question: 'Share your wishlist',
-        placeholder: 'List items you\'d love to receive...\n\n• New yoga mat\n• Wireless earbuds\n• Cooking class gift card',
+        question: 'Anything on your wishlist right now?',
+        placeholder: "List items you'd love to receive...\n\n• New yoga mat\n• Wireless earbuds\n• Cooking class gift card",
+      },
+      {
+        id: 'wishlist_link_1',
+        type: 'url',
+        question: 'Wishlist Link #1 (Optional)',
+        placeholder: 'https://amazon.com/wishlist/...',
+      },
+      {
+        id: 'wishlist_link_2',
+        type: 'url',
+        question: 'Wishlist Link #2 (Optional)',
+        placeholder: 'https://...',
+      },
+      {
+        id: 'wishlist_link_3',
+        type: 'url',
+        question: 'Wishlist Link #3 (Optional)',
+        placeholder: 'https://...',
       },
       {
         id: 'clothing_sizes',
-        type: 'text',
-        question: 'Your sizes (optional)',
+        type: 'textarea',
+        question: 'Clothing / Shoe / Ring Sizes',
         placeholder: 'E.g., Top: M, Pants: 8, Shoes: 7.5, Ring: 6',
+      },
+      {
+        id: 'registry_link',
+        type: 'url',
+        question: 'Registry Link (Optional)',
+        placeholder: 'https://...',
+        helperText: 'Wedding, baby shower, or other registry',
+      },
+      {
+        id: 'registry_details',
+        type: 'textarea',
+        question: 'Registry Details (Optional)',
+        placeholder: 'E.g., Wedding registry at Target, Baby shower for June 2025...',
+      },
+      {
+        id: 'registry_expiry',
+        type: 'date',
+        question: 'Registry Expiry Date (Optional)',
+        helperText: 'When should this registry be removed?',
       },
     ],
   },
 ];
 
-const QuestionnaireScreen = ({ navigation }) => {
+const QuestionnaireScreen = ({ navigation, route }) => {
+  // Check if this is first-time setup (mandatory) - passed from navigation or determined by checking if we can go back
+  const isFirstTime = route?.params?.isFirstTime ?? true;
+
   const [currentSection, setCurrentSection] = useState(0);
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
@@ -449,7 +540,19 @@ const QuestionnaireScreen = ({ navigation }) => {
       try {
         setSaving(true);
         await saveQuestionnaire({ answers });
-        showSuccess('Your preferences have been saved!', () => navigation.goBack());
+
+        if (isFirstTime) {
+          // First time: navigate to MainApp and reset navigation stack
+          showSuccess('Your preferences have been saved!', () => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'MainApp' }],
+            });
+          });
+        } else {
+          // Editing: just go back
+          showSuccess('Your preferences have been saved!', () => navigation.goBack());
+        }
       } catch (error) {
         showError(error.message || 'Failed to save preferences');
       } finally {
@@ -461,9 +564,11 @@ const QuestionnaireScreen = ({ navigation }) => {
   const handleBack = () => {
     if (currentSection > 0) {
       setCurrentSection(currentSection - 1);
-    } else {
+    } else if (!isFirstTime) {
+      // Only allow going back if not first time
       navigation.goBack();
     }
+    // If first time and on first section, do nothing (can't skip)
   };
 
   const section = sections[currentSection];
@@ -504,6 +609,7 @@ const QuestionnaireScreen = ({ navigation }) => {
               <View style={[styles.colorDot, { backgroundColor: option.color }]} />
             )}
             <Text style={styles.optionLabel}>{option.label}</Text>
+            <View style={styles.checkMarkPlaceholder} />
           </View>
         )}
       </TouchableOpacity>
@@ -529,6 +635,65 @@ const QuestionnaireScreen = ({ navigation }) => {
       );
     }
 
+    if (question.type === 'url') {
+      return (
+        <View key={question.id} style={styles.questionContainer}>
+          <Text style={styles.questionText}>{question.question}</Text>
+          <View style={styles.textInputWrapper}>
+            <TextInput
+              style={styles.textInput}
+              placeholder={question.placeholder}
+              placeholderTextColor="#999"
+              value={answers[question.id] || ''}
+              onChangeText={(text) => handleTextChange(question.id, text)}
+              multiline={false}
+              keyboardType="url"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+          {question.helperText && (
+            <Text style={styles.helperText}>{question.helperText}</Text>
+          )}
+        </View>
+      );
+    }
+
+    if (question.type === 'date') {
+      const dateValue = answers[question.id] || '';
+      const formatDisplayDate = (dateStr) => {
+        if (!dateStr) return 'Select a date';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      };
+
+      return (
+        <View key={question.id} style={styles.questionContainer}>
+          <Text style={styles.questionText}>{question.question}</Text>
+          <TouchableOpacity
+            style={styles.textInputWrapper}
+            onPress={() => {
+              // For now, use a simple text input for date
+              // In production, you'd use a date picker modal
+            }}
+          >
+            <TextInput
+              style={styles.textInput}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor="#999"
+              value={answers[question.id] || ''}
+              onChangeText={(text) => handleTextChange(question.id, text)}
+              multiline={false}
+              keyboardType="numbers-and-punctuation"
+            />
+          </TouchableOpacity>
+          {question.helperText && (
+            <Text style={styles.helperText}>{question.helperText}</Text>
+          )}
+        </View>
+      );
+    }
+
     if (question.type === 'textarea') {
       return (
         <View key={question.id} style={styles.questionContainer}>
@@ -545,13 +710,36 @@ const QuestionnaireScreen = ({ navigation }) => {
               textAlignVertical="top"
             />
           </View>
+          {question.helperText && (
+            <Text style={styles.helperText}>{question.helperText}</Text>
+          )}
         </View>
       );
     }
 
+    const allSelected = question.type === 'multiselect' &&
+      question.options.every(opt => (answers[question.id] || []).includes(opt.id));
+
+    const handleSelectAll = () => {
+      if (allSelected) {
+        setAnswers(prev => ({ ...prev, [question.id]: [] }));
+      } else {
+        setAnswers(prev => ({ ...prev, [question.id]: question.options.map(opt => opt.id) }));
+      }
+    };
+
     return (
       <View key={question.id} style={styles.questionContainer}>
-        <Text style={styles.questionText}>{question.question}</Text>
+        <View style={styles.questionHeader}>
+          <Text style={styles.questionText}>{question.question}</Text>
+          {question.type === 'multiselect' && (
+            <TouchableOpacity onPress={handleSelectAll} style={styles.selectAllButton}>
+              <Text style={styles.selectAllText}>
+                {allSelected ? '✓ Deselect All' : '☐ Select All'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
         <View style={styles.optionsGrid}>
           {question.options.map(option => renderOption(option, question.id, question.type))}
         </View>
@@ -562,7 +750,7 @@ const QuestionnaireScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#FFFFFF', '#fbe5f5', '#ccf9ff', '#FFFFFF']}
+        colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
         locations={[0, 0.3, 0.7, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -582,17 +770,27 @@ const QuestionnaireScreen = ({ navigation }) => {
           }],
         }
       ]}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <BackIcon size={24} color="#6b3a8a" />
-        </TouchableOpacity>
+        {/* Back button - only show if not first section, or if not first time setup */}
+        {(currentSection > 0 || !isFirstTime) ? (
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <BackIcon size={24} color="#6b3a8a" />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.backButtonPlaceholder} />
+        )}
         <View style={styles.headerCenter}>
           <Text style={styles.headerStep}>
             {currentSection + 1} of {sections.length}
           </Text>
         </View>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.skipText}>Skip</Text>
-        </TouchableOpacity>
+        {/* Skip button - only show if not first time setup */}
+        {!isFirstTime ? (
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.skipText}>Skip</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.skipPlaceholder} />
+        )}
       </Animated.View>
 
       {/* Progress Bar */}
@@ -626,6 +824,10 @@ const QuestionnaireScreen = ({ navigation }) => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="none"
+        automaticallyAdjustKeyboardInsets={false}
+        removeClippedSubviews={false}
       >
         {!loading && <Animated.View style={[
           styles.sectionContainer,
@@ -674,14 +876,23 @@ const QuestionnaireScreen = ({ navigation }) => {
 
       {/* Navigation Buttons */}
       <View style={styles.navButtons}>
+        {currentSection > 0 && (
+          <TouchableOpacity
+            onPress={handleBack}
+            activeOpacity={0.9}
+            style={styles.backButtonBottom}
+          >
+            <Text style={styles.backButtonText}>Back</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           onPress={handleNext}
           activeOpacity={0.9}
-          style={styles.nextButtonWrapper}
+          style={[styles.nextButtonWrapper, currentSection === 0 && styles.nextButtonFull]}
           disabled={saving}
         >
           <LinearGradient
-            colors={saving ? ['#ccc', '#ccc'] : ['#f4cae8', '#70d0dd']}
+            colors={saving ? ['#ccc', '#ccc'] : ['#70d0dd', '#ca9ad6']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.nextButton}
@@ -728,6 +939,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+  },
+  backButtonPlaceholder: {
+    width: 44,
+    height: 44,
+  },
+  skipPlaceholder: {
+    width: 40,
   },
   headerCenter: {
     alignItems: 'center',
@@ -798,9 +1016,25 @@ const styles = StyleSheet.create({
   questionContainer: {
     gap: 12,
   },
+  questionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  selectAllButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  selectAllText: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#ca9ad6',
+  },
   questionText: {
     fontSize: 16,
     fontFamily: 'Handlee_400Regular',
+    flex: 1,
     color: '#330c54',
   },
   optionsGrid: {
@@ -819,6 +1053,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 14,
     gap: 8,
+    minHeight: 48,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -832,6 +1067,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 14,
     gap: 8,
+    minHeight: 48,
     shadowColor: '#ca9ad6',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -859,6 +1095,13 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   checkMark: {
+    width: 18,
+    height: 14,
+    marginLeft: 4,
+  },
+  checkMarkPlaceholder: {
+    width: 18,
+    height: 14,
     marginLeft: 4,
   },
   textInputWrapper: {
@@ -883,18 +1126,46 @@ const styles = StyleSheet.create({
     minHeight: 140,
     textAlignVertical: 'top',
   },
+  helperText: {
+    fontSize: 12,
+    fontFamily: 'Handlee_400Regular',
+    color: '#999',
+    marginTop: 6,
+    paddingHorizontal: 4,
+  },
   navButtons: {
     position: 'absolute',
     bottom: 30,
     left: 20,
     right: 20,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  backButtonBottom: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
   },
   nextButtonWrapper: {
-    shadowColor: '#ca9ad6',
+    flex: 2,
+    shadowColor: '#70d0dd',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 16,
     elevation: 8,
+  },
+  nextButtonFull: {
+    flex: 1,
   },
   nextButton: {
     paddingVertical: 18,

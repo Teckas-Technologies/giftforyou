@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Modal,
   Dimensions,
+  FlatList,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect, Line, Polyline } from 'react-native-svg';
@@ -74,6 +75,140 @@ const months = [
 
 const getDaysInMonth = (month, year) => {
   return new Date(year, month + 1, 0).getDate();
+};
+
+// Wheel Picker Item Height
+const ITEM_HEIGHT = 44;
+const VISIBLE_ITEMS = 5;
+
+// Wheel Picker Component
+const WheelPicker = ({ data, selectedIndex, onSelect, renderItem, keyExtractor }) => {
+  const flatListRef = useRef(null);
+  const [isScrolling, setIsScrolling] = useState(false);
+
+  // Scroll to selected item on mount and when selectedIndex changes
+  useEffect(() => {
+    if (flatListRef.current && !isScrolling) {
+      flatListRef.current.scrollToOffset({
+        offset: selectedIndex * ITEM_HEIGHT,
+        animated: false,
+      });
+    }
+  }, [selectedIndex, isScrolling]);
+
+  const handleMomentumScrollEnd = useCallback((event) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    const index = Math.round(offsetY / ITEM_HEIGHT);
+    const clampedIndex = Math.max(0, Math.min(index, data.length - 1));
+
+    if (clampedIndex !== selectedIndex) {
+      onSelect(clampedIndex);
+    }
+    setIsScrolling(false);
+  }, [data.length, selectedIndex, onSelect]);
+
+  const handleScrollBegin = useCallback(() => {
+    setIsScrolling(true);
+  }, []);
+
+  const getItemLayout = useCallback((_, index) => ({
+    length: ITEM_HEIGHT,
+    offset: ITEM_HEIGHT * index,
+    index,
+  }), []);
+
+  const renderItemWrapper = useCallback(({ item, index }) => {
+    const isSelected = index === selectedIndex;
+    return (
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => {
+          flatListRef.current?.scrollToOffset({
+            offset: index * ITEM_HEIGHT,
+            animated: true,
+          });
+          onSelect(index);
+        }}
+        style={[
+          styles.wheelPickerItem,
+          isSelected && styles.wheelPickerItemSelected,
+        ]}
+      >
+        <Text style={[
+          styles.wheelPickerItemText,
+          isSelected && styles.wheelPickerItemTextSelected,
+        ]}>
+          {renderItem ? renderItem(item, index) : item.toString()}
+        </Text>
+      </TouchableOpacity>
+    );
+  }, [selectedIndex, onSelect, renderItem]);
+
+  // Add padding items for scroll effect
+  const paddedData = [
+    { id: 'pad-top-1', isPadding: true },
+    { id: 'pad-top-2', isPadding: true },
+    ...data.map((item, index) => ({ value: item, id: keyExtractor ? keyExtractor(item, index) : index.toString() })),
+    { id: 'pad-bottom-1', isPadding: true },
+    { id: 'pad-bottom-2', isPadding: true },
+  ];
+
+  const renderPaddedItem = useCallback(({ item, index }) => {
+    if (item.isPadding) {
+      return <View style={styles.wheelPickerItem} />;
+    }
+    const actualIndex = index - 2; // Adjust for padding
+    const isSelected = actualIndex === selectedIndex;
+    return (
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => {
+          flatListRef.current?.scrollToOffset({
+            offset: actualIndex * ITEM_HEIGHT,
+            animated: true,
+          });
+          onSelect(actualIndex);
+        }}
+        style={[
+          styles.wheelPickerItem,
+          isSelected && styles.wheelPickerItemSelected,
+        ]}
+      >
+        <Text style={[
+          styles.wheelPickerItemText,
+          isSelected && styles.wheelPickerItemTextSelected,
+        ]}>
+          {renderItem ? renderItem(item.value, actualIndex) : item.value.toString()}
+        </Text>
+      </TouchableOpacity>
+    );
+  }, [selectedIndex, onSelect, renderItem]);
+
+  return (
+    <View style={styles.wheelPickerContainer}>
+      <View style={styles.wheelPickerHighlight} />
+      <FlatList
+        ref={flatListRef}
+        data={paddedData}
+        renderItem={renderPaddedItem}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        snapToInterval={ITEM_HEIGHT}
+        decelerationRate="fast"
+        onMomentumScrollEnd={handleMomentumScrollEnd}
+        onScrollBeginDrag={handleScrollBegin}
+        getItemLayout={(_, index) => ({
+          length: ITEM_HEIGHT,
+          offset: ITEM_HEIGHT * index,
+          index,
+        })}
+        style={styles.wheelPickerList}
+        contentContainerStyle={styles.wheelPickerContent}
+        initialScrollIndex={selectedIndex}
+        onScrollToIndexFailed={() => {}}
+      />
+    </View>
+  );
 };
 
 const ProfileSetupScreen = ({ navigation, route }) => {
@@ -275,7 +410,7 @@ const ProfileSetupScreen = ({ navigation, route }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <LinearGradient
-        colors={['#FFFFFF', '#ccf9ff', '#fbe5f5', '#FFFFFF']}
+        colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
         locations={[0, 0.3, 0.7, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -419,61 +554,35 @@ const ProfileSetupScreen = ({ navigation, route }) => {
               {/* Month Picker */}
               <View style={styles.pickerColumn}>
                 <Text style={styles.pickerLabel}>Month</Text>
-                <TouchableOpacity
-                  style={styles.pickerArrow}
-                  onPress={() => adjustValue('month', -1)}
-                >
-                  <ChevronUpIcon size={24} color="#ca9ad6" />
-                </TouchableOpacity>
-                <View style={styles.pickerValue}>
-                  <Text style={styles.pickerValueText}>{months[selectedMonth].slice(0, 3)}</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.pickerArrow}
-                  onPress={() => adjustValue('month', 1)}
-                >
-                  <ChevronDownIcon size={24} color="#ca9ad6" />
-                </TouchableOpacity>
+                <WheelPicker
+                  data={months}
+                  selectedIndex={selectedMonth}
+                  onSelect={setSelectedMonth}
+                  renderItem={(item) => item.slice(0, 3)}
+                  keyExtractor={(item, index) => `month-${index}`}
+                />
               </View>
 
               {/* Day Picker */}
               <View style={styles.pickerColumn}>
                 <Text style={styles.pickerLabel}>Day</Text>
-                <TouchableOpacity
-                  style={styles.pickerArrow}
-                  onPress={() => adjustValue('day', -1)}
-                >
-                  <ChevronUpIcon size={24} color="#ca9ad6" />
-                </TouchableOpacity>
-                <View style={styles.pickerValue}>
-                  <Text style={styles.pickerValueText}>{selectedDay}</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.pickerArrow}
-                  onPress={() => adjustValue('day', 1)}
-                >
-                  <ChevronDownIcon size={24} color="#ca9ad6" />
-                </TouchableOpacity>
+                <WheelPicker
+                  data={Array.from({ length: daysInMonth }, (_, i) => i + 1)}
+                  selectedIndex={selectedDay - 1}
+                  onSelect={(index) => setSelectedDay(index + 1)}
+                  keyExtractor={(item) => `day-${item}`}
+                />
               </View>
 
               {/* Year Picker */}
               <View style={styles.pickerColumn}>
                 <Text style={styles.pickerLabel}>Year</Text>
-                <TouchableOpacity
-                  style={styles.pickerArrow}
-                  onPress={() => adjustValue('year', 1)}
-                >
-                  <ChevronUpIcon size={24} color="#ca9ad6" />
-                </TouchableOpacity>
-                <View style={styles.pickerValue}>
-                  <Text style={styles.pickerValueText}>{selectedYear}</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.pickerArrow}
-                  onPress={() => adjustValue('year', -1)}
-                >
-                  <ChevronDownIcon size={24} color="#ca9ad6" />
-                </TouchableOpacity>
+                <WheelPicker
+                  data={years}
+                  selectedIndex={years.indexOf(selectedYear)}
+                  onSelect={(index) => setSelectedYear(years[index])}
+                  keyExtractor={(item) => `year-${item}`}
+                />
               </View>
             </View>
 
@@ -800,6 +909,47 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
+  },
+  // Wheel Picker Styles
+  wheelPickerContainer: {
+    height: ITEM_HEIGHT * VISIBLE_ITEMS,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  wheelPickerList: {
+    height: ITEM_HEIGHT * VISIBLE_ITEMS,
+  },
+  wheelPickerContent: {
+    paddingVertical: 0,
+  },
+  wheelPickerHighlight: {
+    position: 'absolute',
+    top: ITEM_HEIGHT * 2,
+    left: 0,
+    right: 0,
+    height: ITEM_HEIGHT,
+    backgroundColor: '#fbe5f5',
+    borderRadius: 12,
+    zIndex: -1,
+  },
+  wheelPickerItem: {
+    height: ITEM_HEIGHT,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  wheelPickerItemSelected: {
+    // Selected state handled by highlight background
+  },
+  wheelPickerItemText: {
+    fontSize: 16,
+    fontFamily: 'Handlee_400Regular',
+    color: '#999',
+  },
+  wheelPickerItemTextSelected: {
+    fontSize: 18,
+    color: '#330c54',
+    fontWeight: '500',
   },
 });
 

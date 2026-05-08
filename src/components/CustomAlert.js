@@ -159,10 +159,10 @@ const CustomAlert = ({
                       end={{ x: 1, y: 1 }}
                       style={styles.buttonGradient}
                     >
-                      <Text style={styles.primaryButtonText}>{button.text}</Text>
+                      <Text style={styles.primaryButtonText} numberOfLines={1}>{button.text}</Text>
                     </LinearGradient>
                   ) : (
-                    <Text style={styles.buttonText}>{button.text}</Text>
+                    <Text style={styles.buttonText} numberOfLines={1}>{button.text}</Text>
                   )}
                 </TouchableOpacity>
               ))}
@@ -221,14 +221,13 @@ const styles = StyleSheet.create({
     gap: 12,
     width: '100%',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'stretch',
     marginTop: 4,
   },
   button: {
     flex: 1,
-    minHeight: 48,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    height: 48,
+    paddingHorizontal: 12,
     borderRadius: 14,
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
     alignItems: 'center',
@@ -248,22 +247,23 @@ const styles = StyleSheet.create({
   },
   buttonGradient: {
     width: '100%',
-    minHeight: 48,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
+    height: '100%',
+    paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 14,
   },
   buttonText: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
+    textAlign: 'center',
   },
   primaryButtonText: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
+    textAlign: 'center',
   },
 });
 

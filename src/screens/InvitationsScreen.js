@@ -12,6 +12,10 @@ import {
   Modal,
   ActivityIndicator,
   Share,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
@@ -350,7 +354,12 @@ const InvitationsScreen = ({ navigation, route }) => {
 
       showSuccess('Invitation created! Share the link with your friend.');
     } catch (error) {
-      showError(error.message || 'Failed to create invitation');
+      // Show user-friendly message for already invited error
+      if (error.message?.toLowerCase().includes('already')) {
+        showError(`You've already invited ${newName.trim()}. Check your pending invitations.`);
+      } else {
+        showError(error.message || 'Failed to create invitation');
+      }
     } finally {
       setSending(false);
     }
@@ -392,7 +401,7 @@ const InvitationsScreen = ({ navigation, route }) => {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#FFFFFF', '#ccf9ff', '#fbe5f5', '#FFFFFF']}
+        colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
         locations={[0, 0.3, 0.7, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -615,137 +624,166 @@ const InvitationsScreen = ({ navigation, route }) => {
         animationType="none"
         onRequestClose={closeModal}
       >
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity
-            style={StyleSheet.absoluteFill}
-            onPress={closeModal}
-            activeOpacity={1}
-          />
-          <Animated.View style={[
-            styles.modalContainer,
-            {
-              opacity: modalAnim,
-              transform: [{
-                scale: modalAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.9, 1],
-                }),
-              }, {
-                translateY: modalAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [50, 0],
-                }),
-              }],
-            }
-          ]}>
-            <LinearGradient
-              colors={['#FFFFFF', '#fbe5f5']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.modalContent}
-            >
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Invite Friend</Text>
-                <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
-                  <XIcon size={24} color="#6b3a8a" />
-                </TouchableOpacity>
-              </View>
-
-              <Text style={styles.modalSubtitle}>
-                Create an invite link to share via WhatsApp, SMS, or any app
-              </Text>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Friend's Name *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={newName}
-                  onChangeText={setNewName}
-                  placeholder="Enter their name"
-                  placeholderTextColor="#999"
-                />
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Friend's Email *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={newEmail}
-                  onChangeText={setNewEmail}
-                  placeholder="Enter their email"
-                  placeholderTextColor="#999"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Relationship</Text>
-                <View style={styles.relationshipContainer}>
-                  {RELATIONSHIPS.map((rel) => (
-                    <TouchableOpacity
-                      key={rel}
-                      style={[
-                        styles.relationshipChip,
-                        newRelationship === rel && styles.relationshipChipActive,
-                      ]}
-                      onPress={() => setNewRelationship(rel)}
-                    >
-                      {newRelationship === rel ? (
-                        <LinearGradient
-                          colors={['#ca9ad6', '#70d0dd']}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 1 }}
-                          style={styles.relationshipChipGradient}
-                        >
-                          <Text style={styles.relationshipTextActive}>{rel}</Text>
-                        </LinearGradient>
-                      ) : (
-                        <Text style={styles.relationshipText}>{rel}</Text>
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Personal Message (optional)</Text>
-                <TextInput
-                  style={[styles.input, styles.inputMultiline]}
-                  value={newMessage}
-                  onChangeText={setNewMessage}
-                  placeholder="Add a personal note..."
-                  placeholderTextColor="#999"
-                  multiline
-                  numberOfLines={3}
-                  textAlignVertical="top"
-                />
-              </View>
-
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalOverlayInner}>
               <TouchableOpacity
-                style={[styles.sendButton, (!newName.trim() || !newEmail.trim()) && styles.sendButtonDisabled]}
-                onPress={handleSendInvitation}
-                disabled={!newName.trim() || !newEmail.trim() || sending}
-              >
+                style={StyleSheet.absoluteFill}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  closeModal();
+                }}
+                activeOpacity={1}
+              />
+              <Animated.View style={[
+                styles.modalContainer,
+                {
+                  opacity: modalAnim,
+                  transform: [{
+                    scale: modalAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.9, 1],
+                    }),
+                  }, {
+                    translateY: modalAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [50, 0],
+                    }),
+                  }],
+                }
+              ]}>
                 <LinearGradient
-                  colors={(newName.trim() && newEmail.trim()) ? ['#ca9ad6', '#70d0dd'] : ['#ccc', '#ccc']}
+                  colors={['#FFFFFF', '#fbe5f5']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  style={styles.sendButtonGradient}
+                  style={styles.modalContent}
                 >
-                  {sending ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <>
-                      <UserPlusIcon size={20} color="#FFFFFF" />
-                      <Text style={styles.sendButtonText}>Create & Share Link</Text>
-                    </>
-                  )}
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>Invite Friend</Text>
+                    <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
+                      <XIcon size={24} color="#6b3a8a" />
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={styles.modalSubtitle}>
+                    Create an invite link to share via WhatsApp, SMS, or any app
+                  </Text>
+
+                  <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    style={styles.modalScrollContent}
+                  >
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Friend's Name *</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={newName}
+                        onChangeText={setNewName}
+                        placeholder="Enter their name"
+                        placeholderTextColor="#999"
+                        returnKeyType="next"
+                      />
+                    </View>
+
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Friend's Email *</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={newEmail}
+                        onChangeText={setNewEmail}
+                        placeholder="Enter their email"
+                        placeholderTextColor="#999"
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        returnKeyType="next"
+                      />
+                    </View>
+
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Relationship</Text>
+                      <View style={styles.relationshipContainer}>
+                        {RELATIONSHIPS.map((rel) => (
+                          <TouchableOpacity
+                            key={rel}
+                            style={[
+                              styles.relationshipChip,
+                              newRelationship === rel && styles.relationshipChipActive,
+                            ]}
+                            onPress={() => {
+                              Keyboard.dismiss();
+                              setNewRelationship(rel);
+                            }}
+                          >
+                            {newRelationship === rel ? (
+                              <LinearGradient
+                                colors={['#ca9ad6', '#70d0dd']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.relationshipChipGradient}
+                              >
+                                <Text style={styles.relationshipTextActive}>{rel}</Text>
+                              </LinearGradient>
+                            ) : (
+                              <Text style={styles.relationshipText}>{rel}</Text>
+                            )}
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Personal Message (optional)</Text>
+                      <TextInput
+                        style={[styles.input, styles.inputMultiline]}
+                        value={newMessage}
+                        onChangeText={setNewMessage}
+                        placeholder="Add a personal note..."
+                        placeholderTextColor="#999"
+                        multiline
+                        numberOfLines={3}
+                        textAlignVertical="top"
+                        returnKeyType="done"
+                        blurOnSubmit={true}
+                        onSubmitEditing={Keyboard.dismiss}
+                      />
+                    </View>
+
+                    <TouchableOpacity
+                      style={[styles.sendButton, (!newName.trim() || !newEmail.trim()) && styles.sendButtonDisabled]}
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        handleSendInvitation();
+                      }}
+                      disabled={!newName.trim() || !newEmail.trim() || sending}
+                    >
+                      <LinearGradient
+                        colors={(newName.trim() && newEmail.trim()) ? ['#ca9ad6', '#70d0dd'] : ['#ccc', '#ccc']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.sendButtonGradient}
+                      >
+                        {sending ? (
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                          <>
+                            <UserPlusIcon size={20} color="#FFFFFF" />
+                            <Text style={styles.sendButtonText}>Create & Share Link</Text>
+                          </>
+                        )}
+                      </LinearGradient>
+                    </TouchableOpacity>
+
+                    <View style={{ height: 20 }} />
+                  </ScrollView>
                 </LinearGradient>
-              </TouchableOpacity>
-            </LinearGradient>
-          </Animated.View>
-        </View>
+              </Animated.View>
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Custom Alert */}
@@ -1003,6 +1041,9 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalOverlayInner: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -1010,6 +1051,10 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: '100%',
     maxWidth: 400,
+    maxHeight: '90%',
+  },
+  modalScrollContent: {
+    flexGrow: 0,
   },
   modalContent: {
     borderRadius: 24,

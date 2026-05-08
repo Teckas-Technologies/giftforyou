@@ -492,7 +492,7 @@ const CalendarScreen = ({ navigation }) => {
     <View style={styles.container}>
       {/* Background Gradient - Diagonal */}
       <LinearGradient
-        colors={['#FFFFFF', '#fbe5f5', '#ccf9ff', '#FFFFFF']}
+        colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
         locations={[0, 0.3, 0.7, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -704,9 +704,7 @@ const CalendarScreen = ({ navigation }) => {
                 style={styles.eventItemInner}
                 activeOpacity={0.8}
                 onPress={() => {
-                  if (event.circleId) {
-                    navigation.navigate('ContactDetail', { contactId: event.circleId });
-                  }
+                  navigation.navigate('EventDetail', { eventId: event.id, event });
                 }}
               >
                 <Text style={styles.eventTime}>{event.date}</Text>

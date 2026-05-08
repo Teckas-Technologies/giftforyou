@@ -1,23 +1,23 @@
 // GiftBox4you Color Palette
-// Pink & Blue - Modern Celebration Theme
+// Teal & Pink - Modern Celebration Theme (Teal-dominant)
 
 export const colors = {
-  // Primary Colors - Pink
-  primary: '#ca9ad6',              // Pink dark - main brand
-  primaryLight: '#fbe5f5',         // Pink soft/light
-  primaryAccent: '#f4cae8',        // Pink accent
-  primaryBg: '#f4cae8',            // Pink background
+  // Primary Colors - Teal (shifted from pink-dominant)
+  primary: '#70d0dd',              // Teal - main brand
+  primaryLight: '#ccf9ff',         // Teal soft/light
+  primaryAccent: '#99e5ed',        // Teal accent
+  primaryBg: '#e0f7fa',            // Teal background light
 
-  // Secondary Colors - Blue
-  secondary: '#70d0dd',            // Blue accent
-  secondaryLight: '#ccf9ff',       // Blue light
-  secondaryBg: '#99f3ff',          // Blue background
+  // Secondary Colors - Pink (accent)
+  secondary: '#ca9ad6',            // Pink accent
+  secondaryLight: '#fbe5f5',       // Pink light
+  secondaryBg: '#f4cae8',          // Pink background
 
   // Background Colors
   background: '#FFFFFF',           // White main
-  backgroundGradientStart: '#FDEEF3',  // Gradient start
-  backgroundGradientMid: '#EBF5FB',    // Gradient mid
-  backgroundGradientEnd: '#FBDCE9',    // Gradient end
+  backgroundGradientStart: '#e0f7fa',  // Teal gradient start
+  backgroundGradientMid: '#ccf9ff',    // Teal gradient mid
+  backgroundGradientEnd: '#fbe5f5',    // Pink gradient end (subtle)
   backgroundCard: '#FFFFFF',       // White cards
   backgroundGray: '#F8F9FA',       // Gray background
 
@@ -48,16 +48,16 @@ export const colors = {
   badgeLater: '#fbe5f5',           // Light pink
 
   // Gradient Colors
-  gradientPinkStart: '#f4cae8',    // Pink accent
-  gradientPinkEnd: '#ca9ad6',      // Pink dark
-  gradientBlueStart: '#70d0dd',    // Blue accent
-  gradientBlueEnd: '#99f3ff',      // Blue bg
-  gradientMixStart: '#f4cae8',     // Pink to blue gradient
-  gradientMixEnd: '#70d0dd',
+  gradientTealStart: '#70d0dd',    // Teal accent
+  gradientTealEnd: '#99f3ff',      // Teal light
+  gradientPinkStart: '#ca9ad6',    // Pink accent
+  gradientPinkEnd: '#f4cae8',      // Pink light
+  gradientMixStart: '#70d0dd',     // Teal to pink gradient (teal first)
+  gradientMixEnd: '#ca9ad6',
 
   // Border & Divider
-  border: '#f4cae8',               // Pink border
-  divider: '#fbe5f5',              // Light pink divider
+  border: '#b2ebf2',               // Teal border
+  divider: '#e0f7fa',              // Light teal divider
 
   // Overlay
   overlay: 'rgba(51, 12, 84, 0.5)', // Dark purple overlay

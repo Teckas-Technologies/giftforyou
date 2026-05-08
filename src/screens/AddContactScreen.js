@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Platform,
   Modal,
   ActivityIndicator,
+  FlatList,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
@@ -91,6 +92,105 @@ const months = [
 
 const getDaysInMonth = (month, year) => {
   return new Date(year, month + 1, 0).getDate();
+};
+
+// Wheel picker constants
+const ITEM_HEIGHT = 44;
+const VISIBLE_ITEMS = 5;
+
+// WheelPicker Component for smooth scrolling date selection
+const WheelPicker = ({ data, selectedIndex, onSelect, renderItem, keyExtractor }) => {
+  const flatListRef = useRef(null);
+  const [isScrolling, setIsScrolling] = useState(false);
+
+  useEffect(() => {
+    if (flatListRef.current && !isScrolling && selectedIndex >= 0) {
+      flatListRef.current.scrollToOffset({
+        offset: selectedIndex * ITEM_HEIGHT,
+        animated: false,
+      });
+    }
+  }, [selectedIndex, isScrolling]);
+
+  const handleMomentumScrollEnd = useCallback((event) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    const index = Math.round(offsetY / ITEM_HEIGHT);
+    const clampedIndex = Math.max(0, Math.min(index, data.length - 1));
+    if (clampedIndex !== selectedIndex) {
+      onSelect(clampedIndex);
+    }
+    setIsScrolling(false);
+  }, [data.length, selectedIndex, onSelect]);
+
+  const handleScrollBeginDrag = useCallback(() => {
+    setIsScrolling(true);
+  }, []);
+
+  // Add empty items at start and end for padding
+  const paddedData = [
+    { id: 'pad-start-1', empty: true },
+    { id: 'pad-start-2', empty: true },
+    ...data.map((item, index) => ({ value: item, id: keyExtractor ? keyExtractor(item) : `item-${index}` })),
+    { id: 'pad-end-1', empty: true },
+    { id: 'pad-end-2', empty: true },
+  ];
+
+  const renderWheelItem = useCallback(({ item, index }) => {
+    if (item.empty) {
+      return <View style={{ height: ITEM_HEIGHT }} />;
+    }
+
+    const actualIndex = index - 2; // Adjust for padding items
+    const isSelected = actualIndex === selectedIndex;
+
+    return (
+      <TouchableOpacity
+        style={[
+          wheelStyles.wheelItem,
+          isSelected && wheelStyles.wheelItemSelected,
+        ]}
+        onPress={() => {
+          onSelect(actualIndex);
+          flatListRef.current?.scrollToOffset({
+            offset: actualIndex * ITEM_HEIGHT,
+            animated: true,
+          });
+        }}
+        activeOpacity={0.7}
+      >
+        <Text style={[
+          wheelStyles.wheelItemText,
+          isSelected && wheelStyles.wheelItemTextSelected,
+        ]}>
+          {renderItem ? renderItem(item.value) : item.value}
+        </Text>
+      </TouchableOpacity>
+    );
+  }, [selectedIndex, onSelect, renderItem]);
+
+  return (
+    <View style={wheelStyles.wheelContainer}>
+      <View style={wheelStyles.selectionIndicator} />
+      <FlatList
+        ref={flatListRef}
+        data={paddedData}
+        renderItem={renderWheelItem}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        snapToInterval={ITEM_HEIGHT}
+        decelerationRate="fast"
+        onMomentumScrollEnd={handleMomentumScrollEnd}
+        onScrollBeginDrag={handleScrollBeginDrag}
+        getItemLayout={(data, index) => ({
+          length: ITEM_HEIGHT,
+          offset: ITEM_HEIGHT * index,
+          index,
+        })}
+        style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS }}
+        contentContainerStyle={{ paddingVertical: 0 }}
+      />
+    </View>
+  );
 };
 
 const AddContactScreen = ({ navigation, route }) => {
@@ -264,10 +364,10 @@ const AddContactScreen = ({ navigation, route }) => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <LinearGradient
-        colors={['#FFFFFF', '#ccf9ff', '#fbe5f5', '#FFFFFF']}
+        colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
         locations={[0, 0.3, 0.7, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -372,33 +472,28 @@ const AddContactScreen = ({ navigation, route }) => {
               <Text style={styles.sectionTitle}>Relationship</Text>
             </View>
             <View style={styles.relationshipGrid}>
-              {relationshipTypes.map((type) => (
-                <TouchableOpacity
-                  key={type.id}
-                  style={[
-                    styles.relationshipOption,
-                    relationship === type.id && styles.relationshipSelected,
-                  ]}
-                  onPress={() => setRelationship(type.id)}
-                >
-                  {relationship === type.id ? (
+              {relationshipTypes.map((type) => {
+                const isSelected = relationship === type.id;
+                return (
+                  <TouchableOpacity
+                    key={type.id}
+                    style={styles.relationshipOption}
+                    onPress={() => setRelationship(type.id)}
+                  >
                     <LinearGradient
-                      colors={['#ca9ad6', '#70d0dd']}
+                      colors={isSelected ? ['#ca9ad6', '#70d0dd'] : ['#f8f9fa', '#f8f9fa']}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                       style={styles.relationshipGradient}
                     >
                       <Text style={styles.relationshipEmoji}>{type.emoji}</Text>
-                      <Text style={styles.relationshipTextSelected}>{type.label}</Text>
+                      <Text style={isSelected ? styles.relationshipTextSelected : styles.relationshipText}>
+                        {type.label}
+                      </Text>
                     </LinearGradient>
-                  ) : (
-                    <>
-                      <Text style={styles.relationshipEmoji}>{type.emoji}</Text>
-                      <Text style={styles.relationshipText}>{type.label}</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              ))}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </Animated.View>
 
@@ -523,75 +618,37 @@ const AddContactScreen = ({ navigation, route }) => {
 
               <View style={styles.dateSelectors}>
                 {/* Month Selector */}
-                <View style={styles.selectorColumn}>
-                  <Text style={styles.selectorLabel}>Month</Text>
-                  <ScrollView style={styles.selectorScroll} showsVerticalScrollIndicator={false}>
-                    {months.map((month, index) => (
-                      <TouchableOpacity
-                        key={month}
-                        style={[
-                          styles.selectorItem,
-                          selectedMonth === index && styles.selectorItemSelected,
-                        ]}
-                        onPress={() => setSelectedMonth(index)}
-                      >
-                        <Text style={[
-                          styles.selectorItemText,
-                          selectedMonth === index && styles.selectorItemTextSelected,
-                        ]}>
-                          {month}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
+                <View style={styles.pickerColumn}>
+                  <Text style={styles.pickerLabel}>Month</Text>
+                  <WheelPicker
+                    data={months}
+                    selectedIndex={selectedMonth}
+                    onSelect={(index) => setSelectedMonth(index)}
+                    keyExtractor={(item) => `month-${item}`}
+                    renderItem={(item) => item.substring(0, 3)}
+                  />
                 </View>
 
                 {/* Day Selector */}
-                <View style={styles.selectorColumn}>
-                  <Text style={styles.selectorLabel}>Day</Text>
-                  <ScrollView style={styles.selectorScroll} showsVerticalScrollIndicator={false}>
-                    {days.map((day) => (
-                      <TouchableOpacity
-                        key={day}
-                        style={[
-                          styles.selectorItem,
-                          selectedDay === day && styles.selectorItemSelected,
-                        ]}
-                        onPress={() => setSelectedDay(day)}
-                      >
-                        <Text style={[
-                          styles.selectorItemText,
-                          selectedDay === day && styles.selectorItemTextSelected,
-                        ]}>
-                          {day}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
+                <View style={styles.pickerColumn}>
+                  <Text style={styles.pickerLabel}>Day</Text>
+                  <WheelPicker
+                    data={days}
+                    selectedIndex={days.indexOf(selectedDay)}
+                    onSelect={(index) => setSelectedDay(days[index])}
+                    keyExtractor={(item) => `day-${item}`}
+                  />
                 </View>
 
                 {/* Year Selector */}
-                <View style={styles.selectorColumn}>
-                  <Text style={styles.selectorLabel}>Year</Text>
-                  <ScrollView style={styles.selectorScroll} showsVerticalScrollIndicator={false}>
-                    {years.map((year) => (
-                      <TouchableOpacity
-                        key={year}
-                        style={[
-                          styles.selectorItem,
-                          selectedYear === year && styles.selectorItemSelected,
-                        ]}
-                        onPress={() => setSelectedYear(year)}
-                      >
-                        <Text style={[
-                          styles.selectorItemText,
-                          selectedYear === year && styles.selectorItemTextSelected,
-                        ]}>
-                          {year}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
+                <View style={styles.pickerColumn}>
+                  <Text style={styles.pickerLabel}>Year</Text>
+                  <WheelPicker
+                    data={years}
+                    selectedIndex={years.indexOf(selectedYear)}
+                    onSelect={(index) => setSelectedYear(years[index])}
+                    keyExtractor={(item) => `year-${item}`}
+                  />
                 </View>
               </View>
 
@@ -724,16 +781,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   relationshipOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
     borderRadius: 14,
-    backgroundColor: '#f8f9fa',
-    gap: 6,
-  },
-  relationshipSelected: {
-    padding: 0,
     overflow: 'hidden',
   },
   relationshipGradient: {
@@ -855,39 +903,16 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 20,
   },
-  selectorColumn: {
+  pickerColumn: {
     flex: 1,
+    alignItems: 'center',
   },
-  selectorLabel: {
+  pickerLabel: {
     fontSize: 12,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     textAlign: 'center',
     marginBottom: 8,
-  },
-  selectorScroll: {
-    height: 200,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-  },
-  selectorItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-  },
-  selectorItemSelected: {
-    backgroundColor: '#fbe5f5',
-    borderRadius: 10,
-    marginHorizontal: 4,
-  },
-  selectorItemText: {
-    fontSize: 14,
-    fontFamily: 'Handlee_400Regular',
-    color: '#6b3a8a',
-  },
-  selectorItemTextSelected: {
-    fontFamily: 'Handlee_400Regular',
-    color: '#ca9ad6',
   },
   confirmButton: {
     borderRadius: 16,
@@ -902,6 +927,44 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
+  },
+});
+
+// Wheel picker styles
+const wheelStyles = StyleSheet.create({
+  wheelContainer: {
+    height: ITEM_HEIGHT * VISIBLE_ITEMS,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    width: '100%',
+  },
+  selectionIndicator: {
+    position: 'absolute',
+    top: ITEM_HEIGHT * 2,
+    left: 4,
+    right: 4,
+    height: ITEM_HEIGHT,
+    backgroundColor: '#fbe5f5',
+    borderRadius: 10,
+    zIndex: 0,
+  },
+  wheelItem: {
+    height: ITEM_HEIGHT,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  wheelItemSelected: {
+    // Selection handled by indicator
+  },
+  wheelItemText: {
+    fontSize: 16,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+  },
+  wheelItemTextSelected: {
+    color: '#ca9ad6',
+    fontFamily: 'Handlee_400Regular',
   },
 });
 

@@ -399,7 +399,7 @@ const GiftsScreen = () => {
     <View style={styles.container}>
       {/* Background Gradient - Diagonal */}
       <LinearGradient
-        colors={['#FFFFFF', '#fbe5f5', '#ccf9ff', '#FFFFFF']}
+        colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
         locations={[0, 0.3, 0.7, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}

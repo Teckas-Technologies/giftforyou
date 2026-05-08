@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { useAuth } from '../contexts/AuthContext';
+import { getProfile } from '../services/api';
 import {
   SplashScreen,
   OnboardingScreen,
@@ -19,10 +20,11 @@ import {
   ProfileScreen,
   ProfileSetupScreen,
   AddContactScreen,
-  // QuestionnaireScreen, // Handled via web form only
+  QuestionnaireScreen,
   NotificationsScreen,
   InvitationsScreen,
   AddEventScreen,
+  EventDetailScreen,
   ContactDetailScreen,
   SettingsScreen,
   DiscoverScreen,
@@ -111,22 +113,22 @@ const AuthStack = () => {
 };
 
 // Main App Stack Navigator (for authenticated users)
-const MainStack = () => {
+const MainStack = ({ initialRoute = 'MainApp' }) => {
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
       }}
-      initialRouteName="MainApp"
+      initialRouteName={initialRoute}
     >
       <Stack.Screen name="MainApp" component={MainTabNavigator} />
       <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
       <Stack.Screen name="AddContact" component={AddContactScreen} />
-      {/* Questionnaire is handled via web form only - commented for potential future use */}
-      {/* <Stack.Screen name="Questionnaire" component={QuestionnaireScreen} /> */}
+      <Stack.Screen name="Questionnaire" component={QuestionnaireScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="Invitations" component={InvitationsScreen} />
       <Stack.Screen name="AddEvent" component={AddEventScreen} />
+      <Stack.Screen name="EventDetail" component={EventDetailScreen} />
       <Stack.Screen name="ContactDetail" component={ContactDetailScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Discover" component={DiscoverScreen} />
@@ -151,8 +153,47 @@ const LoadingScreen = () => (
 // Main App Navigator
 const AppNavigator = () => {
   const { isAuthenticated, loading } = useAuth();
+  const [checkingProfile, setCheckingProfile] = useState(false);
+  const [initialRoute, setInitialRoute] = useState('MainApp');
+  const [profileChecked, setProfileChecked] = useState(false);
 
-  if (loading) {
+  // Check if questionnaire is completed when user is authenticated
+  useEffect(() => {
+    const checkQuestionnaireStatus = async () => {
+      if (isAuthenticated && !profileChecked) {
+        try {
+          setCheckingProfile(true);
+          const response = await getProfile();
+          const user = response?.user;
+
+          // Check if questionnaire is completed
+          if (user && !user.questionnaireCompleted) {
+            setInitialRoute('Questionnaire');
+          } else {
+            setInitialRoute('MainApp');
+          }
+        } catch (error) {
+          console.log('Error checking profile:', error);
+          setInitialRoute('MainApp');
+        } finally {
+          setCheckingProfile(false);
+          setProfileChecked(true);
+        }
+      }
+    };
+
+    checkQuestionnaireStatus();
+  }, [isAuthenticated, profileChecked]);
+
+  // Reset profile check when user logs out
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setProfileChecked(false);
+      setInitialRoute('MainApp');
+    }
+  }, [isAuthenticated]);
+
+  if (loading || (isAuthenticated && checkingProfile)) {
     return (
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -164,7 +205,7 @@ const AppNavigator = () => {
 
   return (
     <NavigationContainer>
-      {isAuthenticated ? <MainStack /> : <AuthStack />}
+      {isAuthenticated ? <MainStack initialRoute={initialRoute} /> : <AuthStack />}
     </NavigationContainer>
   );
 };

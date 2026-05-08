@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Pressable,
   Animated,
   Easing,
   Dimensions,
@@ -74,6 +75,13 @@ const SettingsIcon = ({ size = 20, color = '#ca9ad6' }) => (
   </Svg>
 );
 
+// Heart/Gift Preferences Icon SVG
+const GiftPreferencesIcon = ({ size = 20, color = '#ca9ad6' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </Svg>
+);
+
 // Sparkle decoration component
 const Sparkle = ({ style, size = 8, color = '#f4cae8' }) => (
   <Animated.View style={[styles.sparkle, style]}>
@@ -82,11 +90,20 @@ const Sparkle = ({ style, size = 8, color = '#f4cae8' }) => (
 );
 
 const menuItems = [
-  { id: '1', icon: BellIcon, title: 'Notifications', route: 'Notifications' },
-  { id: '2', icon: MailIcon, title: 'Invite Friends', route: 'Invitations' },
-  { id: '3', icon: CalendarPlusIcon, title: 'Add Event', route: 'AddEvent' },
-  { id: '4', icon: SettingsIcon, title: 'Settings', route: 'Settings' },
+  { id: '1', icon: GiftPreferencesIcon, title: 'My Gift Preferences', route: 'Questionnaire', params: { isFirstTime: false } },
+  { id: '2', icon: BellIcon, title: 'Notifications', route: 'Notifications' },
+  { id: '3', icon: MailIcon, title: 'Invite Friends', route: 'Invitations' },
+  { id: '4', icon: CalendarPlusIcon, title: 'Add Event', route: 'AddEvent' },
+  { id: '5', icon: SettingsIcon, title: 'Settings', route: 'Settings' },
 ];
+
+// Avatar types matching ProfileSetupScreen
+const avatarTypes = {
+  turtle: '🐢',
+  pig: '🐷',
+  cow: '🐮',
+  flowers: '🌸',
+};
 
 // Gradient Text Component for stat values
 const GradientStatValue = ({ value, glowAnim }) => (
@@ -190,39 +207,41 @@ const ProfileScreen = ({ navigation }) => {
     return name.substring(0, 2).toUpperCase();
   };
 
-  // Fetch profile and stats data
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [profileRes, statsRes] = await Promise.all([
-          getProfile().catch(() => ({ user: null })),
-          getDashboardStats().catch(() => ({ contactsCount: 0, upcomingEventsCount: 0, giftsGivenCount: 0 })),
-        ]);
+  // Fetch profile and stats data when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      const fetchData = async () => {
+        try {
+          setLoading(true);
+          const [profileRes, statsRes] = await Promise.all([
+            getProfile().catch(() => ({ user: null })),
+            getDashboardStats().catch(() => ({ contactsCount: 0, upcomingEventsCount: 0, giftsGivenCount: 0 })),
+          ]);
 
-        if (profileRes.user) {
-          setProfile({
-            name: profileRes.user.name || '',
-            email: profileRes.user.email || '',
-            photoUrl: profileRes.user.photoUrl || null,
-            avatarType: profileRes.user.avatarType || null,
+          if (profileRes.user) {
+            setProfile({
+              name: profileRes.user.name || '',
+              email: profileRes.user.email || '',
+              photoUrl: profileRes.user.photoUrl || null,
+              avatarType: profileRes.user.avatarType || profileRes.user.avatar_type || null,
+            });
+          }
+
+          setStats({
+            contactsCount: statsRes.contactsCount || 0,
+            upcomingEventsCount: statsRes.upcomingEventsCount || 0,
+            giftsGivenCount: statsRes.giftsGivenCount || 0,
           });
+        } catch (error) {
+          console.error('Error fetching profile data:', error);
+        } finally {
+          setLoading(false);
         }
+      };
 
-        setStats({
-          contactsCount: statsRes.contactsCount || 0,
-          upcomingEventsCount: statsRes.upcomingEventsCount || 0,
-          giftsGivenCount: statsRes.giftsGivenCount || 0,
-        });
-      } catch (error) {
-        console.error('Error fetching profile data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+      fetchData();
+    }, [])
+  );
 
   useEffect(() => {
     // Entry animations
@@ -435,7 +454,7 @@ const ProfileScreen = ({ navigation }) => {
     <View style={styles.container}>
       {/* Background Gradient - Diagonal */}
       <LinearGradient
-        colors={['#FFFFFF', '#ccf9ff', '#fbe5f5', '#FFFFFF']}
+        colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
         locations={[0, 0.3, 0.7, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -519,6 +538,8 @@ const ProfileScreen = ({ navigation }) => {
                     source={{ uri: profile.photoUrl }}
                     style={styles.avatarImage}
                   />
+                ) : profile.avatarType && avatarTypes[profile.avatarType] ? (
+                  <Text style={styles.avatarEmoji}>{avatarTypes[profile.avatarType]}</Text>
                 ) : profile.name ? (
                   <Text style={styles.avatarInitials}>{getInitials(profile.name)}</Text>
                 ) : (
@@ -570,7 +591,7 @@ const ProfileScreen = ({ navigation }) => {
                 key={item.id}
                 style={[styles.menuItem, createSlideStyle(menuAnims[index])]}
               >
-                <TouchableOpacity style={styles.menuItemInner} activeOpacity={0.7} onPress={() => item.route && navigation.navigate(item.route)}>
+                <TouchableOpacity style={styles.menuItemInner} activeOpacity={0.7} onPress={() => item.route && navigation.navigate(item.route, item.params)}>
                   <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
                     <LinearGradient
                       colors={isAlternate ? ['#ccf9ff', '#fbe5f5'] : ['#fbe5f5', '#ccf9ff']}
@@ -609,16 +630,18 @@ const ProfileScreen = ({ navigation }) => {
             }],
           }
         ]}>
-          <TouchableOpacity activeOpacity={0.7} onPress={handleLogout}>
-            <LinearGradient
-              colors={['#fbe5f5', '#f4cae8']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.logoutBtn}
-            >
-              <Text style={styles.logoutText}>Log Out</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+          <Pressable onPress={handleLogout}>
+            {({ pressed }) => (
+              <LinearGradient
+                colors={pressed ? ['#e8d0f0', '#dba8e0'] : ['#fbe5f5', '#f4cae8']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.logoutBtn}
+              >
+                <Text style={styles.logoutText}>Log Out</Text>
+              </LinearGradient>
+            )}
+          </Pressable>
         </Animated.View>
 
         <View style={{ height: 120 }} />
@@ -796,6 +819,9 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontFamily: 'Handlee_400Regular',
     color: 'white',
+  },
+  avatarEmoji: {
+    fontSize: 36,
   },
 });
 

@@ -45,6 +45,21 @@ const GiftIcon = ({ size = 18, color = '#ca9ad6' }) => (
   </Svg>
 );
 
+// Cake Icon for Birthdays
+const CakeIcon = ({ size = 18, color = '#ca9ad6' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" />
+    <Path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1" />
+    <Path d="M2 21h20" />
+    <Path d="M7 8v2" />
+    <Path d="M12 8v2" />
+    <Path d="M17 8v2" />
+    <Path d="M7 4h.01" />
+    <Path d="M12 4h.01" />
+    <Path d="M17 4h.01" />
+  </Svg>
+);
+
 // Sparkle Icon
 const SparkleIcon = ({ size = 16, color = '#70d0dd' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
@@ -101,7 +116,7 @@ const HomeScreen = ({ navigation }) => {
   const [stats, setStats] = useState({
     contactsCount: 0,
     upcomingEventsCount: 0,
-    giftsGivenCount: 0,
+    birthdaysThisMonth: 0,
   });
   const [upcomingEvents, setUpcomingEvents] = useState([]);
 
@@ -131,7 +146,7 @@ const HomeScreen = ({ navigation }) => {
       // Fetch all data in parallel
       const [profileRes, statsRes, eventsRes] = await Promise.all([
         getProfile().catch(() => ({ user: { name: 'User' } })),
-        getDashboardStats().catch(() => ({ contactsCount: 0, upcomingEventsCount: 0, giftsGivenCount: 0 })),
+        getDashboardStats().catch(() => ({ contactsCount: 0, upcomingEventsCount: 0, birthdaysThisMonth: 0 })),
         getUpcomingEvents(5).catch(() => ({ events: [] })),
       ]);
 
@@ -145,7 +160,7 @@ const HomeScreen = ({ navigation }) => {
         setStats({
           contactsCount: statsRes.contactsCount || 0,
           upcomingEventsCount: statsRes.upcomingEventsCount || 0,
-          giftsGivenCount: statsRes.giftsGivenCount || 0,
+          birthdaysThisMonth: statsRes.birthdaysThisMonth || 0,
         });
       }
 
@@ -328,7 +343,7 @@ const HomeScreen = ({ navigation }) => {
     <View style={styles.container}>
       {/* Background Gradient - Diagonal */}
       <LinearGradient
-        colors={['#FFFFFF', '#fbe5f5', '#ccf9ff', '#FFFFFF']}
+        colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
         locations={[0, 0.3, 0.7, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -380,7 +395,7 @@ const HomeScreen = ({ navigation }) => {
           {[
             { icon: UsersIcon, value: String(stats.contactsCount), label: 'Contacts', colors: ['#fbe5f5', '#f4cae8', '#ccf9ff'] },
             { icon: CalendarIcon, value: String(stats.upcomingEventsCount), label: 'Events', colors: ['#ccf9ff', '#a8e6f0', '#fbe5f5'] },
-            { icon: GiftIcon, value: String(stats.giftsGivenCount), label: 'Gifts', colors: ['#fbe5f5', '#f4cae8', '#ccf9ff'] },
+            { icon: CakeIcon, value: String(stats.birthdaysThisMonth), label: 'Birthdays', colors: ['#fbe5f5', '#f4cae8', '#ccf9ff'] },
           ].map((stat, index) => (
             <Animated.View
               key={index}
@@ -463,14 +478,16 @@ const HomeScreen = ({ navigation }) => {
                   style={styles.birthdayCardInner}
                   activeOpacity={0.7}
                   onPress={() => {
-                    // If event has a linked contact, navigate to contact detail
-                    if (event.circleId || event.circle_id) {
-                      navigation.navigate('ContactDetail', {
-                        contactId: event.circleId || event.circle_id
-                      });
-                    } else {
-                      navigation.navigate('Calendar');
-                    }
+                    navigation.navigate('EventDetail', {
+                      eventId: event.id,
+                      event: {
+                        ...event,
+                        eventType: event.event_type || event.eventType,
+                        eventDate: event.event_date || event.eventDate,
+                        contactName: event.contact_name || event.contactName,
+                        circleId: event.circle_id || event.circleId,
+                      }
+                    });
                   }}
                 >
                   {/* Card glow effect */}
@@ -492,8 +509,8 @@ const HomeScreen = ({ navigation }) => {
                     </Text>
                   </Animated.View>
                   <View style={styles.birthdayInfo}>
-                    <Text style={styles.birthdayName}>{contactName}</Text>
-                    <Text style={styles.birthdayRelation}>{event.event_type || event.eventType || 'Event'}</Text>
+                    <Text style={styles.birthdayName} numberOfLines={1}>{contactName}</Text>
+                    <Text style={styles.birthdayRelation} numberOfLines={1}>{event.event_type || event.eventType || 'Event'}</Text>
                   </View>
                   <View style={styles.birthdayDateInfo}>
                     <Text style={styles.birthdayDate}>{formatEventDate(event.event_date || event.eventDate)}</Text>
@@ -527,6 +544,22 @@ const HomeScreen = ({ navigation }) => {
         {/* Quick Actions with premium styling */}
         <Animated.View style={[styles.quickSection, createFadeStyle(quickAnim)]}>
           <Text style={styles.quickTitle}>Quick actions</Text>
+
+          {/* Invite Friends - Top Priority */}
+          <TouchableOpacity style={styles.quickBtnFull} activeOpacity={0.8} onPress={() => navigation.navigate('Invitations')}>
+            <Animated.View style={{ transform: [{ scale: breatheAnim }] }}>
+              <LinearGradient
+                colors={['#ca9ad6', '#70d0dd']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.quickBtnWide}
+              >
+                <Text style={styles.quickBtnIcon}>💌</Text>
+                <Text style={styles.quickBtnTextWhite}>Invite Friends</Text>
+              </LinearGradient>
+            </Animated.View>
+          </TouchableOpacity>
+
           <View style={styles.quickRow}>
             <TouchableOpacity style={styles.quickBtnContainer} activeOpacity={0.8} onPress={() => navigation.navigate('AddContact')}>
               <Animated.View style={{ transform: [{ scale: breatheAnim }] }}>
@@ -689,6 +722,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.95)',
     borderRadius: 20,
     padding: 14,
+    height: 88,
     gap: 12,
     shadowColor: '#6b3a8a',
     shadowOffset: { width: 0, height: 8 },
@@ -781,6 +815,22 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     letterSpacing: 0.3,
   },
+  quickBtnFull: {
+    marginBottom: 12,
+  },
+  quickBtnWide: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 18,
+    borderRadius: 18,
+    gap: 10,
+    shadowColor: '#ca9ad6',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
   quickRow: {
     flexDirection: 'row',
     gap: 12,
@@ -803,6 +853,12 @@ const styles = StyleSheet.create({
   },
   quickBtnIcon: {
     fontSize: 20,
+  },
+  quickBtnTextWhite: {
+    fontSize: 15,
+    fontFamily: 'Handlee_400Regular',
+    color: '#FFFFFF',
+    fontWeight: '500',
   },
   quickBtnTextPink: {
     fontSize: 14,

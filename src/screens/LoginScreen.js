@@ -170,11 +170,12 @@ const LoginScreen = ({ navigation }) => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       {/* Background Gradient - Diagonal */}
       <LinearGradient
-        colors={['#FFFFFF', '#fbe5f5', '#ccf9ff', '#FFFFFF']}
+        colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
         locations={[0, 0.3, 0.7, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}

@@ -106,6 +106,7 @@ const emptyContact = {
   notes: '',
   avatar: null,
   hasQuestionnaire: false,
+  invitationSent: false,
   preferences: {
     activities: [],
     activityDetails: '',
@@ -213,6 +214,7 @@ const ContactDetailScreen = ({ navigation, route }) => {
         notes: rawContact.notes || '',
         avatar: memberPhoto || null,
         hasQuestionnaire: !!preferencesData?.preferences,
+        invitationSent: preferencesData?.invitationSent || false,
         preferences: preferencesData?.preferences ? {
           activities: Array.isArray(preferencesData.preferences.favoriteActivities)
             ? preferencesData.preferences.favoriteActivities
@@ -358,7 +360,7 @@ const ContactDetailScreen = ({ navigation, route }) => {
     return (
       <View style={styles.container}>
         <LinearGradient
-          colors={['#FFFFFF', '#ccf9ff', '#fbe5f5', '#FFFFFF']}
+          colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
           locations={[0, 0.3, 0.7, 1]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -397,7 +399,7 @@ const ContactDetailScreen = ({ navigation, route }) => {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#FFFFFF', '#ccf9ff', '#fbe5f5', '#FFFFFF']}
+        colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
         locations={[0, 0.3, 0.7, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -777,10 +779,10 @@ const ContactDetailScreen = ({ navigation, route }) => {
           </Animated.View>
         )}
 
-        {/* Action Buttons */}
-        {!contact.hasQuestionnaire && (
+        {/* Action Buttons - Only show if no questionnaire AND no invitation sent */}
+        {!contact.hasQuestionnaire && !contact.invitationSent && (
           <Animated.View style={[styles.actionContainer, createSlideStyle(sectionAnims[4])]}>
-            <TouchableOpacity onPress={handleSendInvitation}>
+            <TouchableOpacity activeOpacity={0.7} onPress={handleSendInvitation}>
               <LinearGradient
                 colors={['#ca9ad6', '#70d0dd']}
                 start={{ x: 0, y: 0 }}

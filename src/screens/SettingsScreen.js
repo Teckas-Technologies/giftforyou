@@ -15,8 +15,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
-import { updateSettings, deleteAccount, clearUserCredentials } from '../services/api';
-import { CustomAlert, GiftBoxIcon } from '../components';
+import { updateSettings, clearUserCredentials } from '../services/api';
+import { CustomAlert, GiftBoxIcon, Toast } from '../components';
 import useAlert from '../hooks/useAlert';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../config/supabase';
@@ -81,13 +81,6 @@ const ShareIcon = ({ size = 22, color = '#ca9ad6' }) => (
   </Svg>
 );
 
-const TrashIcon = ({ size = 22, color = '#e53935' }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <Polyline points="3 6 5 6 21 6" />
-    <Path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-  </Svg>
-);
-
 const LogOutIcon = ({ size = 22, color = '#e53935' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <Path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -111,6 +104,16 @@ const SettingsScreen = ({ navigation }) => {
     questionnaires: true,
     marketing: false,
   });
+
+  const [toast, setToast] = useState({ visible: false, message: '' });
+
+  const showToast = (message) => {
+    setToast({ visible: true, message });
+  };
+
+  const hideToast = () => {
+    setToast({ visible: false, message: '' });
+  };
 
   // Custom alert hook
   const { alertConfig, showAlert, showSuccess, showError, showConfirm, showOptions, showInfo, hideAlert } = useAlert();
@@ -179,37 +182,6 @@ const SettingsScreen = ({ navigation }) => {
     });
   };
 
-  const handleDeleteAccount = () => {
-    showAlert({
-      type: 'warning',
-      title: 'Delete Account',
-      message: 'This action cannot be undone. All your data will be permanently deleted.',
-      buttons: [
-        {
-          text: 'Cancel',
-          onPress: () => {}
-        },
-        {
-          text: 'Delete',
-          onPress: async () => {
-            try {
-              await deleteAccount('DELETE');
-              await clearUserCredentials();
-              // Show success briefly before signing out
-              showSuccess('Account deleted successfully');
-              setTimeout(async () => {
-                await signOut();
-              }, 1000);
-            } catch (error) {
-              console.error('Delete account error:', error);
-              showError(error.message || 'Failed to delete account');
-            }
-          }
-        },
-      ],
-    });
-  };
-
   const handleNotificationToggle = async (key, value) => {
     setNotifications(prev => ({ ...prev, [key]: value }));
     showSuccess('Notification preference updated');
@@ -225,12 +197,12 @@ const SettingsScreen = ({ navigation }) => {
           if (user?.email) {
             const { error } = await supabase.auth.resetPasswordForEmail(user.email);
             if (error) throw error;
-            showSuccess('Password reset link sent to your email!');
+            showToast('Password reset link sent to your email!');
           } else {
-            showError('Could not find your email address');
+            showToast('Could not find your email address');
           }
         } catch (error) {
-          showError(error.message || 'Failed to send reset link');
+          showToast(error.message || 'Failed to send reset link');
         }
       },
       null,
@@ -324,7 +296,7 @@ const SettingsScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#FFFFFF', '#ccf9ff', '#fbe5f5', '#FFFFFF']}
+        colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
         locations={[0, 0.3, 0.7, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -451,12 +423,6 @@ const SettingsScreen = ({ navigation }) => {
             onPress={handleLogout}
             isDanger
           />
-          <SettingRow
-            icon={TrashIcon}
-            label="Delete Account"
-            onPress={handleDeleteAccount}
-            isDanger
-          />
         </Animated.View>
 
         {/* App Info */}
@@ -474,6 +440,13 @@ const SettingsScreen = ({ navigation }) => {
 
       {/* Custom Alert */}
       <CustomAlert {...alertConfig} onClose={hideAlert} />
+
+      {/* Toast */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        onHide={hideToast}
+      />
     </View>
   );
 };

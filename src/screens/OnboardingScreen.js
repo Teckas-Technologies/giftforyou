@@ -249,9 +249,14 @@ const OnboardingScreen = ({ navigation }) => {
     }
   };
 
-  const skipToLogin = async () => {
+  const skipToSignUp = async () => {
     await markOnboardingSeenLocal();
     navigation.replace('SignUp');
+  };
+
+  const goToLogin = async () => {
+    await markOnboardingSeenLocal();
+    navigation.replace('Login');
   };
 
   const bellRotate = bellShake.interpolate({
@@ -490,13 +495,13 @@ const OnboardingScreen = ({ navigation }) => {
           </TouchableOpacity>
 
           {isLastSlide ? (
-            <TouchableOpacity onPress={skipToLogin}>
+            <TouchableOpacity onPress={goToLogin}>
               <Text style={styles.loginLink}>
                 Already have an account? <Text style={styles.loginLinkBold}>Sign in</Text>
               </Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity onPress={skipToLogin}>
+            <TouchableOpacity onPress={skipToSignUp}>
               <Text style={styles.skipText}>Skip</Text>
             </TouchableOpacity>
           )}

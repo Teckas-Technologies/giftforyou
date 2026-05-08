@@ -11,11 +11,11 @@ export { default as ProfileScreen } from './ProfileScreen';
 // New screens
 export { default as ProfileSetupScreen } from './ProfileSetupScreen';
 export { default as AddContactScreen } from './AddContactScreen';
-// Questionnaire is handled via web form only - commented for potential future use
-// export { default as QuestionnaireScreen } from './QuestionnaireScreen';
+export { default as QuestionnaireScreen } from './QuestionnaireScreen';
 export { default as NotificationsScreen } from './NotificationsScreen';
 export { default as InvitationsScreen } from './InvitationsScreen';
 export { default as AddEventScreen } from './AddEventScreen';
+export { default as EventDetailScreen } from './EventDetailScreen';
 export { default as ContactDetailScreen } from './ContactDetailScreen';
 export { default as SettingsScreen } from './SettingsScreen';
 export { default as DiscoverScreen } from './DiscoverScreen';
