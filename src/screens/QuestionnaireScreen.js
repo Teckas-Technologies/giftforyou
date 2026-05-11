@@ -461,8 +461,58 @@ const QuestionnaireScreen = ({ navigation, route }) => {
       setLoading(true);
       const response = await getQuestionnaire();
 
-      if (response.questionnaire && response.questionnaire.answers) {
-        setAnswers(response.questionnaire.answers);
+      if (response.questionnaire) {
+        const q = response.questionnaire;
+        // Map camelCase API response to snake_case question IDs
+        const mappedAnswers = {
+          // Activities
+          favorite_activities: q.favoriteActivities || q.favorite_activities || [],
+          activity_details: q.activityDetails || q.activity_details || '',
+          // Style
+          personal_style: q.personalStyle || q.personal_style || '',
+          personal_style_other: q.personalStyleOther || q.personal_style_other || '',
+          favorite_colors: q.favoriteColors || q.favorite_colors || [],
+          favorite_colors_other: q.favoriteColorsOther || q.favorite_colors_other || '',
+          likes_surprises: q.likesSurprises || q.likes_surprises || '',
+          // Values
+          causes_values: q.causesValues || q.causes_values || [],
+          causes_other: q.causesOther || q.causes_other || '',
+          // Flowers
+          favorite_flower: q.favoriteFlower || q.favorite_flower || [],
+          flower_details: q.flowerDetails || q.flower_details || '',
+          // Food
+          favorite_cuisines: q.favoriteCuisines || q.favorite_cuisines || [],
+          cuisine_other: q.cuisineOther || q.cuisine_other || '',
+          favorite_restaurant: q.favoriteRestaurant || q.favorite_restaurant || '',
+          favorite_meal: q.favoriteMeal || q.favorite_meal || '',
+          favorite_desserts: q.favoriteDesserts || q.favorite_desserts || [],
+          dessert_details: q.dessertDetails || q.dessert_details || '',
+          // Gifts
+          gift_types: q.giftTypes || q.gift_types || [],
+          gift_details: q.giftDetails || q.gift_details || '',
+          // Entertainment
+          movie_genre: q.movieGenre || q.movie_genre || '',
+          favorite_movies: q.favoriteMovies || q.favorite_movies || '',
+          music_genre: q.musicGenre || q.music_genre || '',
+          favorite_artists: q.favoriteArtists || q.favorite_artists || '',
+          // Wishlist
+          wishlist_text: q.wishlistText || q.wishlist_text || '',
+          clothing_sizes: q.clothingSizes || q.clothing_sizes || '',
+        };
+
+        // Remove empty values
+        Object.keys(mappedAnswers).forEach(key => {
+          if (mappedAnswers[key] === '' || (Array.isArray(mappedAnswers[key]) && mappedAnswers[key].length === 0)) {
+            delete mappedAnswers[key];
+          }
+        });
+
+        setAnswers(mappedAnswers);
+      }
+
+      // Also load birthday from basicInfo
+      if (response.basicInfo?.birthday) {
+        setAnswers(prev => ({ ...prev, birthday: response.basicInfo.birthday }));
       }
     } catch (error) {
       console.error('Error fetching questionnaire:', error);
