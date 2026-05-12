@@ -1,6 +1,15 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import {
+  GoogleSignin,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
 import { supabase } from '../config/supabase';
 import { registerForPushNotifications } from '../services/notifications';
+
+GoogleSignin.configure({
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  offlineAccess: false,
+});
 
 const AuthContext = createContext({});
 
@@ -93,6 +102,39 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Sign in with Google (native flow → Supabase signInWithIdToken)
+  const signInWithGoogle = async () => {
+    try {
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+
+      // Clear any cached Google account so the account picker always appears.
+      try {
+        await GoogleSignin.signOut();
+      } catch (_) {}
+
+      const userInfo = await GoogleSignin.signIn();
+      const idToken = userInfo?.data?.idToken ?? userInfo?.idToken;
+
+      if (!idToken) {
+        throw new Error('No ID token returned from Google');
+      }
+
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: idToken,
+      });
+
+      if (error) throw error;
+
+      return { data, error: null };
+    } catch (error) {
+      if (error?.code === statusCodes.SIGN_IN_CANCELLED) {
+        return { data: null, error: null, cancelled: true };
+      }
+      return { data: null, error };
+    }
+  };
+
   // Sign in with email and password
   const signIn = async (email, password) => {
     try {
@@ -112,6 +154,10 @@ export const AuthProvider = ({ children }) => {
   // Sign out
   const signOut = async () => {
     try {
+      try {
+        await GoogleSignin.signOut();
+      } catch (_) {}
+
       const { error } = await supabase.auth.signOut();
       // Always clear local state regardless of Supabase response
       setUser(null);
@@ -171,6 +217,7 @@ export const AuthProvider = ({ children }) => {
     initialized,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
     resetPassword,
     updatePassword,

@@ -9,7 +9,12 @@ import {
   Easing,
   ActivityIndicator,
   RefreshControl,
+  Dimensions,
 } from 'react-native';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CARD_WIDTH = SCREEN_WIDTH - 32; // outer scroll has 16px horizontal padding on each side
+const CARD_GAP = 12;
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
@@ -119,6 +124,7 @@ const HomeScreen = ({ navigation }) => {
     birthdaysThisMonth: 0,
   });
   const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [activeEventIndex, setActiveEventIndex] = useState(0);
 
   // Animation values
   const headerAnim = useRef(new Animated.Value(0)).current;
@@ -461,7 +467,19 @@ const HomeScreen = ({ navigation }) => {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            decelerationRate="fast"
+            snapToInterval={CARD_WIDTH + CARD_GAP}
+            snapToAlignment="start"
             contentContainerStyle={styles.eventsScrollContent}
+            scrollEventThrottle={16}
+            onScroll={(e) => {
+              const index = Math.round(
+                e.nativeEvent.contentOffset.x / (CARD_WIDTH + CARD_GAP)
+              );
+              if (index !== activeEventIndex && index >= 0) {
+                setActiveEventIndex(index);
+              }
+            }}
           >
           {upcomingEvents.slice(0, 5).map((event, index) => {
             const avatarStyle = getAvatarStyle(index);
@@ -539,6 +557,20 @@ const HomeScreen = ({ navigation }) => {
             );
           })}
           </ScrollView>
+        )}
+
+        {!loading && upcomingEvents.length > 1 && (
+          <View style={styles.pagerDots}>
+            {upcomingEvents.slice(0, 5).map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.pagerDot,
+                  i === activeEventIndex && styles.pagerDotActive,
+                ]}
+              />
+            ))}
+          </View>
         )}
 
         {/* Quick Actions with premium styling */}
@@ -709,26 +741,43 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
   },
   eventsScrollContent: {
-    paddingRight: 16,
-    gap: 12,
+    gap: CARD_GAP,
+  },
+  pagerDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+  },
+  pagerDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(107, 58, 138, 0.2)',
+  },
+  pagerDotActive: {
+    width: 18,
+    backgroundColor: '#ca9ad6',
   },
   birthdayCard: {
-    width: 280,
-    marginRight: 0,
+    width: CARD_WIDTH,
   },
   birthdayCardInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
     padding: 14,
     height: 88,
     gap: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(202, 154, 214, 0.12)',
     shadowColor: '#6b3a8a',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
     overflow: 'hidden',
   },
   cardGlow: {
