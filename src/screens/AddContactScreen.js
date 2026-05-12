@@ -204,7 +204,7 @@ const AddContactScreen = ({ navigation, route }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(editContact?.birthday ? new Date(editContact.birthday).getMonth() : new Date().getMonth());
   const [selectedDay, setSelectedDay] = useState(editContact?.birthday ? new Date(editContact.birthday).getDate() : new Date().getDate());
-  const [selectedYear, setSelectedYear] = useState(editContact?.birthday ? new Date(editContact.birthday).getFullYear() : new Date().getFullYear() - 25);
+  const [selectedYear, setSelectedYear] = useState(editContact?.birthday ? new Date(editContact.birthday).getFullYear() : new Date().getFullYear());
   const [relationship, setRelationship] = useState(editContact?.relationship?.toLowerCase() || 'friend');
   const [nickname, setNickname] = useState(editContact?.nickname || '');
   const [notes, setNotes] = useState(editContact?.notes || '');

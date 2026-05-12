@@ -633,7 +633,7 @@ const QuestionnaireScreen = ({ navigation, route }) => {
       <TouchableOpacity
         key={option.id}
         onPress={() => handleSelect(questionId, option.id, type)}
-        activeOpacity={0.8}
+        activeOpacity={0.9}
         style={styles.optionWrapper}
       >
         {isSelected ? (

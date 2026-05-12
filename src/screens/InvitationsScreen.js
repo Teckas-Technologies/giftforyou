@@ -624,9 +624,11 @@ const InvitationsScreen = ({ navigation, route }) => {
         animationType="none"
         onRequestClose={closeModal}
       >
+        <View style={styles.modalOverlay}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          enabled={Platform.OS === 'ios'}
+          style={styles.modalKeyboardWrapper}
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.modalOverlayInner}>
@@ -784,6 +786,7 @@ const InvitationsScreen = ({ navigation, route }) => {
             </View>
           </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
+        </View>
       </Modal>
 
       {/* Custom Alert */}
@@ -1039,8 +1042,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   modalOverlay: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalKeyboardWrapper: {
+    flex: 1,
   },
   modalOverlayInner: {
     flex: 1,
