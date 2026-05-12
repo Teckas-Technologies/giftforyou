@@ -431,6 +431,33 @@ export const updateCircle = (id, data) =>
 export const removeFromCircle = (id) =>
   apiRequest(`/api/circles/${id}`, { method: 'DELETE' });
 
+/**
+ * Get pending friend requests (incoming + outgoing)
+ */
+export const getPendingRequests = () =>
+  apiRequest('/api/circles/requests');
+
+/**
+ * Accept a pending friend request (called by the receiver)
+ * @param {string} id - Circle row ID
+ */
+export const acceptFriendRequest = (id) =>
+  apiRequest(`/api/circles/${id}/accept`, { method: 'POST' });
+
+/**
+ * Reject a pending friend request (called by the receiver)
+ * @param {string} id - Circle row ID
+ */
+export const rejectFriendRequest = (id) =>
+  apiRequest(`/api/circles/${id}/reject`, { method: 'POST' });
+
+/**
+ * Cancel a pending friend request you sent (called by the sender)
+ * @param {string} id - Circle row ID
+ */
+export const cancelFriendRequest = (id) =>
+  apiRequest(`/api/circles/${id}/cancel`, { method: 'DELETE' });
+
 // ═══════════════════════════════════════════════════════════════
 // EVENTS API
 // ═══════════════════════════════════════════════════════════════
@@ -665,6 +692,10 @@ export default {
   getContactPreferences,
   addToCircle,
   quickAddToCircle,
+  getPendingRequests,
+  acceptFriendRequest,
+  rejectFriendRequest,
+  cancelFriendRequest,
   updateCircle,
   removeFromCircle,
 

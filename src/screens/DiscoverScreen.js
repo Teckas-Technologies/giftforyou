@@ -131,13 +131,18 @@ const DiscoverScreen = ({ navigation }) => {
 
       await quickAddToCircle(userId, 'Friend');
 
-      // Remove from suggestions
-      setSuggestions(prev => prev.filter(s => (s._id || s.id) !== userId));
+      // Mark this user as requested locally so the button label flips
+      // without needing a refetch.
+      setSuggestions(prev =>
+        prev.map(s =>
+          (s._id || s.id) === userId ? { ...s, requested: true } : s
+        )
+      );
 
-      showSuccess(`${user.name} has been added to your circle.`);
+      showSuccess(`Request sent to ${user.name}. You'll see their preferences once they accept.`);
     } catch (error) {
-      console.error('Error adding to circle:', error);
-      showError('Failed to add to circle. Please try again.');
+      console.log('Error sending friend request:', error);
+      showError('Failed to send request. Please try again.');
     } finally {
       setAddingIds(prev => ({ ...prev, [userId]: false }));
     }
@@ -195,17 +200,20 @@ const DiscoverScreen = ({ navigation }) => {
 
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => handleAddToCircle(user)}
-          disabled={isAdding}
+          onPress={() => !user.requested && handleAddToCircle(user)}
+          disabled={isAdding || user.requested}
+          activeOpacity={user.requested ? 1 : 0.7}
         >
           <LinearGradient
-            colors={['#ca9ad6', '#70d0dd']}
+            colors={user.requested ? ['#e8dced', '#e8dced'] : ['#ca9ad6', '#70d0dd']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.addButtonGradient}
           >
             {isAdding ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : user.requested ? (
+              <Text style={[styles.addButtonText, { color: '#6b3a8a' }]}>Requested</Text>
             ) : (
               <>
                 <UserPlusIcon size={18} color="#FFFFFF" />

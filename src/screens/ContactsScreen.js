@@ -159,6 +159,8 @@ const ContactsScreen = ({ navigation }) => {
           relation: contact.relationship || 'Friend',
           relationTag: getRelationTag(contact.relationship),
           colorType: index % 2 === 0 ? 'pink' : 'blue',
+          status: contact.status,
+          isPending: contact.status === 'pending',
         };
       });
 
@@ -567,25 +569,33 @@ const ContactsScreen = ({ navigation }) => {
                   <Text style={styles.contactName}>{contact.name}</Text>
                   <View style={styles.contactBirthday}>
                     <CalendarIcon size={12} color="#6b3a8a" />
-                    <Text style={styles.birthdayText}>{contact.birthday}</Text>
+                    <Text style={styles.birthdayText}>
+                      {contact.isPending ? 'Waiting for them to accept' : contact.birthday}
+                    </Text>
                   </View>
                 </View>
 
-                {/* Relation Tag with gradient border effect */}
-                <LinearGradient
-                  colors={contact.relationTag === 'family'
-                    ? ['#fbe5f5', '#f4cae8']
-                    : contact.relationTag === 'friend'
-                    ? ['#ccf9ff', '#a8e6f0']
-                    : ['#E8F5E9', '#C8E6C9']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.relationTag}
-                >
-                  <Text style={[styles.relationTagText, { color: tagStyle.color }]}>
-                    {contact.relation}
-                  </Text>
-                </LinearGradient>
+                {/* Pending badge or Relation Tag */}
+                {contact.isPending ? (
+                  <View style={styles.pendingBadge}>
+                    <Text style={styles.pendingBadgeText}>Requested</Text>
+                  </View>
+                ) : (
+                  <LinearGradient
+                    colors={contact.relationTag === 'family'
+                      ? ['#fbe5f5', '#f4cae8']
+                      : contact.relationTag === 'friend'
+                      ? ['#ccf9ff', '#a8e6f0']
+                      : ['#E8F5E9', '#C8E6C9']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.relationTag}
+                  >
+                    <Text style={[styles.relationTagText, { color: tagStyle.color }]}>
+                      {contact.relation}
+                    </Text>
+                  </LinearGradient>
+                )}
               </TouchableOpacity>
             </View>
           );
@@ -628,7 +638,7 @@ const ContactsScreen = ({ navigation }) => {
             }],
           },
         ]} />
-        <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate('AddContact')}>
+        <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate('Invitations')}>
           <LinearGradient
             colors={['#f4cae8', '#70d0dd']}
             start={{ x: 0, y: 0 }}
@@ -804,6 +814,19 @@ const styles = StyleSheet.create({
   relationTagText: {
     fontSize: 11,
     fontFamily: 'Handlee_400Regular',
+  },
+  pendingBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: '#f4e8f7',
+    borderWidth: 1,
+    borderColor: 'rgba(202, 154, 214, 0.4)',
+  },
+  pendingBadgeText: {
+    fontSize: 11,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
   },
   fab: {
     position: 'absolute',

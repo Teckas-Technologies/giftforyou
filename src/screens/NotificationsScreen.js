@@ -18,6 +18,9 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
   deleteNotification,
+  getPendingRequests,
+  acceptFriendRequest,
+  rejectFriendRequest,
 } from '../services/api';
 
 // Icons
@@ -60,6 +63,10 @@ const getNotificationIcon = (type) => {
       return '👥';
     case 'circle_added':
       return '💝';
+    case 'friend_request':
+      return '🤝';
+    case 'friend_request_accepted':
+      return '🎉';
     default:
       return '🔔';
   }
@@ -77,10 +84,12 @@ const getTimeAgo = (date) => {
 
 const NotificationsScreen = ({ navigation }) => {
   const [notifications, setNotifications] = useState([]);
+  const [incomingRequests, setIncomingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [pendingActionIds, setPendingActionIds] = useState({});
 
-  // Fetch notifications from API
+  // Fetch notifications + pending friend requests in parallel
   const fetchNotifications = useCallback(async (isRefresh = false) => {
     try {
       if (isRefresh) {
@@ -89,10 +98,12 @@ const NotificationsScreen = ({ navigation }) => {
         setLoading(true);
       }
 
-      const response = await getNotifications();
-      const notificationsList = response.notifications || [];
+      const [notifResp, requestsResp] = await Promise.all([
+        getNotifications().catch(() => ({ notifications: [] })),
+        getPendingRequests().catch(() => ({ incoming: [] })),
+      ]);
 
-      // Transform API data
+      const notificationsList = notifResp.notifications || [];
       const transformedNotifications = notificationsList.map(n => ({
         id: n.id || n._id,
         type: n.type,
@@ -103,13 +114,46 @@ const NotificationsScreen = ({ navigation }) => {
       }));
 
       setNotifications(transformedNotifications);
+      setIncomingRequests(requestsResp.incoming || []);
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.log('Error fetching notifications:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
+
+  const handleAcceptRequest = async (requestId) => {
+    setPendingActionIds(prev => ({ ...prev, [requestId]: 'accepting' }));
+    try {
+      await acceptFriendRequest(requestId);
+      setIncomingRequests(prev => prev.filter(r => r.id !== requestId));
+    } catch (error) {
+      console.log('Accept request failed:', error.message);
+    } finally {
+      setPendingActionIds(prev => {
+        const next = { ...prev };
+        delete next[requestId];
+        return next;
+      });
+    }
+  };
+
+  const handleRejectRequest = async (requestId) => {
+    setPendingActionIds(prev => ({ ...prev, [requestId]: 'rejecting' }));
+    try {
+      await rejectFriendRequest(requestId);
+      setIncomingRequests(prev => prev.filter(r => r.id !== requestId));
+    } catch (error) {
+      console.log('Reject request failed:', error.message);
+    } finally {
+      setPendingActionIds(prev => {
+        const next = { ...prev };
+        delete next[requestId];
+        return next;
+      });
+    }
+  };
 
   useEffect(() => {
     fetchNotifications();
@@ -254,7 +298,71 @@ const NotificationsScreen = ({ navigation }) => {
           </View>
         )}
 
-        {!loading && notifications.length === 0 ? (
+        {!loading && incomingRequests.length > 0 && (
+          <Animated.View style={[styles.listContainer, { opacity: listAnim }]}>
+            <Text style={styles.sectionTitle}>Friend Requests</Text>
+            {incomingRequests.map((request) => {
+              const senderName = request.sender?.name || 'Someone';
+              const action = pendingActionIds[request.id];
+              return (
+                <View key={request.id} style={[styles.notificationCard, styles.unreadCard]}>
+                  <View style={styles.notificationContent}>
+                    <LinearGradient
+                      colors={['#fbe5f5', '#ccf9ff']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.notificationIcon}
+                    >
+                      <Text style={styles.notificationEmoji}>🤝</Text>
+                    </LinearGradient>
+                    <View style={styles.notificationText}>
+                      <Text style={[styles.notificationTitle, styles.unreadTitle]}>
+                        {senderName} wants to connect
+                      </Text>
+                      <Text style={styles.requestActions}>
+                        Accept to share gift preferences with each other
+                      </Text>
+                      <View style={styles.requestButtonRow}>
+                        <TouchableOpacity
+                          style={[styles.requestButton, styles.declineButton]}
+                          onPress={() => handleRejectRequest(request.id)}
+                          disabled={!!action}
+                        >
+                          {action === 'rejecting' ? (
+                            <ActivityIndicator size="small" color="#6b3a8a" />
+                          ) : (
+                            <Text style={styles.declineButtonText}>Decline</Text>
+                          )}
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.requestButton}
+                          onPress={() => handleAcceptRequest(request.id)}
+                          disabled={!!action}
+                          activeOpacity={0.85}
+                        >
+                          <LinearGradient
+                            colors={['#ca9ad6', '#70d0dd']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.acceptButtonGradient}
+                          >
+                            {action === 'accepting' ? (
+                              <ActivityIndicator size="small" color="#FFFFFF" />
+                            ) : (
+                              <Text style={styles.acceptButtonText}>Accept</Text>
+                            )}
+                          </LinearGradient>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              );
+            })}
+          </Animated.View>
+        )}
+
+        {!loading && notifications.length === 0 && incomingRequests.length === 0 ? (
           <View style={styles.emptyContainer}>
             <LinearGradient
               colors={['#fbe5f5', '#ccf9ff']}
@@ -401,6 +509,51 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     gap: 12,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    marginTop: 4,
+    marginBottom: 4,
+    marginLeft: 4,
+  },
+  requestActions: {
+    fontSize: 12,
+    fontFamily: 'Handlee_400Regular',
+    color: '#9b8aa3',
+    marginTop: 2,
+    marginBottom: 10,
+  },
+  requestButtonRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  requestButton: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  declineButton: {
+    backgroundColor: '#f4e8f7',
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  declineButtonText: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+  },
+  acceptButtonGradient: {
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  acceptButtonText: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#FFFFFF',
   },
   notificationCard: {
     flexDirection: 'row',
