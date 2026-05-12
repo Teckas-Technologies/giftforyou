@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { updateSettings, clearUserCredentials } from '../services/api';
+import { scheduleLocalNotification } from '../services/notifications';
 import { CustomAlert, GiftBoxIcon, Toast } from '../components';
 import useAlert from '../hooks/useAlert';
 import { useAuth } from '../contexts/AuthContext';
@@ -387,6 +388,19 @@ const SettingsScreen = ({ navigation }) => {
             hasToggle
             isEnabled={notifications.marketing}
             onToggle={(value) => setNotifications(prev => ({ ...prev, marketing: value }))}
+          />
+          <SettingRow
+            icon={BellIcon}
+            label="Test Reminder (30 seconds)"
+            onPress={() =>
+              scheduleLocalNotification({
+                title: 'Upcoming: Test Event',
+                body: 'Test Event is today!',
+                data: { type: 'event_reminder' },
+                trigger: { seconds: 30 },
+                channelId: 'reminders',
+              })
+            }
           />
         </Animated.View>
 

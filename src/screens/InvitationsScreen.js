@@ -342,21 +342,28 @@ const InvitationsScreen = ({ navigation, route }) => {
 
       // Get the invite link from response
       const inviteLink = response.invitation?.inviteLink;
+      const sentEmail = newEmail.trim().toLowerCase();
+      const sentName = newName.trim();
 
       // Refresh the list
       await fetchInvitations();
       closeModal();
 
-      // Open share sheet with the invite link
-      if (inviteLink) {
-        await handleShareLink(inviteLink, newName.trim());
-      }
-
-      showSuccess('Invitation created! Share the link with your friend.');
+      showSuccess(
+        `Invitation emailed to ${sentEmail}. You can also share the link directly from the list.`
+      );
     } catch (error) {
-      // Show user-friendly message for already invited error
-      if (error.message?.toLowerCase().includes('already')) {
-        showError(`You've already invited ${newName.trim()}. Check your pending invitations.`);
+      // Show user-friendly message for the two "already" cases the backend returns.
+      // Backend error strings: 'Already invited' (pending) or 'Already completed' (questionnaire done).
+      const msg = error.message?.toLowerCase() || '';
+      if (msg.includes('already invited') || msg.includes('already sent')) {
+        showError(
+          `You've already sent an invitation to ${newEmail.trim().toLowerCase()}. Open the Pending tab to resend it.`
+        );
+      } else if (msg.includes('already completed') || msg.includes('completed')) {
+        showError(
+          `${newName.trim()} has already completed their questionnaire.`
+        );
       } else {
         showError(error.message || 'Failed to create invitation');
       }
@@ -370,7 +377,7 @@ const InvitationsScreen = ({ navigation, route }) => {
       await resendInvitation(id);
       // Refresh the list
       await fetchInvitations();
-      showSuccess('Invitation resent successfully!');
+      showSuccess('Invitation email resent.');
     } catch (error) {
       showError(error.message || 'Failed to resend invitation');
     }
@@ -671,7 +678,7 @@ const InvitationsScreen = ({ navigation, route }) => {
                   </View>
 
                   <Text style={styles.modalSubtitle}>
-                    Create an invite link to share via WhatsApp, SMS, or any app
+                    We'll email them the questionnaire link automatically.
                   </Text>
 
                   <ScrollView
@@ -703,6 +710,9 @@ const InvitationsScreen = ({ navigation, route }) => {
                         autoCapitalize="none"
                         returnKeyType="next"
                       />
+                      <Text style={styles.inputHelper}>
+                        We'll email them the questionnaire link automatically.
+                      </Text>
                     </View>
 
                     <View style={styles.inputContainer}>
@@ -773,7 +783,7 @@ const InvitationsScreen = ({ navigation, route }) => {
                         ) : (
                           <>
                             <UserPlusIcon size={20} color="#FFFFFF" />
-                            <Text style={styles.sendButtonText}>Create & Share Link</Text>
+                            <Text style={styles.sendButtonText}>Send Invitation</Text>
                           </>
                         )}
                       </LinearGradient>
@@ -1104,6 +1114,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginBottom: 8,
+  },
+  inputHelper: {
+    fontSize: 11,
+    fontFamily: 'Handlee_400Regular',
+    color: '#9b8aa3',
+    marginTop: 6,
+    marginLeft: 2,
   },
   input: {
     backgroundColor: '#FFFFFF',

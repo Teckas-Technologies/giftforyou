@@ -1,13 +1,14 @@
 /**
  * GiftBox4you API Service
- * Base URL: http://116.202.96.159:3000
+ * Base URL is read from EXPO_PUBLIC_API_BASE_URL (.env), with a prod fallback.
  * Uses Supabase Authentication
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../config/supabase';
 
-const BASE_URL = 'http://116.202.96.159:3000';
+const BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL || 'http://116.202.96.159:3000';
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -154,7 +155,9 @@ const apiRequest = async (endpoint, options = {}) => {
 
     return data;
   } catch (error) {
-    console.error(`API Error [${endpoint}]:`, error.message);
+    // Use log (not error) so the dev LogBox doesn't pop a toast.
+    // Callers handle the error via try/catch and show user-friendly alerts.
+    console.log(`API Error [${endpoint}]:`, error.message);
     throw error;
   }
 };

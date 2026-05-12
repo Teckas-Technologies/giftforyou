@@ -12,7 +12,8 @@ import { registerPushToken } from './api';
 // Configure how notifications appear when app is in foreground
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,  // drop-down banner like WhatsApp
+    shouldShowList: true,    // appears in the notification panel
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
@@ -108,15 +109,42 @@ export async function registerForPushNotifications() {
 }
 
 /**
- * Schedule a local notification
+ * Schedule a local notification.
+ * `trigger`:
+ *   - null/undefined → fires immediately
+ *   - Date instance → fires at that exact time
+ *   - { seconds: N }  → fires N seconds from now
  */
 export async function scheduleLocalNotification({
   title,
   body,
   data = {},
-  trigger = null, // null = immediate, or { seconds: 60 } or { date: new Date() }
+  trigger = null,
+  channelId = 'default',
 }) {
   try {
+    let normalizedTrigger = null;
+    if (trigger instanceof Date) {
+      normalizedTrigger = {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: trigger,
+        channelId,
+      };
+    } else if (trigger?.date instanceof Date) {
+      normalizedTrigger = {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: trigger.date,
+        channelId,
+      };
+    } else if (typeof trigger?.seconds === 'number') {
+      normalizedTrigger = {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: trigger.seconds,
+        repeats: !!trigger.repeats,
+        channelId,
+      };
+    }
+
     const id = await Notifications.scheduleNotificationAsync({
       content: {
         title,
@@ -124,7 +152,7 @@ export async function scheduleLocalNotification({
         data,
         sound: true,
       },
-      trigger,
+      trigger: normalizedTrigger,
     });
     return id;
   } catch (error) {
@@ -134,7 +162,8 @@ export async function scheduleLocalNotification({
 }
 
 /**
- * Schedule an event reminder notification
+ * Schedule an event reminder notification.
+ * Returns the notification id so we can cancel it later if the event is deleted.
  */
 export async function scheduleEventReminder({
   eventId,
@@ -144,7 +173,7 @@ export async function scheduleEventReminder({
 }) {
   const reminderDate = new Date(eventDate);
   reminderDate.setDate(reminderDate.getDate() - daysBefore);
-  reminderDate.setHours(9, 0, 0, 0); // 9 AM
+  reminderDate.setHours(9, 0, 0, 0); // 9 AM local time
 
   // Don't schedule if reminder date is in the past
   if (reminderDate <= new Date()) {
@@ -157,7 +186,8 @@ export async function scheduleEventReminder({
       ? `${eventTitle} is today!`
       : `${eventTitle} is in ${daysBefore} day${daysBefore > 1 ? 's' : ''}`,
     data: { eventId, type: 'event_reminder' },
-    trigger: { date: reminderDate },
+    trigger: reminderDate,
+    channelId: 'reminders',
   });
 }
 
