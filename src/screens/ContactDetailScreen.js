@@ -12,7 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
-import { getCircle, getContactPreferences } from '../services/api';
+import { getCircle, getContactPreferences, cancelFriendRequest } from '../services/api';
 import { CustomAlert } from '../components';
 import useAlert from '../hooks/useAlert';
 
@@ -213,6 +213,7 @@ const ContactDetailScreen = ({ navigation, route }) => {
         nickname: rawContact.nickname || '',
         notes: rawContact.notes || '',
         avatar: memberPhoto || null,
+        isPending: rawContact.status === 'pending' || preferencesData?.contact?.isPending,
         hasQuestionnaire: !!preferencesData?.preferences,
         invitationSent: preferencesData?.invitationSent || false,
         preferences: preferencesData?.preferences ? {
@@ -349,6 +350,20 @@ const ContactDetailScreen = ({ navigation, route }) => {
         relationship: getRelationshipLabel(contact.relationship),
       },
     });
+  };
+
+  const [cancellingRequest, setCancellingRequest] = useState(false);
+  const handleCancelRequest = async () => {
+    if (cancellingRequest) return;
+    setCancellingRequest(true);
+    try {
+      await cancelFriendRequest(contact.id);
+      navigation.goBack();
+    } catch (error) {
+      console.log('Cancel request failed:', error.message);
+    } finally {
+      setCancellingRequest(false);
+    }
   };
 
   // Questionnaire is handled via web form only - commented for potential future use
@@ -779,8 +794,32 @@ const ContactDetailScreen = ({ navigation, route }) => {
           </Animated.View>
         )}
 
-        {/* Action Buttons - Only show if no questionnaire AND no invitation sent */}
-        {!contact.hasQuestionnaire && !contact.invitationSent && (
+        {/* Pending Friend Request Banner */}
+        {contact.isPending && (
+          <Animated.View style={[styles.actionContainer, createSlideStyle(sectionAnims[4])]}>
+            <View style={styles.pendingBanner}>
+              <Text style={styles.pendingBannerTitle}>Waiting for response</Text>
+              <Text style={styles.pendingBannerBody}>
+                You'll see {contact.name?.split(' ')[0] || 'their'} gift preferences once they accept your request.
+              </Text>
+              <TouchableOpacity
+                style={styles.cancelRequestButton}
+                onPress={handleCancelRequest}
+                disabled={cancellingRequest}
+                activeOpacity={0.7}
+              >
+                {cancellingRequest ? (
+                  <ActivityIndicator size="small" color="#6b3a8a" />
+                ) : (
+                  <Text style={styles.cancelRequestText}>Cancel Request</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Action Buttons - Only show if not pending AND no questionnaire AND no invitation sent */}
+        {!contact.isPending && !contact.hasQuestionnaire && !contact.invitationSent && (
           <Animated.View style={[styles.actionContainer, createSlideStyle(sectionAnims[4])]}>
             <TouchableOpacity activeOpacity={0.7} onPress={handleSendInvitation}>
               <LinearGradient
@@ -1135,6 +1174,42 @@ const styles = StyleSheet.create({
   actionContainer: {
     alignItems: 'center',
     marginTop: 8,
+  },
+  pendingBanner: {
+    width: '100%',
+    backgroundColor: '#f4e8f7',
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(202, 154, 214, 0.3)',
+  },
+  pendingBannerTitle: {
+    fontSize: 15,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    marginBottom: 4,
+  },
+  pendingBannerBody: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    lineHeight: 18,
+  },
+  cancelRequestButton: {
+    marginTop: 14,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(202, 154, 214, 0.5)',
+    backgroundColor: '#FFFFFF',
+  },
+  cancelRequestText: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
   },
   actionButton: {
     flexDirection: 'row',

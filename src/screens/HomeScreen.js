@@ -577,32 +577,17 @@ const HomeScreen = ({ navigation }) => {
         <Animated.View style={[styles.quickSection, createFadeStyle(quickAnim)]}>
           <Text style={styles.quickTitle}>Quick actions</Text>
 
-          {/* Invite Friends - Top Priority */}
-          <TouchableOpacity style={styles.quickBtnFull} activeOpacity={0.8} onPress={() => navigation.navigate('Invitations')}>
-            <Animated.View style={{ transform: [{ scale: breatheAnim }] }}>
-              <LinearGradient
-                colors={['#ca9ad6', '#70d0dd']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.quickBtnWide}
-              >
-                <Text style={styles.quickBtnIcon}>💌</Text>
-                <Text style={styles.quickBtnTextWhite}>Invite Friends</Text>
-              </LinearGradient>
-            </Animated.View>
-          </TouchableOpacity>
-
           <View style={styles.quickRow}>
-            <TouchableOpacity style={styles.quickBtnContainer} activeOpacity={0.8} onPress={() => navigation.navigate('AddContact')}>
+            <TouchableOpacity style={styles.quickBtnContainer} activeOpacity={0.8} onPress={() => navigation.navigate('Invitations')}>
               <Animated.View style={{ transform: [{ scale: breatheAnim }] }}>
                 <LinearGradient
-                  colors={['#fbe5f5', '#f4cae8', '#ccf9ff']}
+                  colors={['#ca9ad6', '#70d0dd']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.quickBtn}
                 >
-                  <Text style={styles.quickBtnIcon}>👤</Text>
-                  <Text style={styles.quickBtnTextPink}>Add Contact</Text>
+                  <Text style={styles.quickBtnIcon}>💌</Text>
+                  <Text style={styles.quickBtnTextWhite}>Invite Friends</Text>
                 </LinearGradient>
               </Animated.View>
             </TouchableOpacity>
@@ -883,6 +868,13 @@ const styles = StyleSheet.create({
   quickRow: {
     flexDirection: 'row',
     gap: 12,
+  },
+  quickSecondaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  quickBtnHalf: {
+    width: '60%',
   },
   quickBtnContainer: {
     flex: 1,
