@@ -55,11 +55,10 @@ export async function registerForPushNotifications() {
     return null;
   }
 
-  // Get projectId - SDK 54 compatible with hardcoded fallback for release builds
+  // Get projectId - read from expo config (set by `npx eas init`)
   const projectId = Constants.expoConfig?.extra?.eas?.projectId
     || Constants.manifest?.extra?.eas?.projectId
-    || Constants.manifest2?.extra?.expoClient?.extra?.eas?.projectId
-    || '4b765adc-af4c-4925-bad7-debcb3ecfb98';
+    || Constants.manifest2?.extra?.expoClient?.extra?.eas?.projectId;
 
   console.log('registerForPushNotifications: projectId:', projectId);
   console.log('registerForPushNotifications: expoConfig:', JSON.stringify(Constants.expoConfig?.extra));
