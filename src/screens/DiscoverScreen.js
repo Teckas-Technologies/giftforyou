@@ -9,11 +9,12 @@ import {
   Easing,
   ActivityIndicator,
   RefreshControl,
+  TextInput,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
-import { getPeopleYouMayKnow, dismissSuggestion, quickAddToCircle } from '../services/api';
+import { getPeopleYouMayKnow, dismissSuggestion, quickAddToCircle, searchUsers } from '../services/api';
 import { CustomAlert } from '../components';
 import useAlert from '../hooks/useAlert';
 
@@ -49,6 +50,13 @@ const XIcon = ({ size = 20, color = '#6b3a8a' }) => (
   </Svg>
 );
 
+const SearchIcon = ({ size = 20, color = '#6b3a8a' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Circle cx="11" cy="11" r="8" />
+    <Line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </Svg>
+);
+
 const getInitials = (name) => {
   if (!name) return '?';
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -66,6 +74,12 @@ const DiscoverScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [addingIds, setAddingIds] = useState({});
   const [dismissingIds, setDismissingIds] = useState({});
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const searchDebounce = useRef(null);
 
   // Custom alert hook
   const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
@@ -123,6 +137,49 @@ const DiscoverScreen = ({ navigation }) => {
     fetchSuggestions();
   };
 
+  // Debounced user search (300ms). Re-runs whenever searchQuery changes.
+  useEffect(() => {
+    if (searchDebounce.current) clearTimeout(searchDebounce.current);
+
+    const q = searchQuery.trim();
+    if (q.length < 2) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
+
+    setSearching(true);
+    searchDebounce.current = setTimeout(async () => {
+      try {
+        const data = await searchUsers(q);
+        const users = (data.users || []).map((u) => ({
+          id: u.id,
+          name: u.name,
+          photo: u.photo,
+          avatar: u.avatar,
+          email: u.email,
+          mutualFriends: 0,
+          reason: u.email || 'Tap to send a request',
+        }));
+        setSearchResults(users);
+      } catch (error) {
+        console.error('Search error:', error);
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+
+    return () => {
+      if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    };
+  }, [searchQuery]);
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
   const handleAddToCircle = async (user) => {
     const userId = user._id || user.id;
 
@@ -131,13 +188,14 @@ const DiscoverScreen = ({ navigation }) => {
 
       await quickAddToCircle(userId, 'Friend');
 
-      // Mark this user as requested locally so the button label flips
-      // without needing a refetch.
-      setSuggestions(prev =>
-        prev.map(s =>
+      // Mark this user as requested locally in BOTH lists so the button label
+      // flips no matter which list the card was rendered from.
+      const markRequested = (list) =>
+        list.map((s) =>
           (s._id || s.id) === userId ? { ...s, requested: true } : s
-        )
-      );
+        );
+      setSuggestions(markRequested);
+      setSearchResults(markRequested);
 
       showSuccess(`Request sent to ${user.name}. You'll see their preferences once they accept.`);
     } catch (error) {
@@ -156,8 +214,9 @@ const DiscoverScreen = ({ navigation }) => {
 
       await dismissSuggestion(userId);
 
-      // Remove from suggestions
+      // Remove from both lists
       setSuggestions(prev => prev.filter(s => (s._id || s.id) !== userId));
+      setSearchResults(prev => prev.filter(s => (s._id || s.id) !== userId));
     } catch (error) {
       console.error('Error dismissing suggestion:', error);
     } finally {
@@ -323,41 +382,93 @@ const DiscoverScreen = ({ navigation }) => {
           />
         }
       >
-        {/* Section Header */}
-        <Animated.View style={[styles.sectionHeader, { opacity: contentAnim }]}>
-          <View style={styles.sectionIcon}>
-            <UsersIcon size={22} color="#ca9ad6" />
-          </View>
-          <View>
-            <Text style={styles.sectionTitle}>People You May Know</Text>
-            <Text style={styles.sectionSubtitle}>
-              Connect with friends and build your circle
-            </Text>
-          </View>
-        </Animated.View>
-
-        {/* Suggestions List */}
-        <Animated.View style={{ opacity: contentAnim }}>
-          {suggestions.length > 0 ? (
-            suggestions.map((user, index) => renderSuggestionCard(user, index))
-          ) : (
-            <View style={styles.emptyContainer}>
-              <View style={styles.emptyIcon}>
-                <UsersIcon size={48} color="#ca9ad6" />
-              </View>
-              <Text style={styles.emptyTitle}>No Suggestions Yet</Text>
-              <Text style={styles.emptyText}>
-                We'll show you people you might know as you use the app more
-              </Text>
-              <TouchableOpacity
-                style={styles.inviteButton}
-                onPress={() => navigation.navigate('Invitations')}
-              >
-                <Text style={styles.inviteButtonText}>Invite Friends Instead</Text>
-              </TouchableOpacity>
-            </View>
+        {/* Search Bar */}
+        <Animated.View style={[styles.searchBar, { opacity: contentAnim }]}>
+          <SearchIcon size={18} color="#ca9ad6" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by name or email"
+            placeholderTextColor="#b8a3c7"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={clearSearch} hitSlop={10} style={styles.searchClear}>
+              <XIcon size={14} color="#6b3a8a" />
+            </TouchableOpacity>
           )}
         </Animated.View>
+
+        {/* When user is searching, show search results and hide the
+            People You May Know list. */}
+        {searchQuery.trim().length >= 2 ? (
+          <Animated.View style={{ opacity: contentAnim }}>
+            <View style={styles.resultMeta}>
+              <Text style={styles.resultMetaText}>
+                {searching
+                  ? 'Searching…'
+                  : `${searchResults.length} ${searchResults.length === 1 ? 'result' : 'results'} for "${searchQuery.trim()}"`}
+              </Text>
+            </View>
+
+            {searching ? (
+              <View style={styles.searchLoading}>
+                <ActivityIndicator size="small" color="#ca9ad6" />
+              </View>
+            ) : searchResults.length > 0 ? (
+              searchResults.map((user, index) => renderSuggestionCard(user, index))
+            ) : (
+              <View style={styles.emptyCompact}>
+                <View style={styles.emptyIconSmall}>
+                  <SearchIcon size={32} color="#ca9ad6" />
+                </View>
+                <Text style={styles.emptyTitle}>No users found</Text>
+                <Text style={styles.emptyText}>
+                  Try a different name or email
+                </Text>
+              </View>
+            )}
+          </Animated.View>
+        ) : (
+          <Animated.View style={{ opacity: contentAnim }}>
+            {suggestions.length > 0 ? (
+              <>
+                {/* Section header only appears when there ARE suggestions */}
+                <View style={styles.sectionHeader}>
+                  <View style={styles.sectionIcon}>
+                    <UsersIcon size={22} color="#ca9ad6" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.sectionTitle}>People You May Know</Text>
+                    <Text style={styles.sectionSubtitle}>
+                      Friends of your friends
+                    </Text>
+                  </View>
+                </View>
+                {suggestions.map((user, index) => renderSuggestionCard(user, index))}
+              </>
+            ) : (
+              <View style={styles.emptyCompact}>
+                <View style={styles.emptyIconSmall}>
+                  <UsersIcon size={36} color="#ca9ad6" />
+                </View>
+                <Text style={styles.emptyTitle}>No Suggestions Yet</Text>
+                <Text style={styles.emptyText}>
+                  Search for a friend above, or invite people you know
+                </Text>
+                <TouchableOpacity
+                  style={styles.inviteButton}
+                  onPress={() => navigation.navigate('Invitations')}
+                >
+                  <Text style={styles.inviteButtonText}>Invite Friends Instead</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </Animated.View>
+        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -416,6 +527,68 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 10,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginBottom: 20,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(202, 154, 214, 0.25)',
+    shadowColor: '#ca9ad6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    padding: 0,
+    height: 22,
+  },
+  searchClear: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#fbe5f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchLoading: {
+    paddingVertical: 50,
+    alignItems: 'center',
+  },
+  resultMeta: {
+    paddingHorizontal: 4,
+    paddingVertical: 8,
+    marginBottom: 8,
+  },
+  resultMetaText: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+  },
+  emptyCompact: {
+    alignItems: 'center',
+    paddingTop: 50,
+    paddingBottom: 40,
+    paddingHorizontal: 32,
+  },
+  emptyIconSmall: {
+    width: 76,
+    height: 76,
+    borderRadius: 22,
+    backgroundColor: '#fbe5f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 18,
   },
   sectionHeader: {
     flexDirection: 'row',

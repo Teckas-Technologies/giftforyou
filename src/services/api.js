@@ -640,6 +640,16 @@ export const getPeopleYouMayKnow = () =>
 export const dismissSuggestion = (userId) =>
   apiRequest(`/api/discover/dismiss/${userId}`, { method: 'POST' });
 
+/**
+ * Search users by name or email
+ * @param {string} query - Search text (min 2 chars)
+ * @param {number} limit - Max results (default 20)
+ */
+export const searchUsers = (query, limit = 20) =>
+  apiRequest(
+    `/api/users/search?q=${encodeURIComponent(query)}&limit=${limit}`
+  );
+
 // ═══════════════════════════════════════════════════════════════
 // DEFAULT EXPORT
 // ═══════════════════════════════════════════════════════════════
@@ -726,4 +736,5 @@ export default {
   // Discover
   getPeopleYouMayKnow,
   dismissSuggestion,
+  searchUsers,
 };
