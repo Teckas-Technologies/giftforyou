@@ -15,6 +15,12 @@ module.exports = {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.giftbox4you.app',
+      infoPlist: {
+        NSPhotoLibraryUsageDescription:
+          'GiftBox4you needs access to your photos so you can set a profile picture.',
+        NSCameraUsageDescription:
+          'GiftBox4you needs access to your camera so you can take a profile picture.',
+      },
     },
     android: {
       adaptiveIcon: {
@@ -51,6 +57,15 @@ module.exports = {
           iosUrlScheme:
             process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME ||
             'com.googleusercontent.apps.202233735305-kvcdb0g5nfq10h4jb4q3u4l0tavu206i',
+        },
+      ],
+      [
+        'expo-image-picker',
+        {
+          photosPermission:
+            'GiftBox4you needs access to your photos so you can set a profile picture.',
+          cameraPermission:
+            'GiftBox4you needs access to your camera so you can take a profile picture.',
         },
       ],
     ],

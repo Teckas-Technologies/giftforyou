@@ -47,6 +47,7 @@ const sections = [
         type: 'date',
         question: 'When is your birthday?',
         helperText: "We'll keep the year private — just used for milestone celebrations.",
+        required: true,
       },
       {
         id: 'anniversary_1',
@@ -95,6 +96,7 @@ const sections = [
         id: 'favorite_activities',
         type: 'multiselect',
         question: 'Select your favorite activities',
+        required: true,
         options: [
           { id: 'hiking', label: 'Hiking', emoji: '🥾' },
           { id: 'shopping', label: 'Shopping', emoji: '🛍️' },
@@ -130,6 +132,7 @@ const sections = [
         id: 'personal_style',
         type: 'single',
         question: 'How would you describe your style?',
+        required: true,
         options: [
           { id: 'minimalist', label: 'Minimalist', emoji: '⬜' },
           { id: 'vintage', label: 'Vintage', emoji: '📻' },
@@ -150,6 +153,7 @@ const sections = [
         id: 'favorite_colors',
         type: 'multiselect',
         question: 'Your favorite colors',
+        required: true,
         options: [
           { id: 'blue', label: 'Blue', color: '#4A90D9' },
           { id: 'green', label: 'Green', color: '#4CAF50' },
@@ -174,6 +178,7 @@ const sections = [
         id: 'likes_surprises',
         type: 'single',
         question: 'Do you like surprises?',
+        required: true,
         options: [
           { id: 'yes', label: 'Yes, love them!', emoji: '🎉' },
           { id: 'no', label: 'I prefer to know ahead', emoji: '📋' },
@@ -191,6 +196,7 @@ const sections = [
         id: 'causes_values',
         type: 'multiselect',
         question: 'Is there a cause or value that matters to you?',
+        required: true,
         options: [
           { id: 'eco_friendly', label: 'Eco-friendly', emoji: '🌍' },
           { id: 'handmade', label: 'Handmade', emoji: '🧶' },
@@ -217,6 +223,7 @@ const sections = [
         id: 'favorite_flower',
         type: 'multiselect',
         question: 'What are your favorite flowers?',
+        required: true,
         options: [
           { id: 'rose', label: 'Rose', emoji: '🌹' },
           { id: 'tulip', label: 'Tulip', emoji: '🌷' },
@@ -249,6 +256,7 @@ const sections = [
         id: 'favorite_cuisines',
         type: 'multiselect',
         question: 'Favorite cuisines',
+        required: true,
         options: [
           { id: 'american', label: 'American', emoji: '🍔' },
           { id: 'barbecue', label: 'Barbecue', emoji: '🍖' },
@@ -289,6 +297,7 @@ const sections = [
         id: 'favorite_desserts',
         type: 'multiselect',
         question: 'Favorite desserts',
+        required: true,
         options: [
           { id: 'chocolate', label: 'Chocolate', emoji: '🍫' },
           { id: 'candy', label: 'Candy', emoji: '🍬' },
@@ -317,6 +326,7 @@ const sections = [
         id: 'gift_types',
         type: 'multiselect',
         question: 'Types of gifts you enjoy',
+        required: true,
         options: [
           { id: 'experiences', label: 'Experiences & Events', emoji: '🎟️' },
           { id: 'jewelry', label: 'Jewelry & Accessories', emoji: '💎' },
@@ -347,6 +357,7 @@ const sections = [
         id: 'movie_genre',
         type: 'single',
         question: 'Favorite movie genre',
+        required: true,
         options: [
           { id: 'action', label: 'Action', emoji: '💥' },
           { id: 'comedy', label: 'Comedy', emoji: '😂' },
@@ -367,6 +378,7 @@ const sections = [
         id: 'music_genre',
         type: 'single',
         question: 'Favorite music genre',
+        required: true,
         options: [
           { id: 'hiphop', label: 'Hip-Hop', emoji: '🎧' },
           { id: 'pop', label: 'Pop', emoji: '🎤' },
@@ -582,7 +594,25 @@ const QuestionnaireScreen = ({ navigation, route }) => {
     setAnswers(prev => ({ ...prev, [questionId]: text }));
   };
 
+  const isAnswerEmpty = (question) => {
+    const value = answers[question.id];
+    if (value === undefined || value === null) return true;
+    if (Array.isArray(value)) return value.length === 0;
+    if (typeof value === 'string') return value.trim() === '';
+    return false;
+  };
+
+  const validateCurrentSection = () => {
+    const missing = section.questions.filter(q => q.required && isAnswerEmpty(q));
+    if (missing.length === 0) return true;
+    const labels = missing.map(q => `• ${q.question}`).join('\n');
+    showError(`Please complete the following before continuing:\n\n${labels}`);
+    return false;
+  };
+
   const handleNext = async () => {
+    if (!validateCurrentSection()) return;
+
     if (currentSection < sections.length - 1) {
       setCurrentSection(currentSection + 1);
     } else {
@@ -666,11 +696,18 @@ const QuestionnaireScreen = ({ navigation, route }) => {
     );
   };
 
+  const QuestionLabel = ({ question }) => (
+    <Text style={styles.questionText}>
+      {question.question}
+      {question.required && <Text style={styles.requiredAsterisk}> *</Text>}
+    </Text>
+  );
+
   const renderQuestion = (question) => {
     if (question.type === 'text') {
       return (
         <View key={question.id} style={styles.questionContainer}>
-          <Text style={styles.questionText}>{question.question}</Text>
+          <QuestionLabel question={question} />
           <View style={styles.textInputWrapper}>
             <TextInput
               style={styles.textInput}
@@ -688,7 +725,7 @@ const QuestionnaireScreen = ({ navigation, route }) => {
     if (question.type === 'url') {
       return (
         <View key={question.id} style={styles.questionContainer}>
-          <Text style={styles.questionText}>{question.question}</Text>
+          <QuestionLabel question={question} />
           <View style={styles.textInputWrapper}>
             <TextInput
               style={styles.textInput}
@@ -719,7 +756,7 @@ const QuestionnaireScreen = ({ navigation, route }) => {
 
       return (
         <View key={question.id} style={styles.questionContainer}>
-          <Text style={styles.questionText}>{question.question}</Text>
+          <QuestionLabel question={question} />
           <TouchableOpacity
             style={styles.textInputWrapper}
             onPress={() => {
@@ -747,7 +784,7 @@ const QuestionnaireScreen = ({ navigation, route }) => {
     if (question.type === 'textarea') {
       return (
         <View key={question.id} style={styles.questionContainer}>
-          <Text style={styles.questionText}>{question.question}</Text>
+          <QuestionLabel question={question} />
           <View style={[styles.textInputWrapper, styles.textareaWrapper]}>
             <TextInput
               style={[styles.textInput, styles.textarea]}
@@ -781,7 +818,7 @@ const QuestionnaireScreen = ({ navigation, route }) => {
     return (
       <View key={question.id} style={styles.questionContainer}>
         <View style={styles.questionHeader}>
-          <Text style={styles.questionText}>{question.question}</Text>
+          <QuestionLabel question={question} />
           {question.type === 'multiselect' && (
             <TouchableOpacity onPress={handleSelectAll} style={styles.selectAllButton}>
               <Text style={styles.selectAllText}>
@@ -1086,6 +1123,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
     flex: 1,
     color: '#330c54',
+  },
+  requiredAsterisk: {
+    color: '#e53935',
+    fontFamily: 'Handlee_400Regular',
   },
   optionsGrid: {
     flexDirection: 'row',

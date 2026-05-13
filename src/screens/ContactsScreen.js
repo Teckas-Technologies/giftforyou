@@ -126,12 +126,20 @@ const getAvatarStyle = (colorType) => {
   return { bg: '#ccf9ff', color: '#70d0dd' };
 };
 
+const TABS = [
+  { key: 'all', label: 'All' },
+  { key: 'friend', label: 'Friends' },
+  { key: 'family', label: 'Family' },
+  { key: 'work', label: 'Colleagues' },
+];
+
 const ContactsScreen = ({ navigation }) => {
   const [searchText, setSearchText] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
 
   // Fetch contacts from API
   const fetchContacts = useCallback(async (isRefresh = false) => {
@@ -323,9 +331,22 @@ const ContactsScreen = ({ navigation }) => {
     }],
   });
 
-  const filteredContacts = contacts.filter(contact =>
+  const tabCounts = {
+    all: contacts.length,
+    friend: contacts.filter(c => c.relationTag === 'friend').length,
+    family: contacts.filter(c => c.relationTag === 'family').length,
+    work: contacts.filter(c => c.relationTag === 'work').length,
+  };
+
+  const tabScopedContacts = activeTab === 'all'
+    ? contacts
+    : contacts.filter(c => c.relationTag === activeTab);
+
+  const filteredContacts = tabScopedContacts.filter(contact =>
     contact.name && contact.name.toLowerCase().includes(searchText.toLowerCase())
   );
+
+  const activeTabLabel = TABS.find(t => t.key === activeTab)?.label || 'contacts';
 
   // Sparkle float transforms
   const sparkle1Style = {
@@ -495,6 +516,48 @@ const ContactsScreen = ({ navigation }) => {
         </TouchableOpacity>
       )}
 
+      {/* Category Tabs */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.tabBarContent}
+        style={styles.tabBar}
+        keyboardShouldPersistTaps="handled"
+      >
+        {TABS.map(tab => {
+          const isActive = activeTab === tab.key;
+          const count = tabCounts[tab.key];
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              onPress={() => setActiveTab(tab.key)}
+              activeOpacity={0.7}
+            >
+              {isActive ? (
+                <LinearGradient
+                  colors={['#ca9ad6', '#70d0dd']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.tabActive}
+                >
+                  <Text style={styles.tabTextActive}>{tab.label}</Text>
+                  <View style={styles.tabBadgeActive}>
+                    <Text style={styles.tabBadgeTextActive}>{count}</Text>
+                  </View>
+                </LinearGradient>
+              ) : (
+                <View style={styles.tab}>
+                  <Text style={styles.tabText}>{tab.label}</Text>
+                  <View style={styles.tabBadge}>
+                    <Text style={styles.tabBadgeText}>{count}</Text>
+                  </View>
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -520,10 +583,18 @@ const ContactsScreen = ({ navigation }) => {
         {!loading && filteredContacts.length === 0 && (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
-              {searchText ? 'No contacts found' : 'No contacts yet'}
+              {searchText
+                ? 'No contacts found'
+                : activeTab === 'all'
+                  ? 'No contacts yet'
+                  : `No ${activeTabLabel.toLowerCase()} yet`}
             </Text>
             <Text style={styles.emptySubtext}>
-              {searchText ? 'Try a different search' : 'Add your first contact using the + button'}
+              {searchText
+                ? `Try a different search${activeTab !== 'all' ? ` or switch tabs` : ''}`
+                : activeTab === 'all'
+                  ? 'Add your first contact using the + button'
+                  : `Contacts tagged as ${activeTabLabel} will appear here`}
             </Text>
           </View>
         )}
@@ -749,6 +820,78 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
+  },
+  tabBar: {
+    maxHeight: 50,
+    marginBottom: 12,
+  },
+  tabBarContent: {
+    paddingHorizontal: 16,
+    gap: 8,
+    alignItems: 'center',
+  },
+  tab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    gap: 6,
+    shadowColor: '#ca9ad6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  tabActive: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
+    gap: 6,
+    shadowColor: '#ca9ad6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  tabText: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+  },
+  tabTextActive: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#FFFFFF',
+  },
+  tabBadge: {
+    backgroundColor: '#fbe5f5',
+    paddingHorizontal: 7,
+    paddingVertical: 1,
+    borderRadius: 10,
+    minWidth: 22,
+    alignItems: 'center',
+  },
+  tabBadgeText: {
+    fontSize: 11,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+  },
+  tabBadgeActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    paddingHorizontal: 7,
+    paddingVertical: 1,
+    borderRadius: 10,
+    minWidth: 22,
+    alignItems: 'center',
+  },
+  tabBadgeTextActive: {
+    fontSize: 11,
+    fontFamily: 'Handlee_400Regular',
+    color: '#FFFFFF',
   },
   scrollContent: {
     paddingHorizontal: 16,
