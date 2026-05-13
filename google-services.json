@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "807357123245",
-    "project_id": "boxcycle-rlt4k",
-    "storage_bucket": "boxcycle-rlt4k.firebasestorage.app"
+    "project_number": "634184681428",
+    "project_id": "giftbox4you-c19fb",
+    "storage_bucket": "giftbox4you-c19fb.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:807357123245:android:7fca2109dfd70aff1b5424",
+        "mobilesdk_app_id": "1:634184681428:android:cce4a8781ca4415b343841",
         "android_client_info": {
           "package_name": "com.giftbox4you.app"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDqaBZDkbMj3CqBAmEZucgPVB1IZZklSrc"
+          "current_key": "AIzaSyD7cT9LVCigvoGci3pv8bhbVRY9j2Dntow"
         }
       ],
       "services": {

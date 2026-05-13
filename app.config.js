@@ -48,15 +48,17 @@ module.exports = {
       [
         '@react-native-google-signin/google-signin',
         {
-          iosUrlScheme: process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME,
+          iosUrlScheme:
+            process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME ||
+            'com.googleusercontent.apps.202233735305-kvcdb0g5nfq10h4jb4q3u4l0tavu206i',
         },
       ],
     ],
     extra: {
       eas: {
-        projectId: '4b765adc-af4c-4925-bad7-debcb3ecfb98',
+        projectId: '432ed620-8985-48e6-9bb7-ca52c267378e',
       },
     },
-    owner: 'sathishteckas',
+    owner: 'sharmila_blessy',
   },
 };
