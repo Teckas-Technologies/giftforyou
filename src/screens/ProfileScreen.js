@@ -11,13 +11,15 @@ import {
   Dimensions,
   Image,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Polyline, Rect, Line } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../theme';
-import { getProfile, getDashboardStats, clearUserCredentials } from '../services/api';
+import { getProfile, getDashboardStats, clearUserCredentials, uploadProfilePhoto } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { CustomAlert } from '../components';
 import useAlert from '../hooks/useAlert';
@@ -156,6 +158,106 @@ const ProfileScreen = ({ navigation }) => {
     upcomingEventsCount: 0,
     giftsGivenCount: 0,
   });
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  // Upload the picked image to the backend. Used by both camera + gallery
+  // paths so the FormData/multer wiring lives in one place.
+  const uploadPickedImage = async (asset) => {
+    setUploadingPhoto(true);
+    // Optimistic UI — show the new photo immediately while upload runs.
+    const previousPhoto = profile.photoUrl;
+    setProfile((p) => ({ ...p, photoUrl: asset.uri }));
+
+    try {
+      const formData = new FormData();
+      const filename = asset.fileName || `profile-${Date.now()}.jpg`;
+      const mimeType = asset.mimeType || 'image/jpeg';
+      formData.append('photo', {
+        uri: asset.uri,
+        name: filename,
+        type: mimeType,
+      });
+
+      const result = await uploadProfilePhoto(formData);
+      if (result?.photoUrl) {
+        setProfile((p) => ({ ...p, photoUrl: result.photoUrl }));
+        showAlert({ type: 'success', title: 'Photo updated', message: 'Looking good!', buttons: [{ text: 'OK' }] });
+      } else {
+        throw new Error('No photoUrl returned');
+      }
+    } catch (error) {
+      // Log everything so we can see exactly what the backend returned —
+      // helps diagnose 'bucket missing', auth, network etc.
+      console.log('Upload photo error:', error?.message || error);
+      console.log('Error full:', JSON.stringify(error, null, 2));
+      setProfile((p) => ({ ...p, photoUrl: previousPhoto }));
+      showAlert({
+        type: 'error',
+        title: 'Upload failed',
+        message: error?.message || "Couldn't upload photo. Try again.",
+        buttons: [{ text: 'OK' }],
+      });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const pickFromGallery = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      showAlert({ type: 'warning', title: 'Permission needed', message: 'Photo library permission is required to pick a photo.', buttons: [{ text: 'OK' }] });
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled && result.assets?.[0]) {
+      await uploadPickedImage(result.assets[0]);
+    }
+  };
+
+  const takePhoto = async () => {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      showAlert({ type: 'warning', title: 'Permission needed', message: 'Camera permission is required to take a photo.', buttons: [{ text: 'OK' }] });
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled && result.assets?.[0]) {
+      await uploadPickedImage(result.assets[0]);
+    }
+  };
+
+  // Opens our themed photo-source bottom sheet (rendered at the end of the
+  // component). No native action sheet so the look matches the rest of the
+  // app — gradient buttons, soft shadows, Handlee font.
+  const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
+
+  const handleAvatarTap = () => {
+    if (uploadingPhoto) return;
+    setPhotoSheetVisible(true);
+  };
+
+  const handleTakePhoto = () => {
+    setPhotoSheetVisible(false);
+    takePhoto();
+  };
+
+  const handlePickFromGallery = () => {
+    setPhotoSheetVisible(false);
+    pickFromGallery();
+  };
 
   // Handle logout
   const handleLogout = () => {
@@ -527,25 +629,46 @@ const ProfileScreen = ({ navigation }) => {
                   }],
                 }
               ]} />
-              <LinearGradient
-                colors={['#f4cae8', '#70d0dd']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.avatar}
+              <TouchableOpacity
+                onPress={handleAvatarTap}
+                activeOpacity={0.85}
+                disabled={uploadingPhoto}
               >
-                {profile.photoUrl ? (
-                  <Image
-                    source={{ uri: profile.photoUrl }}
-                    style={styles.avatarImage}
-                  />
-                ) : profile.avatarType && avatarTypes[profile.avatarType] ? (
-                  <Text style={styles.avatarEmoji}>{avatarTypes[profile.avatarType]}</Text>
-                ) : profile.name ? (
-                  <Text style={styles.avatarInitials}>{getInitials(profile.name)}</Text>
-                ) : (
-                  <UserIcon size={32} color="white" />
-                )}
-              </LinearGradient>
+                <LinearGradient
+                  colors={['#f4cae8', '#70d0dd']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.avatar}
+                >
+                  {profile.photoUrl ? (
+                    <Image
+                      source={{ uri: profile.photoUrl }}
+                      style={styles.avatarImage}
+                    />
+                  ) : profile.avatarType && avatarTypes[profile.avatarType] ? (
+                    <Text style={styles.avatarEmoji}>{avatarTypes[profile.avatarType]}</Text>
+                  ) : profile.name ? (
+                    <Text style={styles.avatarInitials}>{getInitials(profile.name)}</Text>
+                  ) : (
+                    <UserIcon size={32} color="white" />
+                  )}
+
+                  {/* Uploading overlay */}
+                  {uploadingPhoto && (
+                    <View style={styles.avatarUploadingOverlay}>
+                      <ActivityIndicator size="small" color="#ffffff" />
+                    </View>
+                  )}
+                </LinearGradient>
+
+                {/* Camera icon hint — tells users the avatar is tappable */}
+                <View style={styles.avatarCameraBadge}>
+                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#6b3a8a" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <Circle cx="12" cy="13" r="4" />
+                  </Svg>
+                </View>
+              </TouchableOpacity>
             </Animated.View>
 
             <Text style={styles.profileName}>{profile.name || 'User'}</Text>
@@ -649,6 +772,72 @@ const ProfileScreen = ({ navigation }) => {
 
       {/* Custom Alert */}
       <CustomAlert {...alertConfig} onClose={hideAlert} />
+
+      {/* Themed photo-source bottom sheet */}
+      <Modal
+        visible={photoSheetVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPhotoSheetVisible(false)}
+      >
+        <Pressable
+          style={styles.photoSheetOverlay}
+          onPress={() => setPhotoSheetVisible(false)}
+        >
+          <Pressable style={styles.photoSheetCard} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.photoSheetHandle} />
+            <Text style={styles.photoSheetTitle}>Profile Photo</Text>
+            <Text style={styles.photoSheetSubtitle}>Choose a source</Text>
+
+            <TouchableOpacity
+              style={styles.photoSheetButton}
+              onPress={handleTakePhoto}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={['#ca9ad6', '#70d0dd']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.photoSheetButtonGradient}
+              >
+                <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <Circle cx="12" cy="13" r="4" />
+                </Svg>
+                <Text style={styles.photoSheetButtonText}>Take Photo</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.photoSheetButton}
+              onPress={handlePickFromGallery}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={['#ca9ad6', '#70d0dd']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.photoSheetButtonGradient}
+              >
+                <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <Rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <Circle cx="8.5" cy="8.5" r="1.5" />
+                  <Path d="M21 15l-5-5L5 21" />
+                </Svg>
+                <Text style={styles.photoSheetButtonText}>Choose from Gallery</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.photoSheetCancel}
+              onPress={() => setPhotoSheetVisible(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.photoSheetCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 };
@@ -815,6 +1004,29 @@ const styles = StyleSheet.create({
     height: 72,
     borderRadius: 36,
   },
+  avatarCameraBadge: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  avatarUploadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(51, 12, 84, 0.4)',
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   avatarInitials: {
     fontSize: 24,
     fontFamily: 'Handlee_400Regular',
@@ -822,6 +1034,75 @@ const styles = StyleSheet.create({
   },
   avatarEmoji: {
     fontSize: 36,
+  },
+
+  // Themed photo-source bottom sheet
+  photoSheetOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    justifyContent: 'flex-end',
+  },
+  photoSheetCard: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  photoSheetHandle: {
+    alignSelf: 'center',
+    width: 44,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#e8dced',
+    marginBottom: 16,
+  },
+  photoSheetTitle: {
+    fontSize: 20,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    textAlign: 'center',
+  },
+  photoSheetSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  photoSheetButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  photoSheetButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 10,
+  },
+  photoSheetButtonText: {
+    fontSize: 16,
+    fontFamily: 'Handlee_400Regular',
+    color: '#FFFFFF',
+  },
+  photoSheetCancel: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  photoSheetCancelText: {
+    fontSize: 15,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
   },
 });
 
