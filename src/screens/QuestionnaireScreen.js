@@ -14,6 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
+import { useFocusEffect } from '@react-navigation/native';
 import { getQuestionnaire, saveQuestionnaire } from '../services/api';
 import { formatDate as formatAppDate } from '../utils/date';
 import { CustomAlert } from '../components';
@@ -581,14 +582,22 @@ const QuestionnaireScreen = ({ navigation, route }) => {
     }
   }, []);
 
-  useEffect(() => {
-    fetchQuestionnaire();
-  }, [fetchQuestionnaire]);
+  // Refetch every time the screen is focused (not just on mount). Tab/stack
+  // navigators keep this screen mounted, so a plain useEffect ran only once
+  // and the form showed stale/empty data after saving and returning.
+  useFocusEffect(
+    useCallback(() => {
+      fetchQuestionnaire();
+    }, [fetchQuestionnaire])
+  );
 
   // Animations
   const headerAnim = useRef(new Animated.Value(0)).current;
   const contentAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
+  // Sections share one persistent ScrollView, so its scroll offset carries
+  // over between pages. Reset it to the top on every section change.
+  const scrollRef = useRef(null);
 
   useEffect(() => {
     Animated.parallel([
@@ -608,6 +617,10 @@ const QuestionnaireScreen = ({ navigation, route }) => {
   }, []);
 
   useEffect(() => {
+    // Jump back to the top whenever the section changes (Continue/Back),
+    // otherwise the new page opens already scrolled to the old offset.
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+
     Animated.timing(progressAnim, {
       toValue: (currentSection + 1) / sections.length,
       duration: 300,
@@ -993,6 +1006,7 @@ const QuestionnaireScreen = ({ navigation, route }) => {
       )}
 
       <ScrollView
+        ref={scrollRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"

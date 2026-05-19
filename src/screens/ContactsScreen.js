@@ -557,6 +557,7 @@ const ContactsScreen = ({ navigation }) => {
       </ScrollView>
 
       <ScrollView
+        style={styles.contactsList}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
@@ -819,8 +820,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
+  contactsList: {
+    // Take all remaining space and scroll its own content, so a long list
+    // never expands the column and squeezes the tab row above it.
+    flex: 1,
+  },
   tabBar: {
     flexGrow: 0,
+    // flexShrink:0 + fixed height so the column-flex parent can't squeeze
+    // this row when the contacts list grows tall (it defaults to
+    // flexShrink:1 and otherwise collapses, clipping the pills).
+    flexShrink: 0,
+    height: 60,
     marginBottom: 12,
   },
   tabBarContent: {
@@ -858,11 +869,15 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 13,
+    lineHeight: 18,
+    includeFontPadding: false,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
   tabTextActive: {
     fontSize: 13,
+    lineHeight: 18,
+    includeFontPadding: false,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -876,6 +891,8 @@ const styles = StyleSheet.create({
   },
   tabBadgeText: {
     fontSize: 11,
+    lineHeight: 16,
+    includeFontPadding: false,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -889,6 +906,8 @@ const styles = StyleSheet.create({
   },
   tabBadgeTextActive: {
     fontSize: 11,
+    lineHeight: 16,
+    includeFontPadding: false,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },

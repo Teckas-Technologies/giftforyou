@@ -316,9 +316,20 @@ const ProfileScreen = ({ navigation }) => {
         try {
           setLoading(true);
           const [profileRes, statsRes] = await Promise.all([
-            getProfile().catch(() => ({ user: null })),
+            getProfile().catch((err) => {
+              // Was silently swallowed → screen kept the empty default state
+              // and looked "not loaded" with no clue why. Log the real cause.
+              console.log('[ProfileScreen] getProfile FAILED on focus:', err?.message || err);
+              return { user: null };
+            }),
             getDashboardStats().catch(() => ({ contactsCount: 0, upcomingEventsCount: 0, giftsGivenCount: 0 })),
           ]);
+          console.log(
+            '[ProfileScreen] getProfile result —',
+            profileRes?.user
+              ? `name=${profileRes.user.name}, photo=${profileRes.user.profilePhoto ? 'set' : 'MISSING'}, profileCompleted=${profileRes.user.profileCompleted}`
+              : 'user is NULL (request failed or returned no user) — profile will render blank'
+          );
 
           if (profileRes.user) {
             setProfile({
