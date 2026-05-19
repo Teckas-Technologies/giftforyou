@@ -193,16 +193,22 @@ const emptyContact = {
     activities: [],
     activityDetails: '',
     style: [],
+    styleOther: '',
     colors: [],
+    colorsOther: '',
     sizes: {},
     giftTypes: [],
     giftDetails: '',
     causes: [],
+    causesOther: '',
     flower: '',
     flowerDetails: '',
     cuisines: [],
     restaurant: '',
+    cuisineOther: '',
+    favoriteMeal: '',
     desserts: [],
+    dessertDetails: '',
     movieGenre: [],
     favoriteMovies: '',
     musicGenre: [],
@@ -304,7 +310,9 @@ const ContactDetailScreen = ({ navigation, route }) => {
           activities: cleanLabels(preferencesData.preferences.favoriteActivities),
           activityDetails: preferencesData.preferences.activityDetails || '',
           style: cleanLabels(preferencesData.preferences.personalStyle),
+          styleOther: preferencesData.preferences.personalStyleOther || '',
           colors: cleanLabels(preferencesData.preferences.favoriteColors),
+          colorsOther: preferencesData.preferences.favoriteColorsOther || '',
           // clothing_sizes is saved as a single free-text string by the
           // questionnaire ("Top: M, Pants: 8, Shoes: 7.5, Ring: 6").
           // Keep it as-is; the render handles string vs. legacy object.
@@ -312,11 +320,15 @@ const ContactDetailScreen = ({ navigation, route }) => {
           giftTypes: cleanLabels(preferencesData.preferences.giftTypes),
           giftDetails: preferencesData.preferences.giftDetails || '',
           causes: cleanLabels(preferencesData.preferences.causesValues),
+          causesOther: preferencesData.preferences.causesOther || '',
           flower: cleanLabels(preferencesData.preferences.favoriteFlower).join(', '),
           flowerDetails: preferencesData.preferences.flowerDetails || '',
           cuisines: cleanLabels(preferencesData.preferences.favoriteCuisines),
           restaurant: preferencesData.preferences.favoriteRestaurant || '',
+          cuisineOther: preferencesData.preferences.cuisineOther || '',
+          favoriteMeal: preferencesData.preferences.favoriteMeal || '',
           desserts: cleanLabels(preferencesData.preferences.favoriteDesserts),
+          dessertDetails: preferencesData.preferences.dessertDetails || '',
           movieGenre: cleanLabels(preferencesData.preferences.movieGenre),
           favoriteMovies: preferencesData.preferences.favoriteMovies || '',
           musicGenre: cleanLabels(preferencesData.preferences.musicGenre),
@@ -692,7 +704,7 @@ const ContactDetailScreen = ({ navigation, route }) => {
             )}
 
             {/* Personal Style */}
-            {contact.preferences.style?.length > 0 && (
+            {(contact.preferences.style?.length > 0 || contact.preferences.styleOther) && (
               <View style={styles.preferenceRow}>
                 <Text style={styles.preferenceLabel}>Personal Style</Text>
                 <View style={styles.tagContainer}>
@@ -702,11 +714,14 @@ const ContactDetailScreen = ({ navigation, route }) => {
                     </View>
                   ))}
                 </View>
+                {contact.preferences.styleOther ? (
+                  <Text style={styles.preferenceDetail}>{contact.preferences.styleOther}</Text>
+                ) : null}
               </View>
             )}
 
             {/* Favorite Colors */}
-            {contact.preferences.colors?.length > 0 && (
+            {(contact.preferences.colors?.length > 0 || contact.preferences.colorsOther) && (
               <View style={styles.preferenceRow}>
                 <Text style={styles.preferenceLabel}>Favorite Colors</Text>
                 <View style={styles.tagContainer}>
@@ -716,6 +731,9 @@ const ContactDetailScreen = ({ navigation, route }) => {
                     </View>
                   ))}
                 </View>
+                {contact.preferences.colorsOther ? (
+                  <Text style={styles.preferenceDetail}>{contact.preferences.colorsOther}</Text>
+                ) : null}
               </View>
             )}
 
@@ -732,7 +750,7 @@ const ContactDetailScreen = ({ navigation, route }) => {
             )}
 
             {/* Causes & Values */}
-            {contact.preferences.causes?.length > 0 && (
+            {(contact.preferences.causes?.length > 0 || contact.preferences.causesOther) && (
               <View style={styles.preferenceRow}>
                 <Text style={styles.preferenceLabel}>Causes They Care About</Text>
                 <View style={styles.tagContainer}>
@@ -742,13 +760,16 @@ const ContactDetailScreen = ({ navigation, route }) => {
                     </View>
                   ))}
                 </View>
+                {contact.preferences.causesOther ? (
+                  <Text style={styles.preferenceDetail}>{contact.preferences.causesOther}</Text>
+                ) : null}
               </View>
             )}
           </Animated.View>
         )}
 
         {/* Food & Flowers */}
-        {contact.hasQuestionnaire && (contact.preferences.flower || contact.preferences.cuisines?.length > 0 || contact.preferences.desserts?.length > 0) && (
+        {contact.hasQuestionnaire && (contact.preferences.flower || contact.preferences.cuisines?.length > 0 || contact.preferences.desserts?.length > 0 || contact.preferences.cuisineOther || contact.preferences.favoriteMeal || contact.preferences.dessertDetails) && (
           <Animated.View style={[styles.section, createSlideStyle(sectionAnims[3])]}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionEmoji}>🌸</Text>
@@ -767,7 +788,7 @@ const ContactDetailScreen = ({ navigation, route }) => {
             )}
 
             {/* Cuisines */}
-            {contact.preferences.cuisines?.length > 0 && (
+            {(contact.preferences.cuisines?.length > 0 || contact.preferences.cuisineOther || contact.preferences.restaurant || contact.preferences.favoriteMeal) && (
               <View style={styles.preferenceRow}>
                 <Text style={styles.preferenceLabel}>Favorite Cuisines</Text>
                 <View style={styles.tagContainer}>
@@ -777,14 +798,20 @@ const ContactDetailScreen = ({ navigation, route }) => {
                     </View>
                   ))}
                 </View>
+                {contact.preferences.cuisineOther ? (
+                  <Text style={styles.preferenceDetail}>{contact.preferences.cuisineOther}</Text>
+                ) : null}
                 {contact.preferences.restaurant ? (
                   <Text style={styles.preferenceDetail}>🍽️ Favorite restaurant: {contact.preferences.restaurant}</Text>
+                ) : null}
+                {contact.preferences.favoriteMeal ? (
+                  <Text style={styles.preferenceDetail}>🍲 Favorite meal: {contact.preferences.favoriteMeal}</Text>
                 ) : null}
               </View>
             )}
 
             {/* Desserts */}
-            {contact.preferences.desserts?.length > 0 && (
+            {(contact.preferences.desserts?.length > 0 || contact.preferences.dessertDetails) && (
               <View style={styles.preferenceRow}>
                 <Text style={styles.preferenceLabel}>Favorite Desserts</Text>
                 <View style={styles.tagContainer}>
@@ -794,6 +821,9 @@ const ContactDetailScreen = ({ navigation, route }) => {
                     </View>
                   ))}
                 </View>
+                {contact.preferences.dessertDetails ? (
+                  <Text style={styles.preferenceDetail}>{contact.preferences.dessertDetails}</Text>
+                ) : null}
               </View>
             )}
           </Animated.View>
