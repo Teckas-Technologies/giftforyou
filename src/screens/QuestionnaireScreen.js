@@ -571,10 +571,19 @@ const QuestionnaireScreen = ({ navigation, route }) => {
         setAnswers(mappedAnswers);
       }
 
-      // Also load birthday from basicInfo
-      if (response.basicInfo?.birthday) {
-        setAnswers(prev => ({ ...prev, birthday: response.basicInfo.birthday }));
-      }
+      // Also load birthday + special dates (anniversaries) from basicInfo —
+      // these live in separate tables, so they aren't part of `questionnaire`
+      // and must be merged in explicitly or the basic-info step shows empty
+      // on revisit.
+      const basic = response.basicInfo || {};
+      const anc = Array.isArray(basic.anniversaries) ? basic.anniversaries : [];
+      setAnswers(prev => ({
+        ...prev,
+        ...(basic.birthday ? { birthday: basic.birthday } : {}),
+        ...(anc[0]?.date ? { anniversary_1: anc[0].date, anniversary_1_title: anc[0].title || '' } : {}),
+        ...(anc[1]?.date ? { anniversary_2: anc[1].date, anniversary_2_title: anc[1].title || '' } : {}),
+        ...(anc[2]?.date ? { anniversary_3: anc[2].date, anniversary_3_title: anc[2].title || '' } : {}),
+      }));
     } catch (error) {
       console.error('Error fetching questionnaire:', error);
     } finally {

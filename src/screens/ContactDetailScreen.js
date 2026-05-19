@@ -221,6 +221,7 @@ const emptyContact = {
     registryExpiry: '',
   },
   upcomingEvents: [],
+  specialDates: [],
 };
 
 const getRelationshipLabel = (relationship) => {
@@ -361,6 +362,13 @@ const ContactDetailScreen = ({ navigation, route }) => {
           type: (event.event_type || event.eventType)?.toLowerCase() || 'event',
           daysUntil: appDaysUntil(event.event_date || event.eventDate),
         })),
+        // Special dates the contact entered in the questionnaire's basic-info
+        // step. They live in their own table (not events), so the API now
+        // returns them separately for the Basic Info section.
+        specialDates: (preferencesData?.specialDates || []).map((d) => ({
+          date: d.date || d.anniversary_date,
+          title: d.title || '',
+        })).filter((d) => d.date),
       };
 
       setContact(transformedContact);
@@ -606,28 +614,57 @@ const ContactDetailScreen = ({ navigation, route }) => {
           </View>
         </Animated.View>
 
-        {/* Quick Info */}
+        {/* Basic Info */}
         <Animated.View style={[styles.section, createSlideStyle(sectionAnims[0])]}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionEmoji}>👤</Text>
+            <Text style={styles.sectionTitle}>Basic Info</Text>
+          </View>
           <View style={styles.infoRow}>
             <View style={styles.infoIcon}>
               <EmailIcon size={18} color="#6b3a8a" />
             </View>
-            <Text style={styles.infoText}>{contact.email}</Text>
+            <View style={styles.infoTextWrap}>
+              <Text style={styles.infoSubLabel}>Email</Text>
+              <Text style={styles.infoText}>{contact.email || 'Not set'}</Text>
+            </View>
           </View>
-          {contact.phone && (
+          {contact.phone ? (
             <View style={styles.infoRow}>
               <View style={styles.infoIcon}>
                 <PhoneIcon size={18} color="#6b3a8a" />
               </View>
-              <Text style={styles.infoText}>{contact.phone}</Text>
+              <View style={styles.infoTextWrap}>
+                <Text style={styles.infoSubLabel}>Phone</Text>
+                <Text style={styles.infoText}>{contact.phone}</Text>
+              </View>
             </View>
-          )}
+          ) : null}
           <View style={styles.infoRow}>
             <View style={styles.infoIcon}>
               <CalendarIcon size={18} color="#6b3a8a" />
             </View>
-            <Text style={styles.infoText}>Birthday: {formatDate(contact.birthday)}</Text>
+            <View style={styles.infoTextWrap}>
+              <Text style={styles.infoSubLabel}>Birthday</Text>
+              <Text style={styles.infoText}>{formatDate(contact.birthday)}</Text>
+            </View>
           </View>
+          {/* Special Dates — anniversaries the contact entered in the
+              questionnaire's basic-info step (returned by the API from its
+              own table, independent of the Upcoming Events list). */}
+          {contact.specialDates.map((sd, index) => (
+            <View key={`special-${index}`} style={styles.infoRow}>
+              <View style={styles.infoIcon}>
+                <CalendarIcon size={18} color="#6b3a8a" />
+              </View>
+              <View style={styles.infoTextWrap}>
+                <Text style={styles.infoSubLabel}>
+                  {sd.title ? `Special Date — ${sd.title}` : 'Special Date'}
+                </Text>
+                <Text style={styles.infoText}>{formatDate(sd.date)}</Text>
+              </View>
+            </View>
+          ))}
         </Animated.View>
 
         {/* Upcoming Events */}
@@ -681,7 +718,10 @@ const ContactDetailScreen = ({ navigation, route }) => {
                   ))}
                 </View>
                 {contact.preferences.giftDetails ? (
-                  <Text style={styles.preferenceDetail}>{contact.preferences.giftDetails}</Text>
+                  <>
+                    <Text style={styles.preferenceSubLabel}>Any specific gift ideas or things you collect?</Text>
+                    <Text style={styles.preferenceDetailValue}>{contact.preferences.giftDetails}</Text>
+                  </>
                 ) : null}
               </View>
             )}
@@ -698,7 +738,10 @@ const ContactDetailScreen = ({ navigation, route }) => {
                   ))}
                 </View>
                 {contact.preferences.activityDetails ? (
-                  <Text style={styles.preferenceDetail}>{contact.preferences.activityDetails}</Text>
+                  <>
+                    <Text style={styles.preferenceSubLabel}>Tell us more about what you enjoy</Text>
+                    <Text style={styles.preferenceDetailValue}>{contact.preferences.activityDetails}</Text>
+                  </>
                 ) : null}
               </View>
             )}
@@ -715,7 +758,10 @@ const ContactDetailScreen = ({ navigation, route }) => {
                   ))}
                 </View>
                 {contact.preferences.styleOther ? (
-                  <Text style={styles.preferenceDetail}>{contact.preferences.styleOther}</Text>
+                  <>
+                    <Text style={styles.preferenceSubLabel}>Describe your style (if Other)</Text>
+                    <Text style={styles.preferenceDetailValue}>{contact.preferences.styleOther}</Text>
+                  </>
                 ) : null}
               </View>
             )}
@@ -732,7 +778,10 @@ const ContactDetailScreen = ({ navigation, route }) => {
                   ))}
                 </View>
                 {contact.preferences.colorsOther ? (
-                  <Text style={styles.preferenceDetail}>{contact.preferences.colorsOther}</Text>
+                  <>
+                    <Text style={styles.preferenceSubLabel}>Any other favorite colors?</Text>
+                    <Text style={styles.preferenceDetailValue}>{contact.preferences.colorsOther}</Text>
+                  </>
                 ) : null}
               </View>
             )}
@@ -761,7 +810,10 @@ const ContactDetailScreen = ({ navigation, route }) => {
                   ))}
                 </View>
                 {contact.preferences.causesOther ? (
-                  <Text style={styles.preferenceDetail}>{contact.preferences.causesOther}</Text>
+                  <>
+                    <Text style={styles.preferenceSubLabel}>Other causes or values?</Text>
+                    <Text style={styles.preferenceDetailValue}>{contact.preferences.causesOther}</Text>
+                  </>
                 ) : null}
               </View>
             )}
@@ -782,7 +834,10 @@ const ContactDetailScreen = ({ navigation, route }) => {
                 <Text style={styles.preferenceLabel}>Favorite Flower</Text>
                 <Text style={styles.preferenceValue}>{contact.preferences.flower}</Text>
                 {contact.preferences.flowerDetails ? (
-                  <Text style={styles.preferenceDetail}>{contact.preferences.flowerDetails}</Text>
+                  <>
+                    <Text style={styles.preferenceSubLabel}>Any specific flower arrangements you love?</Text>
+                    <Text style={styles.preferenceDetailValue}>{contact.preferences.flowerDetails}</Text>
+                  </>
                 ) : null}
               </View>
             )}
@@ -799,13 +854,22 @@ const ContactDetailScreen = ({ navigation, route }) => {
                   ))}
                 </View>
                 {contact.preferences.cuisineOther ? (
-                  <Text style={styles.preferenceDetail}>{contact.preferences.cuisineOther}</Text>
+                  <>
+                    <Text style={styles.preferenceSubLabel}>Any other cuisine preferences?</Text>
+                    <Text style={styles.preferenceDetailValue}>{contact.preferences.cuisineOther}</Text>
+                  </>
                 ) : null}
                 {contact.preferences.restaurant ? (
-                  <Text style={styles.preferenceDetail}>🍽️ Favorite restaurant: {contact.preferences.restaurant}</Text>
+                  <>
+                    <Text style={styles.preferenceSubLabel}>🍽️ Your favorite restaurant</Text>
+                    <Text style={styles.preferenceDetailValue}>{contact.preferences.restaurant}</Text>
+                  </>
                 ) : null}
                 {contact.preferences.favoriteMeal ? (
-                  <Text style={styles.preferenceDetail}>🍲 Favorite meal: {contact.preferences.favoriteMeal}</Text>
+                  <>
+                    <Text style={styles.preferenceSubLabel}>🍲 Your favorite meal at that restaurant</Text>
+                    <Text style={styles.preferenceDetailValue}>{contact.preferences.favoriteMeal}</Text>
+                  </>
                 ) : null}
               </View>
             )}
@@ -822,7 +886,10 @@ const ContactDetailScreen = ({ navigation, route }) => {
                   ))}
                 </View>
                 {contact.preferences.dessertDetails ? (
-                  <Text style={styles.preferenceDetail}>{contact.preferences.dessertDetails}</Text>
+                  <>
+                    <Text style={styles.preferenceSubLabel}>Dessert preferences</Text>
+                    <Text style={styles.preferenceDetailValue}>{contact.preferences.dessertDetails}</Text>
+                  </>
                 ) : null}
               </View>
             )}
@@ -849,7 +916,10 @@ const ContactDetailScreen = ({ navigation, route }) => {
                   ))}
                 </View>
                 {contact.preferences.favoriteArtists ? (
-                  <Text style={styles.preferenceDetail}>Favorite artists: {contact.preferences.favoriteArtists}</Text>
+                  <>
+                    <Text style={styles.preferenceSubLabel}>Favorite albums, artists, or singers</Text>
+                    <Text style={styles.preferenceDetailValue}>{contact.preferences.favoriteArtists}</Text>
+                  </>
                 ) : null}
               </View>
             )}
@@ -866,7 +936,10 @@ const ContactDetailScreen = ({ navigation, route }) => {
                   ))}
                 </View>
                 {contact.preferences.favoriteMovies ? (
-                  <Text style={styles.preferenceDetail}>Favorites: {contact.preferences.favoriteMovies}</Text>
+                  <>
+                    <Text style={styles.preferenceSubLabel}>Specific movies or shows you like</Text>
+                    <Text style={styles.preferenceDetailValue}>{contact.preferences.favoriteMovies}</Text>
+                  </>
                 ) : null}
               </View>
             )}
@@ -886,7 +959,10 @@ const ContactDetailScreen = ({ navigation, route }) => {
             </View>
 
             {contact.preferences.wishlistText ? (
-              <Text style={styles.wishlistTextContent}>{contact.preferences.wishlistText}</Text>
+              <View style={styles.preferenceRow}>
+                <Text style={styles.preferenceLabel}>Anything on your wishlist right now?</Text>
+                <Text style={styles.wishlistTextContent}>{contact.preferences.wishlistText}</Text>
+              </View>
             ) : null}
 
             {contact.preferences.wishlistLinks?.length > 0 && (
@@ -914,12 +990,18 @@ const ContactDetailScreen = ({ navigation, route }) => {
                   🎁 {contact.preferences.registryLink}
                 </Text>
                 {contact.preferences.registryDetails ? (
-                  <Text style={styles.preferenceDetail}>{contact.preferences.registryDetails}</Text>
+                  <>
+                    <Text style={styles.preferenceSubLabel}>Registry Details</Text>
+                    <Text style={styles.preferenceDetailValue}>{contact.preferences.registryDetails}</Text>
+                  </>
                 ) : null}
                 {contact.preferences.registryExpiry ? (
-                  <Text style={styles.preferenceDetail}>
-                    Expires: {formatAppDate(contact.preferences.registryExpiry, { month: 'long', day: 'numeric', year: 'numeric' }, '')}
-                  </Text>
+                  <>
+                    <Text style={styles.preferenceSubLabel}>Registry Expiry Date</Text>
+                    <Text style={styles.preferenceDetailValue}>
+                      {formatAppDate(contact.preferences.registryExpiry, { month: 'long', day: 'numeric', year: 'numeric' }, '')}
+                    </Text>
+                  </>
                 ) : null}
               </View>
             ) : null}
@@ -1172,6 +1254,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
+  infoTextWrap: {
+    flex: 1,
+  },
+  infoSubLabel: {
+    fontSize: 12,
+    fontFamily: 'Handlee_400Regular',
+    color: '#9277ab',
+    marginBottom: 2,
+  },
   infoText: {
     fontSize: 14,
     fontFamily: 'Handlee_400Regular',
@@ -1276,6 +1367,21 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 8,
+    fontStyle: 'italic',
+  },
+  // Caption above a free-text answer, mirroring the questionnaire's own
+  // question wording so every typed-in field is clearly labelled.
+  preferenceSubLabel: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#9277ab',
+    marginTop: 12,
+    marginBottom: 2,
+  },
+  preferenceDetailValue: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
     fontStyle: 'italic',
   },
   preferenceValue: {

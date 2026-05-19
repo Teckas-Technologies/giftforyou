@@ -11,6 +11,7 @@ import {
   RefreshControl,
   TextInput,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
@@ -75,6 +76,13 @@ const DiscoverScreen = ({ navigation }) => {
   const [addingIds, setAddingIds] = useState({});
   const [dismissingIds, setDismissingIds] = useState({});
 
+  // Persist which users we've sent a request to, so background polling
+  // re-fetches don't reset the "Requested" button back to "Add to Circle"
+  // while the request is still pending. Once the other person accepts, the
+  // backend stops returning them as a suggestion, so the card drops off
+  // naturally on the next poll.
+  const requestedIdsRef = useRef({});
+
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -95,14 +103,20 @@ const DiscoverScreen = ({ navigation }) => {
       const rawSuggestions = data.suggestions || data || [];
 
       // Transform API response to flat user objects
-      const transformedSuggestions = rawSuggestions.map(s => ({
-        id: s.user?.id || s.suggestionId || s.id,
-        name: s.user?.name || s.name || 'Unknown',
-        photo: s.user?.photo || s.photo,
-        avatar: s.user?.avatar || s.avatar,
-        mutualFriends: s.mutualFriend ? 1 : 0,
-        reason: s.reason,
-      }));
+      const transformedSuggestions = rawSuggestions.map(s => {
+        const id = s.user?.id || s.suggestionId || s.id;
+        return {
+          id,
+          name: s.user?.name || s.name || 'Unknown',
+          photo: s.user?.photo || s.photo,
+          avatar: s.user?.avatar || s.avatar,
+          mutualFriends: s.mutualFriend ? 1 : 0,
+          reason: s.reason,
+          // Re-apply the locally-tracked "requested" flag so polling doesn't
+          // clobber it for still-pending requests.
+          requested: !!requestedIdsRef.current[id],
+        };
+      });
 
       setSuggestions(transformedSuggestions);
     } catch (error) {
@@ -114,8 +128,6 @@ const DiscoverScreen = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
-    fetchSuggestions();
-
     Animated.parallel([
       Animated.timing(headerAnim, {
         toValue: 1,
@@ -130,7 +142,19 @@ const DiscoverScreen = ({ navigation }) => {
         useNativeDriver: true,
       }),
     ]).start();
-  }, [fetchSuggestions]);
+  }, []);
+
+  // Fetch on focus, then poll every 12s while this screen is focused so the
+  // list updates automatically when a request is accepted on the other
+  // device (no realtime channel, and the user never leaves the screen).
+  // Polling stops on blur to avoid background network churn.
+  useFocusEffect(
+    useCallback(() => {
+      fetchSuggestions();
+      const interval = setInterval(fetchSuggestions, 12000);
+      return () => clearInterval(interval);
+    }, [fetchSuggestions])
+  );
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -187,6 +211,9 @@ const DiscoverScreen = ({ navigation }) => {
       setAddingIds(prev => ({ ...prev, [userId]: true }));
 
       await quickAddToCircle(userId, 'Friend');
+
+      // Remember the request so background polling re-applies the flag.
+      requestedIdsRef.current[userId] = true;
 
       // Mark this user as requested locally in BOTH lists so the button label
       // flips no matter which list the card was rendered from.

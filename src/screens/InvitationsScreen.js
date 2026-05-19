@@ -17,6 +17,7 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
@@ -182,12 +183,16 @@ const InvitationsScreen = ({ navigation, route }) => {
   const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
 
   // Fetch invitations from API
-  const fetchInvitations = useCallback(async (isRefresh = false) => {
+  // `silent` skips the loading/refreshing spinners — used by the background
+  // poll so the list updates in place without a flicker.
+  const fetchInvitations = useCallback(async (isRefresh = false, silent = false) => {
     try {
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
+      if (!silent) {
+        if (isRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
       }
 
       const response = await getInvitations();
@@ -217,9 +222,16 @@ const InvitationsScreen = ({ navigation, route }) => {
     }
   }, []);
 
-  useEffect(() => {
-    fetchInvitations();
-  }, [fetchInvitations]);
+  // Fetch on focus, then poll every 12s while focused so an invitation flips
+  // to "Completed" automatically when the invitee finishes — without the user
+  // leaving the screen. Polling is silent (no spinner) and stops on blur.
+  useFocusEffect(
+    useCallback(() => {
+      fetchInvitations();
+      const interval = setInterval(() => fetchInvitations(false, true), 12000);
+      return () => clearInterval(interval);
+    }, [fetchInvitations])
+  );
 
   // Handle auto-fill from route params (when navigating from a contact)
   useEffect(() => {
