@@ -88,8 +88,15 @@ const OPTION_EMOJI = {
   other: '✨',
 };
 
-const emojiFor = (value) =>
-  OPTION_EMOJI[String(value).toLowerCase().replace(/[^a-z0-9]/g, '')] || '';
+// The questionnaire uses a section-specific emoji for its "Other" option
+// (✨ for activities/style/values, 🍴 cuisines, 🍰 desserts, 🎬 movies,
+// 🎵 music). A flat map can't disambiguate "Other", so callers pass the
+// section's "Other" emoji to match the questionnaire exactly.
+const emojiFor = (value, otherEmoji = '✨') => {
+  const key = String(value).toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (key === 'other') return otherEmoji;
+  return OPTION_EMOJI[key] || '';
+};
 
 // Icons
 const BackIcon = ({ size = 24, color = '#6b3a8a' }) => (
@@ -298,7 +305,10 @@ const ContactDetailScreen = ({ navigation, route }) => {
           activityDetails: preferencesData.preferences.activityDetails || '',
           style: cleanLabels(preferencesData.preferences.personalStyle),
           colors: cleanLabels(preferencesData.preferences.favoriteColors),
-          sizes: preferencesData.preferences.clothingSizes || {},
+          // clothing_sizes is saved as a single free-text string by the
+          // questionnaire ("Top: M, Pants: 8, Shoes: 7.5, Ring: 6").
+          // Keep it as-is; the render handles string vs. legacy object.
+          sizes: preferencesData.preferences.clothingSizes || '',
           giftTypes: cleanLabels(preferencesData.preferences.giftTypes),
           giftDetails: preferencesData.preferences.giftDetails || '',
           causes: cleanLabels(preferencesData.preferences.causesValues),
@@ -763,7 +773,7 @@ const ContactDetailScreen = ({ navigation, route }) => {
                 <View style={styles.tagContainer}>
                   {contact.preferences.cuisines.map((cuisine, index) => (
                     <View key={index} style={styles.plainTag}>
-                      <Text style={styles.plainTagText}>{emojiFor(cuisine)} {cuisine}</Text>
+                      <Text style={styles.plainTagText}>{emojiFor(cuisine, '🍴')} {cuisine}</Text>
                     </View>
                   ))}
                 </View>
@@ -780,7 +790,7 @@ const ContactDetailScreen = ({ navigation, route }) => {
                 <View style={styles.tagContainer}>
                   {contact.preferences.desserts.map((dessert, index) => (
                     <View key={index} style={styles.plainTag}>
-                      <Text style={styles.plainTagText}>{emojiFor(dessert)} {dessert}</Text>
+                      <Text style={styles.plainTagText}>{emojiFor(dessert, '🍰')} {dessert}</Text>
                     </View>
                   ))}
                 </View>
@@ -804,7 +814,7 @@ const ContactDetailScreen = ({ navigation, route }) => {
                 <View style={styles.tagContainer}>
                   {contact.preferences.musicGenre.map((genre, index) => (
                     <View key={index} style={styles.plainTag}>
-                      <Text style={styles.plainTagText}>{emojiFor(genre)} {genre}</Text>
+                      <Text style={styles.plainTagText}>{emojiFor(genre, '🎵')} {genre}</Text>
                     </View>
                   ))}
                 </View>
@@ -821,7 +831,7 @@ const ContactDetailScreen = ({ navigation, route }) => {
                 <View style={styles.tagContainer}>
                   {contact.preferences.movieGenre.map((genre, index) => (
                     <View key={index} style={styles.plainTag}>
-                      <Text style={styles.plainTagText}>{emojiFor(genre)} {genre}</Text>
+                      <Text style={styles.plainTagText}>{emojiFor(genre, '🎬')} {genre}</Text>
                     </View>
                   ))}
                 </View>
@@ -886,23 +896,35 @@ const ContactDetailScreen = ({ navigation, route }) => {
           </Animated.View>
         )}
 
-        {/* Clothing Sizes */}
-        {contact.hasQuestionnaire && contact.preferences.sizes && Object.keys(contact.preferences.sizes).length > 0 && (
+        {/* Clothing Sizes — saved as a free-text string; older data may be
+            a key→value object, so handle both shapes. */}
+        {contact.hasQuestionnaire && (
+          typeof contact.preferences.sizes === 'string'
+            ? contact.preferences.sizes.trim().length > 0
+            : contact.preferences.sizes &&
+              Object.keys(contact.preferences.sizes).length > 0
+        ) && (
           <Animated.View style={[styles.section, createSlideStyle(sectionAnims[3])]}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionEmoji}>👕</Text>
-              <Text style={styles.sectionTitle}>Clothing Sizes</Text>
+              <Text style={styles.sectionTitle}>Clothing / Shoe / Ring Sizes</Text>
             </View>
-            <View style={styles.sizesGrid}>
-              {Object.entries(contact.preferences.sizes).map(([key, value]) => (
-                value ? (
-                  <View key={key} style={styles.sizeItem}>
-                    <Text style={styles.sizeLabel}>{key}</Text>
-                    <Text style={styles.sizeValue}>{value}</Text>
-                  </View>
-                ) : null
-              ))}
-            </View>
+            {typeof contact.preferences.sizes === 'string' ? (
+              <Text style={styles.wishlistTextContent}>
+                {contact.preferences.sizes}
+              </Text>
+            ) : (
+              <View style={styles.sizesGrid}>
+                {Object.entries(contact.preferences.sizes).map(([key, value]) => (
+                  value ? (
+                    <View key={key} style={styles.sizeItem}>
+                      <Text style={styles.sizeLabel}>{key}</Text>
+                      <Text style={styles.sizeValue}>{value}</Text>
+                    </View>
+                  ) : null
+                ))}
+              </View>
+            )}
           </Animated.View>
         )}
 
