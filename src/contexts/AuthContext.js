@@ -5,6 +5,7 @@ import {
 } from '@react-native-google-signin/google-signin';
 import { supabase } from '../config/supabase';
 import { registerForPushNotifications } from '../services/notifications';
+import { checkEmailRegistered } from '../services/api';
 
 GoogleSignin.configure({
   webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
@@ -77,6 +78,21 @@ export const AuthProvider = ({ children }) => {
 
       if (error) throw error;
 
+      // Supabase does not return an error when the email is already
+      // registered (anti email-enumeration). Instead it returns a user
+      // with an empty `identities` array. Detect that and tell the user
+      // to log in instead of silently "succeeding".
+      if (
+        data?.user &&
+        Array.isArray(data.user.identities) &&
+        data.user.identities.length === 0
+      ) {
+        return {
+          data: null,
+          error: { message: 'This email is already registered. Please log in instead.' },
+        };
+      }
+
       // Create user profile in our users table
       if (data.user) {
         const { error: profileError } = await supabase
@@ -138,6 +154,20 @@ export const AuthProvider = ({ children }) => {
   // Sign in with email and password
   const signIn = async (email, password) => {
     try {
+      // Pre-check: Supabase only returns a generic "Invalid login
+      // credentials" (it won't distinguish unknown email from wrong
+      // password). A server-side check (service-role, bypasses RLS) tells
+      // us if the account truly doesn't exist so we can guide the user to
+      // sign up. `null` = unknown (network/error) → don't block, fall
+      // through to the normal sign-in flow.
+      const registered = await checkEmailRegistered(email);
+      if (registered === false) {
+        return {
+          data: null,
+          error: { message: 'This email is not registered. Please create an account first.' },
+        };
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,

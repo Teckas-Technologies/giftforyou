@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
 import { addToCircle, updateCircle } from '../services/api';
+import { getDateParts } from '../utils/date';
 import { CustomAlert } from '../components';
 import useAlert from '../hooks/useAlert';
 
@@ -200,11 +201,16 @@ const AddContactScreen = ({ navigation, route }) => {
 
   const [name, setName] = useState(editContact?.name || '');
   const [email, setEmail] = useState(editContact?.email || '');
-  const [birthday, setBirthday] = useState(editContact?.birthday ? new Date(editContact.birthday) : null);
+  // Parse an existing birthday into ET calendar parts so editing pre-fills
+  // the exact date the client entered (no UTC/timezone drift).
+  const editParts = getDateParts(editContact?.birthday);
+  const [birthday, setBirthday] = useState(
+    editParts ? new Date(editParts.year, editParts.month - 1, editParts.day) : null
+  );
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState(editContact?.birthday ? new Date(editContact.birthday).getMonth() : new Date().getMonth());
-  const [selectedDay, setSelectedDay] = useState(editContact?.birthday ? new Date(editContact.birthday).getDate() : new Date().getDate());
-  const [selectedYear, setSelectedYear] = useState(editContact?.birthday ? new Date(editContact.birthday).getFullYear() : new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(editParts ? editParts.month - 1 : new Date().getMonth());
+  const [selectedDay, setSelectedDay] = useState(editParts ? editParts.day : new Date().getDate());
+  const [selectedYear, setSelectedYear] = useState(editParts ? editParts.year : new Date().getFullYear());
   const [relationship, setRelationship] = useState(editContact?.relationship?.toLowerCase() || 'friend');
   const [nickname, setNickname] = useState(editContact?.nickname || '');
   const [notes, setNotes] = useState(editContact?.notes || '');

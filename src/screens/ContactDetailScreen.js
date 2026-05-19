@@ -8,6 +8,7 @@ import {
   Animated,
   Easing,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
@@ -15,6 +16,80 @@ import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { getCircle, getContactPreferences, cancelFriendRequest } from '../services/api';
 import { CustomAlert } from '../components';
 import useAlert from '../hooks/useAlert';
+import { formatDate as formatAppDate, daysUntil as appDaysUntil } from '../utils/date';
+
+// Turn a stored preference value into a clean, human-readable list.
+// Values may be a real array, a single string, or — for some legacy/
+// migrated rows — a multiply JSON-encoded string (e.g. favorite_flower
+// came through as `["[","\"","l","i","l","y" ...]`). We unwrap JSON as
+// far as it parses, flatten, drop punctuation/char fragments, and keep
+// only real tokens.
+const prettyLabel = (s) =>
+  String(s)
+    .replace(/[_-]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+const cleanList = (value) => {
+  let v = value;
+  // Unwrap JSON-encoded strings, up to a few levels deep.
+  for (let i = 0; i < 4 && typeof v === 'string'; i++) {
+    const t = v.trim();
+    if (!(t.startsWith('[') || t.startsWith('"'))) break;
+    try { v = JSON.parse(t); } catch { break; }
+  }
+  let flat = (Array.isArray(v) ? v : v == null || v === '' ? [] : [v])
+    .flat(Infinity)
+    .map((x) => String(x).trim());
+  // Unparseable corrupted string (e.g. `["[","\"","l","i" ...`): recover
+  // real words by splitting on anything that isn't a word char.
+  if (flat.length === 1 && /[[\]"\\]/.test(flat[0])) {
+    flat = flat[0].split(/[^a-z0-9_]+/i);
+  }
+  const seen = new Set();
+  return flat.filter((tok) => {
+    // Drop empties, lone punctuation, and single-char fragments left by a
+    // corrupted char-by-char encoding. Keep real words/codes (2+ chars).
+    if (!/[a-z0-9]/i.test(tok) || tok.replace(/[^a-z0-9]/gi, '').length < 2) {
+      return false;
+    }
+    const key = tok.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+const cleanLabels = (value) => cleanList(value).map(prettyLabel);
+
+// Per-option emoji, matching the questionnaire. Keyed by the option id
+// with separators stripped; we look up by normalizing the displayed
+// label the same way ("Dining Out" -> "diningout").
+const OPTION_EMOJI = {
+  hiking: '🥾', shopping: '🛍️', travelling: '✈️', food: '🍴', sports: '⚽',
+  exercise: '💪', concerts: '🎤', picnics: '🧺', collector: '🏆',
+  antiquing: '🏺', diningout: '🍽️', movies: '🎬',
+  minimalist: '⬜', vintage: '📻', modern: '🔲', bohemian: '🌸',
+  classic: '👔', colorful: '🌈',
+  ecofriendly: '🌍', handmade: '🧶', locallysourced: '📍', charitable: '💕',
+  rose: '🌹', tulip: '🌷', lavender: '💜', sunflower: '🌻', orchid: '🪻',
+  lily: '🪷', daisy: '🌼', peony: '🌺', cherryblossom: '🌸', hydrangea: '💐',
+  barbecue: '🍖', chinese: '🥡', french: '🥐', hamburger: '🍔', indian: '🍛',
+  italian: '🍝', japanese: '🍱', mexican: '🌮', pizza: '🍕', seafood: '🦐',
+  steak: '🥩', sushi: '🍣', thai: '🍜',
+  chocolate: '🍫', candy: '🍬', icecream: '🍦', cookies: '🍪', cake: '🎂',
+  fruity: '🍓',
+  experiences: '🎟️', jewelry: '💎', fooddrink: '🍷', beauty: '💄',
+  tech: '📱', books: '📚', home: '🏠', fashion: '👗',
+  action: '💥', comedy: '😂', crime: '🔍', drama: '🎭', thriller: '😱',
+  documentary: '📹',
+  hiphop: '🎧', pop: '🎤', rock: '🎸', country: '🤠', classical: '🎻',
+  other: '✨',
+};
+
+const emojiFor = (value) =>
+  OPTION_EMOJI[String(value).toLowerCase().replace(/[^a-z0-9]/g, '')] || '';
 
 // Icons
 const BackIcon = ({ size = 24, color = '#6b3a8a' }) => (
@@ -127,6 +202,10 @@ const emptyContact = {
     favoriteArtists: '',
     likesSurprises: null,
     wishlistText: '',
+    wishlistLinks: [],
+    registryLink: '',
+    registryDetails: '',
+    registryExpiry: '',
   },
   upcomingEvents: [],
 };
@@ -153,13 +232,8 @@ const getRelationshipEmoji = (relationship) => {
   return emojis[relationship] || '👤';
 };
 
-const formatDate = (date) => {
-  if (!date) return 'Not set';
-  return new Date(date).toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-  });
-};
+const formatDate = (date) =>
+  formatAppDate(date, { month: 'long', day: 'numeric' }, 'Not set');
 
 const getInitials = (name) => {
   if (!name) return '?';
@@ -168,6 +242,7 @@ const getInitials = (name) => {
 
 const ContactDetailScreen = ({ navigation, route }) => {
   const contactId = route?.params?.contactId;
+  console.log('[ContactDetail] mounted with route.params:', route?.params);
   const [contact, setContact] = useState(emptyContact);
   const [loading, setLoading] = useState(true);
 
@@ -189,12 +264,14 @@ const ContactDetailScreen = ({ navigation, route }) => {
 
     try {
       setLoading(true);
+      console.log('[ContactDetail] fetching circle with id:', contactId);
 
       // Fetch contact details and preferences in parallel
       const [contactData, preferencesData] = await Promise.all([
         getCircle(contactId),
         getContactPreferences(contactId).catch(() => null), // Preferences may not exist
       ]);
+      console.log('[ContactDetail] contactData:', JSON.stringify(contactData)?.slice(0, 200));
 
       // Transform API data to component format (handle both snake_case and nested member object)
       const rawContact = contactData.contact || contactData;
@@ -208,7 +285,7 @@ const ContactDetailScreen = ({ navigation, route }) => {
         name: memberName,
         email: memberEmail,
         phone: rawContact.phone || '',
-        birthday: memberBirthday ? new Date(memberBirthday) : null,
+        birthday: memberBirthday || null,
         relationship: rawContact.relationship?.toLowerCase() || 'friend',
         nickname: rawContact.nickname || '',
         notes: rawContact.notes || '',
@@ -217,50 +294,50 @@ const ContactDetailScreen = ({ navigation, route }) => {
         hasQuestionnaire: !!preferencesData?.preferences,
         invitationSent: preferencesData?.invitationSent || false,
         preferences: preferencesData?.preferences ? {
-          activities: Array.isArray(preferencesData.preferences.favoriteActivities)
-            ? preferencesData.preferences.favoriteActivities
-            : preferencesData.preferences.favoriteActivities ? [preferencesData.preferences.favoriteActivities] : [],
+          activities: cleanLabels(preferencesData.preferences.favoriteActivities),
           activityDetails: preferencesData.preferences.activityDetails || '',
-          style: Array.isArray(preferencesData.preferences.personalStyle)
-            ? preferencesData.preferences.personalStyle
-            : preferencesData.preferences.personalStyle ? [preferencesData.preferences.personalStyle] : [],
-          colors: Array.isArray(preferencesData.preferences.favoriteColors)
-            ? preferencesData.preferences.favoriteColors
-            : preferencesData.preferences.favoriteColors ? [preferencesData.preferences.favoriteColors] : [],
+          style: cleanLabels(preferencesData.preferences.personalStyle),
+          colors: cleanLabels(preferencesData.preferences.favoriteColors),
           sizes: preferencesData.preferences.clothingSizes || {},
-          giftTypes: Array.isArray(preferencesData.preferences.giftTypes)
-            ? preferencesData.preferences.giftTypes
-            : preferencesData.preferences.giftTypes ? [preferencesData.preferences.giftTypes] : [],
+          giftTypes: cleanLabels(preferencesData.preferences.giftTypes),
           giftDetails: preferencesData.preferences.giftDetails || '',
-          causes: Array.isArray(preferencesData.preferences.causesValues)
-            ? preferencesData.preferences.causesValues
-            : preferencesData.preferences.causesValues ? [preferencesData.preferences.causesValues] : [],
-          flower: preferencesData.preferences.favoriteFlower || '',
+          causes: cleanLabels(preferencesData.preferences.causesValues),
+          flower: cleanLabels(preferencesData.preferences.favoriteFlower).join(', '),
           flowerDetails: preferencesData.preferences.flowerDetails || '',
-          cuisines: Array.isArray(preferencesData.preferences.favoriteCuisines)
-            ? preferencesData.preferences.favoriteCuisines
-            : preferencesData.preferences.favoriteCuisines ? [preferencesData.preferences.favoriteCuisines] : [],
+          cuisines: cleanLabels(preferencesData.preferences.favoriteCuisines),
           restaurant: preferencesData.preferences.favoriteRestaurant || '',
-          desserts: Array.isArray(preferencesData.preferences.favoriteDesserts)
-            ? preferencesData.preferences.favoriteDesserts
-            : preferencesData.preferences.favoriteDesserts ? [preferencesData.preferences.favoriteDesserts] : [],
-          movieGenre: Array.isArray(preferencesData.preferences.movieGenre)
-            ? preferencesData.preferences.movieGenre
-            : preferencesData.preferences.movieGenre ? [preferencesData.preferences.movieGenre] : [],
+          desserts: cleanLabels(preferencesData.preferences.favoriteDesserts),
+          movieGenre: cleanLabels(preferencesData.preferences.movieGenre),
           favoriteMovies: preferencesData.preferences.favoriteMovies || '',
-          musicGenre: Array.isArray(preferencesData.preferences.musicGenre)
-            ? preferencesData.preferences.musicGenre
-            : preferencesData.preferences.musicGenre ? [preferencesData.preferences.musicGenre] : [],
+          musicGenre: cleanLabels(preferencesData.preferences.musicGenre),
           favoriteArtists: preferencesData.preferences.favoriteArtists || '',
-          likesSurprises: preferencesData.preferences.likesSurprises === 'Yes' || preferencesData.preferences.likesSurprises === true,
+          // Stored as the option id ('yes'/'no'), but legacy data may be a
+          // label ('Yes, love them!') or boolean. Treat anything that starts
+          // with "yes" (or true) as loving surprises; empty/absent → null so
+          // the badge is hidden rather than showing a wrong default.
+          likesSurprises: (() => {
+            const ls = preferencesData.preferences.likesSurprises;
+            if (ls === true) return true;
+            if (ls === false) return false;
+            if (ls == null || String(ls).trim() === '') return null;
+            return /^yes/i.test(String(ls).trim());
+          })(),
           wishlistText: preferencesData.preferences.wishlistText || '',
+          wishlistLinks: [
+            preferencesData.preferences.wishlistLink1,
+            preferencesData.preferences.wishlistLink2,
+            preferencesData.preferences.wishlistLink3,
+          ].filter((u) => u && String(u).trim()),
+          registryLink: preferencesData.preferences.registryLink || '',
+          registryDetails: preferencesData.preferences.registryDetails || '',
+          registryExpiry: preferencesData.preferences.registryExpiry || '',
         } : emptyContact.preferences,
         upcomingEvents: (preferencesData?.upcomingEvents || rawContact.upcomingEvents || []).map(event => ({
           id: event._id || event.id,
           name: event.title || event.event_type || event.eventType,
-          date: new Date(event.event_date || event.eventDate),
+          date: event.event_date || event.eventDate,
           type: (event.event_type || event.eventType)?.toLowerCase() || 'event',
-          daysUntil: Math.ceil((new Date(event.event_date || event.eventDate) - new Date()) / (1000 * 60 * 60 * 24)),
+          daysUntil: appDaysUntil(event.event_date || event.eventDate),
         })),
       };
 
@@ -278,15 +355,17 @@ const ContactDetailScreen = ({ navigation, route }) => {
   }, [fetchContactDetails]);
 
   useEffect(() => {
+    if (!loading) {
+      // Always show header once loading finishes, even if contact failed to load
+      Animated.timing(headerAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
     if (!loading && contact.name) {
-      // Run animations after data is loaded
+      // Run remaining animations only when contact actually loaded
       Animated.sequence([
-        Animated.timing(headerAnim, {
-          toValue: 1,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
         Animated.parallel([
           Animated.spring(avatarAnim, {
             toValue: 1,
@@ -461,6 +540,14 @@ const ContactDetailScreen = ({ navigation, route }) => {
         </TouchableOpacity>
       </Animated.View>
 
+      {!contact.name && !loading && (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+          <Text style={{ fontSize: 16, color: '#6b3a8a', textAlign: 'center', fontFamily: 'Handlee_400Regular' }}>
+            Contact not found{contactId ? ` (id: ${String(contactId).slice(0, 12)}…)` : ' — no id provided'}
+          </Text>
+        </View>
+      )}
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -566,16 +653,9 @@ const ContactDetailScreen = ({ navigation, route }) => {
                 <Text style={styles.preferenceLabel}>Loves to receive</Text>
                 <View style={styles.tagContainer}>
                   {contact.preferences.giftTypes.map((type, index) => (
-                    <LinearGradient
-                      key={index}
-                      colors={['#fbe5f5', '#ccf9ff']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.gradientTag}
-                    >
-                      <HeartIcon size={12} color="#ca9ad6" />
-                      <Text style={styles.gradientTagText}>{type}</Text>
-                    </LinearGradient>
+                    <View key={index} style={styles.plainTag}>
+                      <Text style={styles.plainTagText}>{emojiFor(type)} {type}</Text>
+                    </View>
                   ))}
                 </View>
                 {contact.preferences.giftDetails ? (
@@ -590,8 +670,8 @@ const ContactDetailScreen = ({ navigation, route }) => {
                 <Text style={styles.preferenceLabel}>Interests & Hobbies</Text>
                 <View style={styles.tagContainer}>
                   {contact.preferences.activities.map((activity, index) => (
-                    <View key={index} style={styles.tag}>
-                      <Text style={styles.tagText}>{activity}</Text>
+                    <View key={index} style={styles.plainTag}>
+                      <Text style={styles.plainTagText}>{emojiFor(activity)} {activity}</Text>
                     </View>
                   ))}
                 </View>
@@ -607,8 +687,8 @@ const ContactDetailScreen = ({ navigation, route }) => {
                 <Text style={styles.preferenceLabel}>Personal Style</Text>
                 <View style={styles.tagContainer}>
                   {contact.preferences.style.map((style, index) => (
-                    <View key={index} style={styles.tag}>
-                      <Text style={styles.tagText}>{style}</Text>
+                    <View key={index} style={styles.plainTag}>
+                      <Text style={styles.plainTagText}>{emojiFor(style)} {style}</Text>
                     </View>
                   ))}
                 </View>
@@ -621,8 +701,8 @@ const ContactDetailScreen = ({ navigation, route }) => {
                 <Text style={styles.preferenceLabel}>Favorite Colors</Text>
                 <View style={styles.tagContainer}>
                   {contact.preferences.colors.map((color, index) => (
-                    <View key={index} style={[styles.colorTag, { backgroundColor: '#fbe5f5' }]}>
-                      <Text style={styles.tagText}>{color}</Text>
+                    <View key={index} style={styles.plainTag}>
+                      <Text style={styles.plainTagText}>{color}</Text>
                     </View>
                   ))}
                 </View>
@@ -647,8 +727,8 @@ const ContactDetailScreen = ({ navigation, route }) => {
                 <Text style={styles.preferenceLabel}>Causes They Care About</Text>
                 <View style={styles.tagContainer}>
                   {contact.preferences.causes.map((cause, index) => (
-                    <View key={index} style={styles.causeTag}>
-                      <Text style={styles.causeTagText}>💚 {cause}</Text>
+                    <View key={index} style={styles.plainTag}>
+                      <Text style={styles.plainTagText}>{emojiFor(cause)} {cause}</Text>
                     </View>
                   ))}
                 </View>
@@ -682,8 +762,8 @@ const ContactDetailScreen = ({ navigation, route }) => {
                 <Text style={styles.preferenceLabel}>Favorite Cuisines</Text>
                 <View style={styles.tagContainer}>
                   {contact.preferences.cuisines.map((cuisine, index) => (
-                    <View key={index} style={styles.tag}>
-                      <Text style={styles.tagText}>{cuisine}</Text>
+                    <View key={index} style={styles.plainTag}>
+                      <Text style={styles.plainTagText}>{emojiFor(cuisine)} {cuisine}</Text>
                     </View>
                   ))}
                 </View>
@@ -699,8 +779,8 @@ const ContactDetailScreen = ({ navigation, route }) => {
                 <Text style={styles.preferenceLabel}>Favorite Desserts</Text>
                 <View style={styles.tagContainer}>
                   {contact.preferences.desserts.map((dessert, index) => (
-                    <View key={index} style={styles.tag}>
-                      <Text style={styles.tagText}>🍰 {dessert}</Text>
+                    <View key={index} style={styles.plainTag}>
+                      <Text style={styles.plainTagText}>{emojiFor(dessert)} {dessert}</Text>
                     </View>
                   ))}
                 </View>
@@ -723,8 +803,8 @@ const ContactDetailScreen = ({ navigation, route }) => {
                 <Text style={styles.preferenceLabel}>Music Taste</Text>
                 <View style={styles.tagContainer}>
                   {contact.preferences.musicGenre.map((genre, index) => (
-                    <View key={index} style={styles.tag}>
-                      <Text style={styles.tagText}>🎵 {genre}</Text>
+                    <View key={index} style={styles.plainTag}>
+                      <Text style={styles.plainTagText}>{emojiFor(genre)} {genre}</Text>
                     </View>
                   ))}
                 </View>
@@ -740,8 +820,8 @@ const ContactDetailScreen = ({ navigation, route }) => {
                 <Text style={styles.preferenceLabel}>Movie Preferences</Text>
                 <View style={styles.tagContainer}>
                   {contact.preferences.movieGenre.map((genre, index) => (
-                    <View key={index} style={styles.tag}>
-                      <Text style={styles.tagText}>🎬 {genre}</Text>
+                    <View key={index} style={styles.plainTag}>
+                      <Text style={styles.plainTagText}>{emojiFor(genre)} {genre}</Text>
                     </View>
                   ))}
                 </View>
@@ -754,13 +834,55 @@ const ContactDetailScreen = ({ navigation, route }) => {
         )}
 
         {/* Wishlist */}
-        {contact.hasQuestionnaire && contact.preferences.wishlistText && (
+        {contact.hasQuestionnaire && (
+          contact.preferences.wishlistText ||
+          contact.preferences.wishlistLinks?.length > 0 ||
+          contact.preferences.registryLink
+        ) && (
           <Animated.View style={[styles.section, createSlideStyle(sectionAnims[3])]}>
             <View style={styles.sectionHeader}>
               <ClipboardIcon size={20} color="#ca9ad6" />
               <Text style={styles.sectionTitle}>Wishlist & Notes</Text>
             </View>
-            <Text style={styles.wishlistTextContent}>{contact.preferences.wishlistText}</Text>
+
+            {contact.preferences.wishlistText ? (
+              <Text style={styles.wishlistTextContent}>{contact.preferences.wishlistText}</Text>
+            ) : null}
+
+            {contact.preferences.wishlistLinks?.length > 0 && (
+              <View style={styles.preferenceRow}>
+                <Text style={styles.preferenceLabel}>Wishlist Links</Text>
+                {contact.preferences.wishlistLinks.map((url, index) => (
+                  <Text
+                    key={index}
+                    style={styles.linkText}
+                    onPress={() => Linking.openURL(url).catch(() => {})}
+                  >
+                    🔗 {url}
+                  </Text>
+                ))}
+              </View>
+            )}
+
+            {contact.preferences.registryLink ? (
+              <View style={styles.preferenceRow}>
+                <Text style={styles.preferenceLabel}>Registry</Text>
+                <Text
+                  style={styles.linkText}
+                  onPress={() => Linking.openURL(contact.preferences.registryLink).catch(() => {})}
+                >
+                  🎁 {contact.preferences.registryLink}
+                </Text>
+                {contact.preferences.registryDetails ? (
+                  <Text style={styles.preferenceDetail}>{contact.preferences.registryDetails}</Text>
+                ) : null}
+                {contact.preferences.registryExpiry ? (
+                  <Text style={styles.preferenceDetail}>
+                    Expires: {formatAppDate(contact.preferences.registryExpiry, { month: 'long', day: 'numeric', year: 'numeric' }, '')}
+                  </Text>
+                ) : null}
+              </View>
+            ) : null}
           </Animated.View>
         )}
 
@@ -1049,11 +1171,10 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   preferenceLabel: {
-    fontSize: 12,
+    fontSize: 14,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginBottom: 8,
-    textTransform: 'uppercase',
   },
   tagContainer: {
     flexDirection: 'row',
@@ -1068,6 +1189,15 @@ const styles = StyleSheet.create({
   },
   tagText: {
     fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+  },
+  plainTag: {
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+  },
+  plainTagText: {
+    fontSize: 14,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -1132,6 +1262,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     lineHeight: 22,
+  },
+  linkText: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#3a8fb0',
+    marginBottom: 6,
+    textDecorationLine: 'underline',
   },
   sizesGrid: {
     flexDirection: 'row',

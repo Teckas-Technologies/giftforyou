@@ -2,11 +2,14 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as Notifications from 'expo-notifications';
 import {
   registerForPushNotifications,
   addNotificationReceivedListener,
   addNotificationResponseListener,
 } from './src/services/notifications';
+import { getRouteForNotification } from './src/services/notificationRouter';
+import { navigationRef } from './src/navigation';
 import { supabase } from './src/config/supabase';
 import {
   useFonts,
@@ -52,10 +55,50 @@ export default function App() {
       console.log('Notification received:', notification);
     });
 
-    // Listen for user interaction with notification
+    // Navigate based on a push payload, waiting until the nav tree is mounted
+    // (matters for cold-start taps fired before NavigationContainer is ready).
+    const handlePushTap = (data) => {
+      console.log('[push] tapped, raw data:', JSON.stringify(data));
+      if (!data) return;
+      const route = getRouteForNotification({
+        type: data.type,
+        data,
+        related_id: data.circleId || data.eventId || data.relatedId,
+      });
+      console.log('[push] resolved route:', JSON.stringify(route));
+      if (!route) return;
+
+      let attempts = 0;
+      const tryNavigate = () => {
+        const ready = navigationRef.isReady();
+        if (ready) {
+          try {
+            navigationRef.navigate(route.screen, route.params);
+            console.log('[push] navigated to', route.screen);
+          } catch (e) {
+            console.log('[push] navigate error:', e?.message || String(e));
+          }
+        } else if (attempts++ < 50) {
+          setTimeout(tryNavigate, 100);
+        } else {
+          console.log('[push] navigationRef never became ready — giving up');
+        }
+      };
+      tryNavigate();
+    };
+
+    // Warm tap: app is running (foreground or background) when user taps banner.
     responseListener.current = addNotificationResponseListener(response => {
-      const data = response.notification.request.content.data;
-      console.log('Notification tapped:', data);
+      handlePushTap(response.notification.request.content.data);
+    });
+
+    // Cold start: app was killed and launched by tapping the notification.
+    // The response listener does NOT fire in this case — Expo stores the tap
+    // and we have to read it explicitly.
+    Notifications.getLastNotificationResponseAsync().then(response => {
+      if (response) {
+        handlePushTap(response.notification.request.content.data);
+      }
     });
 
     return () => {

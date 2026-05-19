@@ -85,7 +85,7 @@ const SignUpScreen = ({ navigation }) => {
   const [focusedField, setFocusedField] = useState(null);
 
   const { signUp, signInWithGoogle } = useAuth();
-  const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
+  const { alertConfig, showSuccess, showError, showConfirm, hideAlert } = useAlert();
 
   // Animations
   const logoAnim = useRef(new Animated.Value(0)).current;
@@ -137,7 +137,20 @@ const SignUpScreen = ({ navigation }) => {
     setLoading(false);
 
     if (error) {
-      showError(error.message || 'Failed to create account. Please try again.');
+      // Email already has an account: no account was created — offer to log
+      // in (prefilling the email) instead of just showing an error.
+      if (/already registered/i.test(error.message || '')) {
+        showConfirm(
+          'Account Already Exists',
+          'This email is already registered. Would you like to log in instead?',
+          () => navigation.navigate('Login'),
+          undefined,
+          'Log In',
+          'Cancel'
+        );
+      } else {
+        showError(error.message || 'Failed to create account. Please try again.');
+      }
     } else {
       if (data?.session) {
         showSuccess('Account created successfully! Welcome to GiftBox4you!');

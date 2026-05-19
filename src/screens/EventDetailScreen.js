@@ -14,6 +14,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { getEvent, deleteEvent } from '../services/api';
+import { formatLongDate, daysUntil as appDaysUntil } from '../utils/date';
+import { CustomAlert } from '../components';
+import useAlert from '../hooks/useAlert';
 
 // Icons
 const BackIcon = ({ size = 24, color = '#6b3a8a' }) => (
@@ -81,19 +84,11 @@ const getEventEmoji = (eventType) => {
   return emojis[eventType] || '🎁';
 };
 
-const formatDate = (dateStr) => {
-  const date = new Date(dateStr);
-  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  return date.toLocaleDateString('en-US', options);
-};
+const formatDate = (dateStr) => formatLongDate(dateStr);
 
 const getDaysUntil = (dateStr) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const eventDate = new Date(dateStr);
-  eventDate.setHours(0, 0, 0, 0);
-  const diffTime = eventDate - today;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const diffDays = appDaysUntil(dateStr);
+  if (diffDays === null) return { text: '', type: 'later' };
 
   if (diffDays === 0) return { text: 'Today!', type: 'urgent' };
   if (diffDays === 1) return { text: 'Tomorrow', type: 'urgent' };
@@ -109,6 +104,7 @@ const EventDetailScreen = ({ navigation, route }) => {
   const [event, setEvent] = useState(passedEvent || null);
   const [loading, setLoading] = useState(!passedEvent);
   const [deleting, setDeleting] = useState(false);
+  const { alertConfig, showConfirm, showError, hideAlert } = useAlert();
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -117,8 +113,13 @@ const EventDetailScreen = ({ navigation, route }) => {
   useEffect(() => {
     if (eventId && !passedEvent) {
       fetchEvent();
-    } else {
+    } else if (passedEvent) {
       startAnimations();
+    } else {
+      // No id and no event passed (e.g. an old push without eventId) —
+      // don't spin forever; stop loading and go back.
+      setLoading(false);
+      showError('Event not found', () => navigation.goBack());
     }
   }, [eventId]);
 
@@ -153,27 +154,23 @@ const EventDetailScreen = ({ navigation, route }) => {
   };
 
   const handleDelete = () => {
-    Alert.alert(
+    showConfirm(
       'Delete Event',
       'Are you sure you want to delete this event?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setDeleting(true);
-              await deleteEvent(event.id);
-              navigation.goBack();
-            } catch (error) {
-              Alert.alert('Error', 'Failed to delete event');
-            } finally {
-              setDeleting(false);
-            }
-          },
-        },
-      ]
+      async () => {
+        try {
+          setDeleting(true);
+          await deleteEvent(event.id);
+          navigation.goBack();
+        } catch (error) {
+          showError('Failed to delete event');
+        } finally {
+          setDeleting(false);
+        }
+      },
+      undefined,
+      'Delete',
+      'Cancel'
     );
   };
 
@@ -397,6 +394,7 @@ const EventDetailScreen = ({ navigation, route }) => {
           <View style={{ height: 40 }} />
         </Animated.View>
       </ScrollView>
+      <CustomAlert {...alertConfig} onClose={hideAlert} />
     </View>
   );
 };

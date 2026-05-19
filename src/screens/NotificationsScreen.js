@@ -22,6 +22,7 @@ import {
   acceptFriendRequest,
   rejectFriendRequest,
 } from '../services/api';
+import { getRouteForNotification } from '../services/notificationRouter';
 
 // Icons
 const BackIcon = ({ size = 24, color = '#6b3a8a' }) => (
@@ -51,10 +52,16 @@ const TrashIcon = ({ size = 18, color = '#e53935' }) => (
   </Svg>
 );
 
-const getNotificationIcon = (type) => {
+const getNotificationIcon = (type, title = '') => {
   switch (type) {
-    case 'event_reminder':
+    case 'event_reminder': {
+      // Reminders carry only free text, so infer the event type from the
+      // title: birthdays get a heart-with-bow, anniversaries champagne.
+      const t = String(title).toLowerCase();
+      if (t.includes('anniversary')) return '🍾🍾';
+      if (t.includes('birthday')) return '💝';
       return '🎂';
+    }
     case 'invitation_accepted':
       return '✉️';
     case 'profile_incomplete':
@@ -67,6 +74,8 @@ const getNotificationIcon = (type) => {
       return '🤝';
     case 'friend_request_accepted':
       return '🎉';
+    case 'friend_request_declined':
+      return '🙁';
     default:
       return '🔔';
   }
@@ -103,7 +112,17 @@ const NotificationsScreen = ({ navigation }) => {
         getPendingRequests().catch(() => ({ incoming: [] })),
       ]);
 
-      const notificationsList = notifResp.notifications || [];
+      // `friend_request` notifications are intentionally excluded from the
+      // general list: the same request is already shown as an actionable
+      // Accept/Decline card in the "Friend Requests" section above, so a
+      // generic row here is a duplicate. Covers any rows created before the
+      // backend stopped emitting them.
+      const notificationsList = (notifResp.notifications || []).filter(
+        n => n.type !== 'friend_request'
+      );
+      if (notificationsList[0]) {
+        console.log('[in-app] raw API notification[0]:', JSON.stringify(notificationsList[0]));
+      }
       const transformedNotifications = notificationsList.map(n => ({
         id: n.id || n._id,
         type: n.type,
@@ -111,6 +130,9 @@ const NotificationsScreen = ({ navigation }) => {
         body: n.body || n.message,
         is_read: n.isRead || n.is_read,
         created_at: new Date(n.createdAt || n.created_at),
+        related_id: n.relatedId || n.related_id || null,
+        related_type: n.relatedType || n.related_type || null,
+        data: n.data || {},
       }));
 
       setNotifications(transformedNotifications);
@@ -200,6 +222,20 @@ const NotificationsScreen = ({ navigation }) => {
       );
     } catch (error) {
       console.error('Error marking as read:', error);
+    }
+  };
+
+  const handleNotificationPress = (notification) => {
+    console.log('[in-app] tapped notification:', JSON.stringify({
+      type: notification.type,
+      related_id: notification.related_id,
+      data: notification.data,
+    }));
+    handleMarkRead(notification.id);
+    const route = getRouteForNotification(notification);
+    console.log('[in-app] resolved route:', JSON.stringify(route));
+    if (route) {
+      navigation.navigate(route.screen, route.params);
     }
   };
 
@@ -389,7 +425,7 @@ const NotificationsScreen = ({ navigation }) => {
               >
                 <TouchableOpacity
                   style={styles.notificationContent}
-                  onPress={() => handleMarkRead(notification.id)}
+                  onPress={() => handleNotificationPress(notification)}
                   activeOpacity={0.8}
                 >
                   <LinearGradient
@@ -401,7 +437,7 @@ const NotificationsScreen = ({ navigation }) => {
                     style={styles.notificationIcon}
                   >
                     <Text style={styles.notificationEmoji}>
-                      {getNotificationIcon(notification.type)}
+                      {getNotificationIcon(notification.type, notification.title)}
                     </Text>
                   </LinearGradient>
                   <View style={styles.notificationText}>
@@ -561,14 +597,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
     padding: 14,
+    // Reserve the unread accent strip in BOTH states so marking-read doesn't
+    // shift the layout. Read = transparent, unread = colored.
+    borderLeftWidth: 3,
+    borderLeftColor: 'transparent',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   unreadCard: {
-    borderLeftWidth: 3,
     borderLeftColor: '#ca9ad6',
   },
   notificationContent: {

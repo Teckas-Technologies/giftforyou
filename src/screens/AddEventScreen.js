@@ -325,6 +325,13 @@ const AddEventScreen = ({ navigation, route }) => {
   };
 
   const handleSave = async () => {
+    // Validate before hitting the API so the user gets a clear, friendly
+    // warning instead of a raw server "Validation failed" message.
+    if (eventName.trim().length < 2) {
+      showError('Please enter an event name (at least 2 characters).');
+      return;
+    }
+
     try {
       setSaving(true);
 
