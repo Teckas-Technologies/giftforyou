@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+
+export const navigationRef = createNavigationContainerRef();
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StyleSheet, View, ActivityIndicator } from 'react-native';
@@ -166,8 +168,16 @@ const AppNavigator = () => {
           const response = await getProfile();
           const user = response?.user;
 
-          // Check if questionnaire is completed
-          if (user && !user.questionnaireCompleted) {
+          // Only force the questionnaire for genuinely new users with no
+          // answers at all. If they already have data — including answers
+          // migrated from an invite they filled before signing up — skip
+          // straight into the app; they can review/edit it any time via
+          // Profile → My Gift Preferences.
+          const hasAnyAnswers =
+            user?.questionnaireCompleted ||
+            (user?.questionnaireCompletionPercent || 0) > 0;
+
+          if (user && !hasAnyAnswers) {
             setInitialRoute('Questionnaire');
           } else {
             setInitialRoute('MainApp');
@@ -195,7 +205,7 @@ const AppNavigator = () => {
 
   if (loading || (isAuthenticated && checkingProfile)) {
     return (
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Loading" component={LoadingScreen} />
         </Stack.Navigator>
@@ -204,7 +214,7 @@ const AppNavigator = () => {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       {isAuthenticated ? <MainStack initialRoute={initialRoute} /> : <AuthStack />}
     </NavigationContainer>
   );

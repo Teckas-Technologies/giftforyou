@@ -203,7 +203,9 @@ const InvitationsScreen = ({ navigation, route }) => {
         completed_at: inv.completed_at || inv.respondedAt ? new Date(inv.completed_at || inv.respondedAt) : null,
         relationship: inv.relationship,
         token: inv.token,
-        inviteLink: inv.token ? `https://giftbox-frontend-psi.vercel.app/invite/${inv.token}` : null,
+        inviteLink: inv.token
+          ? `${process.env.EXPO_PUBLIC_WEB_APP_URL || 'https://giftbox-frontend-psi.vercel.app'}/invite/${inv.token}`
+          : null,
       }));
 
       setInvitations(transformedInvitations);
@@ -665,7 +667,7 @@ const InvitationsScreen = ({ navigation, route }) => {
                 }
               ]}>
                 <LinearGradient
-                  colors={['#FFFFFF', '#fbe5f5']}
+                  colors={['#FFFFFF', '#e0f7fa']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.modalContent}

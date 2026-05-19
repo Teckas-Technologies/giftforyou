@@ -9,6 +9,27 @@ import { supabase } from '../config/supabase';
 
 const BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL || 'http://116.202.96.159:3000';
+console.log('[api] BASE_URL resolved to:', BASE_URL, '(env was:', process.env.EXPO_PUBLIC_API_BASE_URL, ')');
+
+/**
+ * Check (server-side, bypasses RLS) whether an email already has an account.
+ * Public endpoint — no auth token needed (used before login).
+ * @returns {Promise<boolean|null>} true=registered, false=not, null=unknown
+ *          (network/error — caller should not block login on null).
+ */
+export const checkEmailRegistered = async (email) => {
+  try {
+    const res = await fetch(`${BASE_URL}/api/auth/check-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: (email || '').trim().toLowerCase() }),
+    });
+    const data = await res.json();
+    return typeof data.registered === 'boolean' ? data.registered : null;
+  } catch (e) {
+    return null; // network/unknown — fall back to normal sign-in
+  }
+};
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -150,7 +171,18 @@ const apiRequest = async (endpoint, options = {}) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || data.message || 'API request failed');
+      // Include field-level validation details (backend sends `details`)
+      // so failures are diagnosable instead of a bare "Validation failed".
+      let message = data.error || data.message || 'API request failed';
+      if (Array.isArray(data.details) && data.details.length) {
+        const fields = data.details
+          .map(d => `${d.field}: ${d.message}`)
+          .join('; ');
+        message += ` (${fields})`;
+      }
+      const err = new Error(message);
+      err.details = data.details;
+      throw err;
     }
 
     return data;

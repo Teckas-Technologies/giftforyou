@@ -31,7 +31,7 @@ const GiftBoxIcon = ({ size = 70, style }) => {
         {/* Inner bow - left (st1: fill #330c54, stroke #99f3ff) */}
         <Path
           d="M342.78,304.49s-77.78-50.75-63.06-97.73c21.15-67.55,119.4-65.66,170.27,4.7,62.01,85.75,62.01,93.04,62.01,93.04h-169.22Z"
-          fill="#330c54"
+          fill="#70d0dd"
           stroke="#99f3ff"
           strokeWidth={40}
           strokeMiterlimit={10}
@@ -39,7 +39,7 @@ const GiftBoxIcon = ({ size = 70, style }) => {
         {/* Inner bow - right (st1) */}
         <Path
           d="M681.22,304.49s77.78-50.75,63.06-97.73c-21.15-67.55-119.4-65.66-170.27,4.7-62.01,85.75-62.01,93.04-62.01,93.04h169.22Z"
-          fill="#330c54"
+          fill="#70d0dd"
           stroke="#99f3ff"
           strokeWidth={40}
           strokeMiterlimit={10}
@@ -48,7 +48,7 @@ const GiftBoxIcon = ({ size = 70, style }) => {
         {/* Ribbon knot center fill (st2: fill #ca9ad6, NO stroke) */}
         <Path
           d="M492.74,324.34c-9.63,0-17.89-6.86-19.66-16.32l-13.97-74.71c-1.09-5.85.47-11.88,4.27-16.45s9.44-7.22,15.39-7.22h64.38c5.95,0,11.59,2.65,15.39,7.22,3.8,4.58,5.37,10.61,4.27,16.45l-13.97,74.71c-1.77,9.46-10.03,16.32-19.66,16.32h-36.44Z"
-          fill="#ca9ad6"
+          fill="#ccf9ff"
         />
         {/* Ribbon knot outline (st6: fill #99f3ff, NO stroke) */}
         <Path
@@ -64,7 +64,7 @@ const GiftBoxIcon = ({ size = 70, style }) => {
           height={577.77}
           rx={21.58}
           ry={21.58}
-          fill="#e8c9e6"
+          fill="#70d0dd"
           stroke="#99f3ff"
           strokeWidth={40}
           strokeMiterlimit={10}
@@ -78,7 +78,7 @@ const GiftBoxIcon = ({ size = 70, style }) => {
           height={208.29}
           rx={21.58}
           ry={21.58}
-          fill="#e8c9e6"
+          fill="#70d0dd"
           stroke="#99f3ff"
           strokeWidth={40}
           strokeMiterlimit={10}
@@ -90,7 +90,7 @@ const GiftBoxIcon = ({ size = 70, style }) => {
           y={292.48}
           width={210.94}
           height={210.94}
-          fill="#ca9ad6"
+          fill="#ccf9ff"
           stroke="#99f3ff"
           strokeWidth={40}
           strokeLinejoin="round"
@@ -101,7 +101,7 @@ const GiftBoxIcon = ({ size = 70, style }) => {
           y={503.43}
           width={187.29}
           height={406.36}
-          fill="#ca9ad6"
+          fill="#ccf9ff"
           stroke="#99f3ff"
           strokeWidth={40}
           strokeLinejoin="round"

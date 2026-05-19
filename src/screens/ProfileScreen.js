@@ -324,7 +324,13 @@ const ProfileScreen = ({ navigation }) => {
             setProfile({
               name: profileRes.user.name || '',
               email: profileRes.user.email || '',
-              photoUrl: profileRes.user.photoUrl || null,
+              // API returns this as `profilePhoto` (user.profile_photo);
+              // accept the other shapes too so the picture loads on revisit.
+              photoUrl:
+                profileRes.user.profilePhoto ||
+                profileRes.user.photoUrl ||
+                profileRes.user.profile_photo ||
+                null,
               avatarType: profileRes.user.avatarType || profileRes.user.avatar_type || null,
             });
           }

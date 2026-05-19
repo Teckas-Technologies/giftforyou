@@ -20,6 +20,7 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
 import { getDashboardStats, getUpcomingEvents, getProfile } from '../services/api';
+import { getDateParts, daysUntil as appDaysUntil } from '../utils/date';
 
 // Users Icon SVG
 const UsersIcon = ({ size = 18, color = '#ca9ad6' }) => (
@@ -82,22 +83,12 @@ const getInitials = (name) => {
 
 // Helper to format date
 const formatEventDate = (dateStr) => {
-  const date = new Date(dateStr);
-  const day = date.getDate();
-  const month = date.toLocaleString('default', { month: 'long' });
-  return `${day}. ${month}`;
+  const p = getDateParts(dateStr);
+  return p ? `${p.day}. ${p.monthLong}` : '';
 };
 
-// Helper to get days until event
-const getDaysUntil = (dateStr) => {
-  const eventDate = new Date(dateStr);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  eventDate.setHours(0, 0, 0, 0);
-  const diffTime = eventDate - today;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays;
-};
+// Helper to get days until event (Eastern Time calendar days)
+const getDaysUntil = (dateStr) => appDaysUntil(dateStr) ?? 0;
 
 // Helper to get badge info
 const getBadgeInfo = (daysUntil) => {
@@ -399,9 +390,9 @@ const HomeScreen = ({ navigation }) => {
         {/* Stats Row with enhanced animations */}
         <View style={styles.statsRow}>
           {[
-            { icon: UsersIcon, value: String(stats.contactsCount), label: 'Contacts', colors: ['#fbe5f5', '#f4cae8', '#ccf9ff'] },
-            { icon: CalendarIcon, value: String(stats.upcomingEventsCount), label: 'Events', colors: ['#ccf9ff', '#a8e6f0', '#fbe5f5'] },
-            { icon: CakeIcon, value: String(stats.birthdaysThisMonth), label: 'Birthdays', colors: ['#fbe5f5', '#f4cae8', '#ccf9ff'] },
+            { icon: UsersIcon, value: String(stats.contactsCount), label: 'Contacts', colors: ['#70d0dd', '#99e5ed', '#ccf9ff'] },
+            { icon: CalendarIcon, value: String(stats.upcomingEventsCount), label: 'Events', colors: ['#70d0dd', '#99e5ed', '#ccf9ff'] },
+            { icon: CakeIcon, value: String(stats.birthdaysThisMonth), label: 'Birthdays', colors: ['#70d0dd', '#99e5ed', '#ccf9ff'] },
           ].map((stat, index) => (
             <Animated.View
               key={index}

@@ -20,6 +20,7 @@ import Svg, { Circle, Line, Rect, Path } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme';
 import { getCircles } from '../services/api';
+import { getDateParts } from '../utils/date';
 
 const { width, height } = Dimensions.get('window');
 
@@ -85,11 +86,8 @@ const getInitials = (name) => {
 
 // Helper to format birthday date
 const formatBirthday = (dateStr) => {
-  if (!dateStr) return '';
-  const date = new Date(dateStr);
-  const months = ['January', 'February', 'March', 'April', 'May', 'June',
-                  'July', 'August', 'September', 'October', 'November', 'December'];
-  return `${date.getDate()} ${months[date.getMonth()]}`;
+  const p = getDateParts(dateStr);
+  return p ? `${p.day} ${p.monthLong}` : '';
 };
 
 // Helper to get relation tag type
@@ -822,11 +820,12 @@ const styles = StyleSheet.create({
     color: '#330c54',
   },
   tabBar: {
-    maxHeight: 50,
+    flexGrow: 0,
     marginBottom: 12,
   },
   tabBarContent: {
     paddingHorizontal: 16,
+    paddingVertical: 6,
     gap: 8,
     alignItems: 'center',
   },

@@ -17,6 +17,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect, Line, Polyline } from 'react-native-svg';
 import { setupProfile, setUserCredentials, getUserCredentials, getProfile } from '../services/api';
+import { getDateParts } from '../utils/date';
 import { CustomAlert } from '../components';
 import useAlert from '../hooks/useAlert';
 
@@ -243,19 +244,29 @@ const ProfileSetupScreen = ({ navigation, route }) => {
   // Load profile data on mount
   useEffect(() => {
     const loadProfile = async () => {
-      if (isEditMode && !profileLoaded) {
+      // Always load the saved profile (not only in edit mode) so returning
+      // to this screen after setup shows the existing values pre-filled.
+      if (!profileLoaded) {
         try {
           setLoading(true);
           const response = await getProfile();
           const profile = response.user || response.profile || response;
 
           if (profile) {
-            if (profile.name) setName(profile.name);
+            if (profile.name) {
+              setName(profile.name);
+            } else {
+              const credentials = getUserCredentials();
+              if (credentials?.name) setName(credentials.name);
+            }
             if (profile.birthday) {
-              const date = new Date(profile.birthday);
-              setSelectedMonth(date.getMonth());
-              setSelectedDay(date.getDate());
-              setSelectedYear(date.getFullYear());
+              // Parse via the TZ-safe util so the day doesn't shift.
+              const p = getDateParts(profile.birthday);
+              if (p) {
+                setSelectedMonth(p.month - 1);
+                setSelectedDay(p.day);
+                setSelectedYear(p.year);
+              }
             }
             if (profile.avatarType || profile.avatar_type) {
               setSelectedAvatar(profile.avatarType || profile.avatar_type);

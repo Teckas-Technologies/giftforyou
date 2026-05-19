@@ -17,6 +17,7 @@ import Svg, { Path } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme';
 import { getEventDates, getUpcomingEvents, getEventsByDate } from '../services/api';
+import { getDateParts, daysUntil as appDaysUntil } from '../utils/date';
 
 // Plus Icon for FAB
 const PlusIcon = ({ size = 24, color = '#FFFFFF' }) => (
@@ -54,13 +55,8 @@ const getEventEmoji = (eventType) => {
 
 // Helper to get days until event
 const getDaysUntil = (dateStr) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const eventDate = new Date(dateStr);
-  eventDate.setHours(0, 0, 0, 0);
-  const diffTime = eventDate - today;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
+  const diffDays = appDaysUntil(dateStr);
+  if (diffDays === null) return '';
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Tomorrow';
   if (diffDays < 0) return `${Math.abs(diffDays)} days ago`;
@@ -69,8 +65,8 @@ const getDaysUntil = (dateStr) => {
 
 // Helper to format date for display
 const formatEventDate = (dateStr) => {
-  const date = new Date(dateStr);
-  return `${MONTHS[date.getMonth()].substring(0, 3)} ${date.getDate()}`;
+  const p = getDateParts(dateStr);
+  return p ? `${p.monthShort} ${p.day}` : '';
 };
 
 // Sparkle decoration component
@@ -113,8 +109,8 @@ const CalendarScreen = ({ navigation }) => {
       const datesObj = {};
       if (datesRes.dates && Array.isArray(datesRes.dates)) {
         datesRes.dates.forEach(date => {
-          const day = new Date(date.date || date).getDate();
-          datesObj[day] = date;
+          const parts = getDateParts(date.date || date);
+          if (parts) datesObj[parts.day] = date;
         });
       }
       setEventDates(datesObj);

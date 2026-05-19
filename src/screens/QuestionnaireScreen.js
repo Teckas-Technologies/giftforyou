@@ -15,10 +15,26 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
 import { getQuestionnaire, saveQuestionnaire } from '../services/api';
+import { formatDate as formatAppDate } from '../utils/date';
 import { CustomAlert } from '../components';
 import useAlert from '../hooks/useAlert';
 
 const { width } = Dimensions.get('window');
+
+// Date fields are entered in US format (MM/DD/YYYY) but stored/sent as
+// ISO (YYYY-MM-DD) so the backend, DB DATE columns, and the timezone
+// utils are unaffected. These convert only at the input boundary.
+const isoToUS = (v) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v ?? '').trim());
+  return m ? `${m[2]}/${m[3]}/${m[1]}` : (v ?? '');
+};
+const usToISO = (v) => {
+  const s = String(v ?? '').trim();
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
+  return m
+    ? `${m[3]}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`
+    : s; // partial typing or already ISO — leave as-is
+};
 
 // Icons
 const BackIcon = ({ size = 24, color = '#6b3a8a' }) => (
@@ -95,7 +111,7 @@ const sections = [
       {
         id: 'favorite_activities',
         type: 'multiselect',
-        question: 'Select your favorite activities',
+        question: '\vorite activities',
         required: true,
         options: [
           { id: 'hiking', label: 'Hiking', emoji: '🥾' },
@@ -119,6 +135,27 @@ const sections = [
         question: 'Tell us more about what you enjoy',
         placeholder: 'E.g., I love hiking in mountains on weekends, collecting vintage items...',
         helperText: 'If you selected "Other", please describe here',
+        // Placeholder adapts to the activities picked above. Falls back to the
+        // static `placeholder` when nothing (or only "Other") is selected.
+        dynamicPlaceholder: {
+          source: 'favorite_activities',
+          prefix: 'E.g., I love ',
+          suffix: '...',
+          examples: {
+            hiking: 'hiking scenic mountain trails on weekends',
+            shopping: 'browsing boutiques for unique finds',
+            travelling: 'exploring new places and cultures',
+            food: 'trying new cuisines and recipes',
+            sports: 'playing and watching my favorite sports',
+            exercise: 'staying active with regular workouts',
+            concerts: 'going to live music shows',
+            picnics: 'relaxed picnics in the park',
+            collector: 'collecting vintage items',
+            antiquing: 'hunting for antiques and rare finds',
+            dining_out: 'dining out at cozy restaurants',
+            movies: 'watching movies and discovering new films',
+          },
+        },
       },
     ],
   },
@@ -258,7 +295,6 @@ const sections = [
         question: 'Favorite cuisines',
         required: true,
         options: [
-          { id: 'american', label: 'American', emoji: '🍔' },
           { id: 'barbecue', label: 'Barbecue', emoji: '🍖' },
           { id: 'chinese', label: 'Chinese', emoji: '🥡' },
           { id: 'french', label: 'French', emoji: '🥐' },
@@ -355,8 +391,8 @@ const sections = [
     questions: [
       {
         id: 'movie_genre',
-        type: 'single',
-        question: 'Favorite movie genre',
+        type: 'multiselect',
+        question: 'Favorite movie genres',
         required: true,
         options: [
           { id: 'action', label: 'Action', emoji: '💥' },
@@ -376,8 +412,8 @@ const sections = [
       },
       {
         id: 'music_genre',
-        type: 'single',
-        question: 'Favorite music genre',
+        type: 'multiselect',
+        question: 'Favorite music genres',
         required: true,
         options: [
           { id: 'hiphop', label: 'Hip-Hop', emoji: '🎧' },
@@ -502,13 +538,25 @@ const QuestionnaireScreen = ({ navigation, route }) => {
           // Gifts
           gift_types: q.giftTypes || q.gift_types || [],
           gift_details: q.giftDetails || q.gift_details || '',
-          // Entertainment
-          movie_genre: q.movieGenre || q.movie_genre || '',
+          // Entertainment — movie/music genres are now multiselect (arrays).
+          // Coerce any legacy single-string value into a one-item array so
+          // previously-saved questionnaires still load correctly.
+          movie_genre: Array.isArray(q.movieGenre || q.movie_genre)
+            ? (q.movieGenre || q.movie_genre)
+            : ((q.movieGenre || q.movie_genre) ? [q.movieGenre || q.movie_genre] : []),
           favorite_movies: q.favoriteMovies || q.favorite_movies || '',
-          music_genre: q.musicGenre || q.music_genre || '',
+          music_genre: Array.isArray(q.musicGenre || q.music_genre)
+            ? (q.musicGenre || q.music_genre)
+            : ((q.musicGenre || q.music_genre) ? [q.musicGenre || q.music_genre] : []),
           favorite_artists: q.favoriteArtists || q.favorite_artists || '',
           // Wishlist
           wishlist_text: q.wishlistText || q.wishlist_text || '',
+          wishlist_link_1: q.wishlistLink1 || q.wishlist_link_1 || '',
+          wishlist_link_2: q.wishlistLink2 || q.wishlist_link_2 || '',
+          wishlist_link_3: q.wishlistLink3 || q.wishlist_link_3 || '',
+          registry_link: q.registryLink || q.registry_link || '',
+          registry_details: q.registryDetails || q.registry_details || '',
+          registry_expiry: q.registryExpiry || q.registry_expiry || '',
           clothing_sizes: q.clothingSizes || q.clothing_sizes || '',
         };
 
@@ -602,6 +650,27 @@ const QuestionnaireScreen = ({ navigation, route }) => {
     return false;
   };
 
+  // Resolves a question's placeholder. When the question declares a
+  // `dynamicPlaceholder`, the hint is built from the options the user picked
+  // in the referenced `source` question (e.g. activities -> example phrases).
+  // Falls back to the static `placeholder` if nothing usable is selected.
+  const getPlaceholder = (question) => {
+    const dp = question.dynamicPlaceholder;
+    if (!dp) return question.placeholder;
+
+    const selected = answers[dp.source];
+    if (!Array.isArray(selected) || selected.length === 0) {
+      return question.placeholder;
+    }
+
+    const phrases = selected
+      .map(optionId => dp.examples[optionId])
+      .filter(Boolean);
+    if (phrases.length === 0) return question.placeholder;
+
+    return `${dp.prefix || ''}${phrases.join(', ')}${dp.suffix || ''}`;
+  };
+
   const validateCurrentSection = () => {
     const missing = section.questions.filter(q => q.required && isAnswerEmpty(q));
     if (missing.length === 0) return true;
@@ -654,10 +723,23 @@ const QuestionnaireScreen = ({ navigation, route }) => {
   const section = sections[currentSection];
   const isLastSection = currentSection === sections.length - 1;
 
+  // Match a stored answer against an option by id OR label, case/space
+  // tolerant. Older data (and answers migrated from invite links before the
+  // backend fix) were saved as display labels ("Pizza") instead of option
+  // ids ("pizza"); this lets those still pre-fill. handleSelect always
+  // writes the id, so re-saving normalizes the value back to the id.
+  const norm = (s) => String(s ?? '').trim().toLowerCase();
+  const optionMatchesValue = (option, value) =>
+    value != null &&
+    (norm(value) === norm(option.id) || norm(value) === norm(option.label));
+  // Stored multiselect answers can be an array, a single string (legacy /
+  // single-select data), or null — normalize to an array before matching.
+  const asArray = (v) => (Array.isArray(v) ? v : v == null || v === '' ? [] : [v]);
+
   const renderOption = (option, questionId, type) => {
     const isSelected = type === 'multiselect'
-      ? (answers[questionId] || []).includes(option.id)
-      : answers[questionId] === option.id;
+      ? asArray(answers[questionId]).some((v) => optionMatchesValue(option, v))
+      : optionMatchesValue(option, answers[questionId]);
 
     return (
       <TouchableOpacity
@@ -711,7 +793,7 @@ const QuestionnaireScreen = ({ navigation, route }) => {
           <View style={styles.textInputWrapper}>
             <TextInput
               style={styles.textInput}
-              placeholder={question.placeholder}
+              placeholder={getPlaceholder(question)}
               placeholderTextColor="#999"
               value={answers[question.id] || ''}
               onChangeText={(text) => handleTextChange(question.id, text)}
@@ -729,7 +811,7 @@ const QuestionnaireScreen = ({ navigation, route }) => {
           <View style={styles.textInputWrapper}>
             <TextInput
               style={styles.textInput}
-              placeholder={question.placeholder}
+              placeholder={getPlaceholder(question)}
               placeholderTextColor="#999"
               value={answers[question.id] || ''}
               onChangeText={(text) => handleTextChange(question.id, text)}
@@ -748,11 +830,12 @@ const QuestionnaireScreen = ({ navigation, route }) => {
 
     if (question.type === 'date') {
       const dateValue = answers[question.id] || '';
-      const formatDisplayDate = (dateStr) => {
-        if (!dateStr) return 'Select a date';
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-      };
+      const formatDisplayDate = (dateStr) =>
+        formatAppDate(
+          dateStr,
+          { month: 'long', day: 'numeric', year: 'numeric' },
+          'Select a date'
+        );
 
       return (
         <View key={question.id} style={styles.questionContainer}>
@@ -766,10 +849,10 @@ const QuestionnaireScreen = ({ navigation, route }) => {
           >
             <TextInput
               style={styles.textInput}
-              placeholder="YYYY-MM-DD"
+              placeholder="MM/DD/YYYY"
               placeholderTextColor="#999"
-              value={answers[question.id] || ''}
-              onChangeText={(text) => handleTextChange(question.id, text)}
+              value={isoToUS(answers[question.id] || '')}
+              onChangeText={(text) => handleTextChange(question.id, usToISO(text))}
               multiline={false}
               keyboardType="numbers-and-punctuation"
             />
@@ -788,7 +871,7 @@ const QuestionnaireScreen = ({ navigation, route }) => {
           <View style={[styles.textInputWrapper, styles.textareaWrapper]}>
             <TextInput
               style={[styles.textInput, styles.textarea]}
-              placeholder={question.placeholder}
+              placeholder={getPlaceholder(question)}
               placeholderTextColor="#999"
               value={answers[question.id] || ''}
               onChangeText={(text) => handleTextChange(question.id, text)}
@@ -805,7 +888,8 @@ const QuestionnaireScreen = ({ navigation, route }) => {
     }
 
     const allSelected = question.type === 'multiselect' &&
-      question.options.every(opt => (answers[question.id] || []).includes(opt.id));
+      question.options.every(opt =>
+        asArray(answers[question.id]).some(v => optionMatchesValue(opt, v)));
 
     const handleSelectAll = () => {
       if (allSelected) {
