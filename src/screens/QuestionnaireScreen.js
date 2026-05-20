@@ -10,10 +10,12 @@ import {
   Easing,
   Dimensions,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
-import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
+import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
 import { getQuestionnaire, saveQuestionnaire } from '../services/api';
 import { formatDate as formatAppDate } from '../utils/date';
@@ -37,10 +39,35 @@ const usToISO = (v) => {
     : s; // partial typing or already ISO — leave as-is
 };
 
+// Bridge between the ISO `YYYY-MM-DD` we store in answers and the native
+// `Date` object the calendar picker requires. Parsing is timezone-safe
+// (local date, no UTC shift) and missing/invalid values fall back to today
+// so the picker opens on a sensible default rather than 1970-01-01.
+const isoToDate = (iso) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso ?? '').trim());
+  if (!m) return new Date();
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+};
+const dateToISO = (d) => {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 // Icons
 const BackIcon = ({ size = 24, color = '#6b3a8a' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <Polyline points="15 18 9 12 15 6" />
+  </Svg>
+);
+
+const CalendarIcon = ({ size = 20, color = '#ca9ad6' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+    <Line x1="16" y1="2" x2="16" y2="6" />
+    <Line x1="8" y1="2" x2="8" y2="6" />
+    <Line x1="3" y1="10" x2="21" y2="10" />
   </Svg>
 );
 
@@ -500,6 +527,9 @@ const QuestionnaireScreen = ({ navigation, route }) => {
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  // Which date question (if any) currently has the native calendar open.
+  // null when the picker is closed.
+  const [pickerFor, setPickerFor] = useState(null);
 
   // Custom alert hook
   const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
@@ -571,10 +601,19 @@ const QuestionnaireScreen = ({ navigation, route }) => {
         setAnswers(mappedAnswers);
       }
 
-      // Also load birthday from basicInfo
-      if (response.basicInfo?.birthday) {
-        setAnswers(prev => ({ ...prev, birthday: response.basicInfo.birthday }));
-      }
+      // Also load birthday + special dates (anniversaries) from basicInfo —
+      // these live in separate tables, so they aren't part of `questionnaire`
+      // and must be merged in explicitly or the basic-info step shows empty
+      // on revisit.
+      const basic = response.basicInfo || {};
+      const anc = Array.isArray(basic.anniversaries) ? basic.anniversaries : [];
+      setAnswers(prev => ({
+        ...prev,
+        ...(basic.birthday ? { birthday: basic.birthday } : {}),
+        ...(anc[0]?.date ? { anniversary_1: anc[0].date, anniversary_1_title: anc[0].title || '' } : {}),
+        ...(anc[1]?.date ? { anniversary_2: anc[1].date, anniversary_2_title: anc[1].title || '' } : {}),
+        ...(anc[2]?.date ? { anniversary_3: anc[2].date, anniversary_3_title: anc[2].title || '' } : {}),
+      }));
     } catch (error) {
       console.error('Error fetching questionnaire:', error);
     } finally {
@@ -843,32 +882,35 @@ const QuestionnaireScreen = ({ navigation, route }) => {
 
     if (question.type === 'date') {
       const dateValue = answers[question.id] || '';
-      const formatDisplayDate = (dateStr) =>
-        formatAppDate(
-          dateStr,
-          { month: 'long', day: 'numeric', year: 'numeric' },
-          'Select a date'
-        );
+      // Display every date input in US short format MM/DD/YYYY (e.g.
+      // 05/20/2026). The underlying value is still ISO `YYYY-MM-DD` in
+      // answers — only the visible label on the field changes.
+      const formattedDate = formatAppDate(
+        dateValue,
+        { month: '2-digit', day: '2-digit', year: 'numeric' },
+        ''
+      );
 
       return (
         <View key={question.id} style={styles.questionContainer}>
           <QuestionLabel question={question} />
           <TouchableOpacity
             style={styles.textInputWrapper}
-            onPress={() => {
-              // For now, use a simple text input for date
-              // In production, you'd use a date picker modal
-            }}
+            activeOpacity={0.7}
+            onPress={() => setPickerFor(question.id)}
           >
-            <TextInput
-              style={styles.textInput}
-              placeholder="MM/DD/YYYY"
-              placeholderTextColor="#999"
-              value={isoToUS(answers[question.id] || '')}
-              onChangeText={(text) => handleTextChange(question.id, usToISO(text))}
-              multiline={false}
-              keyboardType="numbers-and-punctuation"
-            />
+            <View style={styles.datePickerField}>
+              <Text
+                style={[
+                  styles.textInput,
+                  styles.datePickerText,
+                  !formattedDate && styles.datePickerPlaceholder,
+                ]}
+              >
+                {formattedDate || 'Tap to pick a date'}
+              </Text>
+              <CalendarIcon size={20} color="#ca9ad6" />
+            </View>
           </TouchableOpacity>
           {question.helperText && (
             <Text style={styles.helperText}>{question.helperText}</Text>
@@ -1095,6 +1137,30 @@ const QuestionnaireScreen = ({ navigation, route }) => {
 
       {/* Custom Alert */}
       <CustomAlert {...alertConfig} onClose={hideAlert} />
+
+      {/* Native calendar date picker — mounts only while a date question is
+          actively being picked. Android shows a calendar dialog; iOS shows
+          the inline/wheel picker. Either way the user gets a real calendar
+          instead of typing MM/DD/YYYY by hand. */}
+      {pickerFor && (
+        <DateTimePicker
+          value={isoToDate(answers[pickerFor])}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'inline' : 'calendar'}
+          onChange={(event, selectedDate) => {
+            // Android: 'set' = user confirmed; 'dismissed' = user cancelled.
+            // Either way the dialog closes itself, so we always unmount.
+            if (Platform.OS === 'android') setPickerFor(null);
+            if (event?.type === 'dismissed') return;
+            if (selectedDate) {
+              handleTextChange(pickerFor, dateToISO(selectedDate));
+            }
+            // iOS inline picker stays open until the user taps elsewhere
+            // (TouchableWithoutFeedback could dismiss it). Leave pickerFor
+            // set on iOS so multiple adjustments work in one open session.
+          }}
+        />
+      )}
     </View>
   );
 };
@@ -1310,6 +1376,21 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     padding: 16,
+  },
+  datePickerField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingRight: 16,
+  },
+  datePickerText: {
+    flex: 1,
+  },
+  datePickerPlaceholder: {
+    color: '#999',
+  },
+  datePickerIcon: {
+    fontSize: 20,
   },
   textarea: {
     minHeight: 140,

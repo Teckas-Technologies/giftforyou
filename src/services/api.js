@@ -9,7 +9,6 @@ import { supabase } from '../config/supabase';
 
 const BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL || 'http://116.202.96.159:3000';
-console.log('[api] BASE_URL resolved to:', BASE_URL, '(env was:', process.env.EXPO_PUBLIC_API_BASE_URL, ')');
 
 /**
  * Check (server-side, bypasses RLS) whether an email already has an account.

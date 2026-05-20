@@ -91,13 +91,17 @@ const CalendarScreen = ({ navigation }) => {
   const currentMonthNow = new Date().getMonth();
   const currentYearNow = new Date().getFullYear();
 
-  // Fetch event dates for calendar and upcoming events
-  const fetchEvents = useCallback(async (isRefresh = false) => {
+  // Fetch event dates for calendar and upcoming events.
+  // `silent` skips the spinners so background polling refreshes the calendar
+  // in place without flicker.
+  const fetchEvents = useCallback(async (isRefresh = false, silent = false) => {
     try {
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
+      if (!silent) {
+        if (isRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
       }
 
       const [datesRes, upcomingRes] = await Promise.all([
@@ -136,10 +140,15 @@ const CalendarScreen = ({ navigation }) => {
     }
   }, [currentMonth, currentYear]);
 
-  // Auto-refresh when screen comes into focus
+  // Refresh on focus + poll every 30s while focused so newly-created events
+  // (e.g. a birthday/anniversary event spawned when a contact accepts your
+  // invitation) appear without leaving the tab. Events change less often
+  // than notifications, so 30s is plenty here.
   useFocusEffect(
     useCallback(() => {
       fetchEvents();
+      const interval = setInterval(() => fetchEvents(false, true), 30000);
+      return () => clearInterval(interval);
     }, [fetchEvents])
   );
 
