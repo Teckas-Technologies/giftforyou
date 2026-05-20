@@ -68,6 +68,7 @@ module.exports = {
             'GiftBox4you needs access to your camera so you can take a profile picture.',
         },
       ],
+      '@react-native-community/datetimepicker',
     ],
     extra: {
       eas: {

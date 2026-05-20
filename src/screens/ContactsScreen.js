@@ -140,12 +140,16 @@ const ContactsScreen = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('all');
 
   // Fetch contacts from API
-  const fetchContacts = useCallback(async (isRefresh = false) => {
+  // `silent` skips the loading/refreshing spinners — used by background
+  // polling so a newly-accepted contact appears in place without flicker.
+  const fetchContacts = useCallback(async (isRefresh = false, silent = false) => {
     try {
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
+      if (!silent) {
+        if (isRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
       }
 
       const response = await getCircles();
@@ -179,10 +183,14 @@ const ContactsScreen = ({ navigation }) => {
     }
   }, []);
 
-  // Auto-refresh when screen comes into focus
+  // Refresh on focus + poll every 15s while focused, so an accepted friend
+  // request (or other contact-list change from another device) lands here
+  // automatically while the user idles on the tab.
   useFocusEffect(
     useCallback(() => {
       fetchContacts();
+      const interval = setInterval(() => fetchContacts(false, true), 15000);
+      return () => clearInterval(interval);
     }, [fetchContacts])
   );
 

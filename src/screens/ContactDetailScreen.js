@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Linking,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
@@ -201,7 +202,7 @@ const emptyContact = {
     giftDetails: '',
     causes: [],
     causesOther: '',
-    flower: '',
+    flower: [],
     flowerDetails: '',
     cuisines: [],
     restaurant: '',
@@ -270,14 +271,16 @@ const ContactDetailScreen = ({ navigation, route }) => {
   const avatarPulse = useRef(new Animated.Value(1)).current;
   const sectionAnims = useRef([...Array(5)].map(() => new Animated.Value(0))).current;
 
-  const fetchContactDetails = useCallback(async () => {
+  // `silent` skips the full-screen loader so background polling can refresh
+  // the page (pending→accepted, questionnaire updates) without flicker.
+  const fetchContactDetails = useCallback(async (silent = false) => {
     if (!contactId) {
       setLoading(false);
       return;
     }
 
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       console.log('[ContactDetail] fetching circle with id:', contactId);
 
       // Fetch contact details and preferences in parallel
@@ -322,7 +325,10 @@ const ContactDetailScreen = ({ navigation, route }) => {
           giftDetails: preferencesData.preferences.giftDetails || '',
           causes: cleanLabels(preferencesData.preferences.causesValues),
           causesOther: preferencesData.preferences.causesOther || '',
-          flower: cleanLabels(preferencesData.preferences.favoriteFlower).join(', '),
+          // Keep as an array so the contact page renders flowers as chips
+          // (with their per-flower emojis) — matching the invite form's
+          // multiselect for this section.
+          flower: cleanLabels(preferencesData.preferences.favoriteFlower),
           flowerDetails: preferencesData.preferences.flowerDetails || '',
           cuisines: cleanLabels(preferencesData.preferences.favoriteCuisines),
           restaurant: preferencesData.preferences.favoriteRestaurant || '',
@@ -380,9 +386,16 @@ const ContactDetailScreen = ({ navigation, route }) => {
     }
   }, [contactId]);
 
-  useEffect(() => {
-    fetchContactDetails();
-  }, [fetchContactDetails]);
+  // Refresh on focus and poll every 15s while focused, so a pending friend
+  // request flips to "accepted" (and the contact's questionnaire updates)
+  // automatically when the other party acts — no need to leave the page.
+  useFocusEffect(
+    useCallback(() => {
+      fetchContactDetails();
+      const interval = setInterval(() => fetchContactDetails(true), 15000);
+      return () => clearInterval(interval);
+    }, [fetchContactDetails])
+  );
 
   useEffect(() => {
     if (!loading) {
@@ -821,18 +834,26 @@ const ContactDetailScreen = ({ navigation, route }) => {
         )}
 
         {/* Food & Flowers */}
-        {contact.hasQuestionnaire && (contact.preferences.flower || contact.preferences.cuisines?.length > 0 || contact.preferences.desserts?.length > 0 || contact.preferences.cuisineOther || contact.preferences.favoriteMeal || contact.preferences.dessertDetails) && (
+        {contact.hasQuestionnaire && (contact.preferences.flower?.length > 0 || contact.preferences.flowerDetails || contact.preferences.cuisines?.length > 0 || contact.preferences.desserts?.length > 0 || contact.preferences.cuisineOther || contact.preferences.favoriteMeal || contact.preferences.dessertDetails) && (
           <Animated.View style={[styles.section, createSlideStyle(sectionAnims[3])]}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionEmoji}>🌸</Text>
               <Text style={styles.sectionTitle}>Food & Flowers</Text>
             </View>
 
-            {/* Favorite Flower */}
-            {contact.preferences.flower && (
+            {/* Favorite Flower — chips with the same per-flower emojis the
+                invite form shows, and 🌿 for the form's section-specific
+                "Other" option (other sections use ✨, but flowers uses 🌿). */}
+            {(contact.preferences.flower?.length > 0 || contact.preferences.flowerDetails) && (
               <View style={styles.preferenceRow}>
                 <Text style={styles.preferenceLabel}>Favorite Flower</Text>
-                <Text style={styles.preferenceValue}>{contact.preferences.flower}</Text>
+                <View style={styles.tagContainer}>
+                  {contact.preferences.flower.map((flower, index) => (
+                    <View key={index} style={styles.plainTag}>
+                      <Text style={styles.plainTagText}>{emojiFor(flower, '🌿')} {flower}</Text>
+                    </View>
+                  ))}
+                </View>
                 {contact.preferences.flowerDetails ? (
                   <>
                     <Text style={styles.preferenceSubLabel}>Any specific flower arrangements you love?</Text>

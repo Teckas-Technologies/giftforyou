@@ -135,10 +135,12 @@ const HomeScreen = ({ navigation }) => {
   const sparkleAnim = useRef(new Animated.Value(0)).current;
   const breatheAnim = useRef(new Animated.Value(1)).current;
 
-  // Fetch data from API - auto-refresh when screen comes into focus
-  const fetchData = useCallback(async () => {
+  // Fetch data from API - auto-refresh when screen comes into focus.
+  // `silent` skips the loader so background polling updates counts/events
+  // in place without flicker.
+  const fetchData = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
 
       // Fetch all data in parallel
       const [profileRes, statsRes, eventsRes] = await Promise.all([
@@ -172,9 +174,15 @@ const HomeScreen = ({ navigation }) => {
     }
   }, []);
 
+  // Refresh on focus + poll every 30s while focused. Home shows aggregate
+  // stats and upcoming events that change as contacts accept invites, events
+  // are added elsewhere, etc.; a slower cadence than the more reactive
+  // screens (Notifications/Discover) is fine here.
   useFocusEffect(
     useCallback(() => {
       fetchData();
+      const interval = setInterval(() => fetchData(true), 30000);
+      return () => clearInterval(interval);
     }, [fetchData])
   );
 
@@ -390,8 +398,8 @@ const HomeScreen = ({ navigation }) => {
         {/* Stats Row with enhanced animations */}
         <View style={styles.statsRow}>
           {[
-            { icon: UsersIcon, value: String(stats.contactsCount), label: 'Contacts', colors: ['#70d0dd', '#99e5ed', '#ccf9ff'] },
-            { icon: CalendarIcon, value: String(stats.upcomingEventsCount), label: 'Events', colors: ['#70d0dd', '#99e5ed', '#ccf9ff'] },
+            { icon: UsersIcon, value: String(stats.contactsCount), label: 'Contacts', colors: ['#70d0dd', '#99e5ed', '#ccf9ff'], onPress: () => navigation.navigate('Contacts') },
+            { icon: CalendarIcon, value: String(stats.upcomingEventsCount), label: 'Events', colors: ['#70d0dd', '#99e5ed', '#ccf9ff'], onPress: () => navigation.navigate('Calendar') },
             { icon: CakeIcon, value: String(stats.birthdaysThisMonth), label: 'Birthdays', colors: ['#70d0dd', '#99e5ed', '#ccf9ff'] },
           ].map((stat, index) => (
             <Animated.View
@@ -402,24 +410,30 @@ const HomeScreen = ({ navigation }) => {
                 { transform: [{ scale: breatheAnim }] }
               ]}
             >
-              <LinearGradient
-                colors={stat.colors}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.statCard}
+              <TouchableOpacity
+                activeOpacity={stat.onPress ? 0.85 : 1}
+                onPress={stat.onPress}
+                disabled={!stat.onPress}
               >
-                {/* Glow effect */}
-                <Animated.View style={[styles.statGlow, { opacity: glowOpacity }]} />
+                <LinearGradient
+                  colors={stat.colors}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.statCard}
+                >
+                  {/* Glow effect */}
+                  <Animated.View style={[styles.statGlow, { opacity: glowOpacity }]} />
 
-                <Animated.View style={[
-                  styles.statIcon,
-                  { transform: [{ scale: pulseAnim }] }
-                ]}>
-                  <stat.icon size={20} color="#ca9ad6" />
-                </Animated.View>
-                <Text style={styles.statValue}>{stat.value}</Text>
-                <Text style={styles.statLabel}>{stat.label}</Text>
-              </LinearGradient>
+                  <Animated.View style={[
+                    styles.statIcon,
+                    { transform: [{ scale: pulseAnim }] }
+                  ]}>
+                    <stat.icon size={20} color="#ca9ad6" />
+                  </Animated.View>
+                  <Text style={styles.statValue}>{stat.value}</Text>
+                  <Text style={styles.statLabel}>{stat.label}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
             </Animated.View>
           ))}
         </View>

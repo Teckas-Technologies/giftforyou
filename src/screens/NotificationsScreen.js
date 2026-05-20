@@ -10,6 +10,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
@@ -98,13 +99,17 @@ const NotificationsScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [pendingActionIds, setPendingActionIds] = useState({});
 
-  // Fetch notifications + pending friend requests in parallel
-  const fetchNotifications = useCallback(async (isRefresh = false) => {
+  // Fetch notifications + pending friend requests in parallel.
+  // `silent` skips the loading/refreshing spinners — used by the background
+  // poll so new notifications appear in place without flicker.
+  const fetchNotifications = useCallback(async (isRefresh = false, silent = false) => {
     try {
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
+      if (!silent) {
+        if (isRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
       }
 
       const [notifResp, requestsResp] = await Promise.all([
@@ -177,9 +182,17 @@ const NotificationsScreen = ({ navigation }) => {
     }
   };
 
-  useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
+  // Fetch on focus and poll every 12s while focused. Notifications are the
+  // most realtime-sensitive surface (incoming friend requests, accepts,
+  // events) and there's no push channel into the screen — polling keeps the
+  // list fresh without requiring the user to leave and return.
+  useFocusEffect(
+    useCallback(() => {
+      fetchNotifications();
+      const interval = setInterval(() => fetchNotifications(false, true), 12000);
+      return () => clearInterval(interval);
+    }, [fetchNotifications])
+  );
 
   // Animations
   const headerAnim = useRef(new Animated.Value(0)).current;
