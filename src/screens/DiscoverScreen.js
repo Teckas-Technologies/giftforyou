@@ -15,7 +15,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
-import { getPeopleYouMayKnow, dismissSuggestion, quickAddToCircle, searchUsers } from '../services/api';
+import { getPeopleYouMayKnow, dismissSuggestion, quickAddToCircle, searchUsers, getCircles } from '../services/api';
 import { CustomAlert } from '../components';
 import useAlert from '../hooks/useAlert';
 
@@ -51,6 +51,12 @@ const XIcon = ({ size = 20, color = '#6b3a8a' }) => (
   </Svg>
 );
 
+const CheckIcon = ({ size = 18, color = '#FFFFFF' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <Polyline points="20 6 9 17 4 12" />
+  </Svg>
+);
+
 const SearchIcon = ({ size = 20, color = '#6b3a8a' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <Circle cx="11" cy="11" r="8" />
@@ -76,12 +82,27 @@ const DiscoverScreen = ({ navigation }) => {
   const [addingIds, setAddingIds] = useState({});
   const [dismissingIds, setDismissingIds] = useState({});
 
-  // Persist which users we've sent a request to, so background polling
-  // re-fetches don't reset the "Requested" button back to "Add to Circle"
-  // while the request is still pending. Once the other person accepts, the
-  // backend stops returning them as a suggestion, so the card drops off
-  // naturally on the next poll.
-  const requestedIdsRef = useRef({});
+  // Request pipeline — a React-state map of users we've sent a friend
+  // request to (or that just accepted). Each entry holds the full card
+  // data plus a status:
+  //
+  //   'requested' — request sent, waiting for the other side to accept.
+  //                 Card shows muted "Requested" button.
+  //   'accepted'  — the other side accepted. Card shows green "Accepted"
+  //                 button and is removed ACCEPTED_HOLD_MS later.
+  //
+  // The render combines pipeline cards with backend lists (suggestions /
+  // search results), so a pipeline card stays on screen regardless of
+  // what `getPeopleYouMayKnow` returns. This is the fix for the bug
+  // where tapping Add to Circle would make the card vanish — the backend
+  // dismisses the suggestion immediately on quickAdd, but our pipeline
+  // owns the card visually until the request resolves.
+  const [pipeline, setPipeline] = useState({});  // { [userId]: { id, name, ..., status } }
+  const ACCEPTED_HOLD_MS = 2000;
+
+  // Latest searchQuery, mirrored into a ref so the polling interval below
+  // can read the current value without stale-closure issues.
+  const searchQueryRef = useRef('');
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -97,35 +118,21 @@ const DiscoverScreen = ({ navigation }) => {
   const contentAnim = useRef(new Animated.Value(0)).current;
   const cardAnims = useRef([]).current;
 
-  const fetchSuggestions = useCallback(async () => {
-    try {
-      const data = await getPeopleYouMayKnow();
-      const rawSuggestions = data.suggestions || data || [];
-
-      // Transform API response to flat user objects
-      const transformedSuggestions = rawSuggestions.map(s => {
-        const id = s.user?.id || s.suggestionId || s.id;
-        return {
-          id,
-          name: s.user?.name || s.name || 'Unknown',
-          photo: s.user?.photo || s.photo,
-          avatar: s.user?.avatar || s.avatar,
-          mutualFriends: s.mutualFriend ? 1 : 0,
-          reason: s.reason,
-          // Re-apply the locally-tracked "requested" flag so polling doesn't
-          // clobber it for still-pending requests.
-          requested: !!requestedIdsRef.current[id],
-        };
-      });
-
-      setSuggestions(transformedSuggestions);
-    } catch (error) {
-      console.error('Error fetching suggestions:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+  // Pure transform of the backend suggestion response into card objects.
+  // The `status` field is intentionally absent here — the pipeline owns
+  // request/accept state, and the render combines both lists.
+  const buildSuggestions = (rawSuggestions) =>
+    (rawSuggestions || []).map((s) => {
+      const id = s.user?.id || s.suggestionId || s.id;
+      return {
+        id,
+        name: s.user?.name || s.name || 'Unknown',
+        photo: s.user?.photo || s.photo,
+        avatar: s.user?.avatar || s.avatar,
+        mutualFriends: s.mutualFriend ? 1 : 0,
+        reason: s.reason,
+      };
+    });
 
   useEffect(() => {
     Animated.parallel([
@@ -144,25 +151,104 @@ const DiscoverScreen = ({ navigation }) => {
     ]).start();
   }, []);
 
-  // Fetch on focus, then poll every 12s while this screen is focused so the
-  // list updates automatically when a request is accepted on the other
-  // device (no realtime channel, and the user never leaves the screen).
-  // Polling stops on blur to avoid background network churn.
+  // Refresh both backend lists. The pipeline state is updated separately
+  // (it owns request/accept transitions), so this function only writes
+  // to `suggestions` and `searchResults`.
+  const refreshAll = useCallback(async () => {
+    const q = (searchQueryRef.current || '').trim();
+    try {
+      const [suggResp, circlesResp, searchResp] = await Promise.all([
+        getPeopleYouMayKnow().catch(() => ({ suggestions: [] })),
+        getCircles().catch(() => ({ contacts: [] })),
+        q.length >= 2 ? searchUsers(q).catch(() => ({ users: [] })) : Promise.resolve(null),
+      ]);
+
+      const contacts = circlesResp?.contacts || circlesResp?.circles || [];
+      const acceptedIds = new Set(
+        contacts
+          .filter((c) => c.status === 'accepted')
+          .map((c) => c.member?.id || c.member_id || c.memberId)
+          .filter(Boolean)
+      );
+
+      // Flip any pipeline cards whose user just accepted into the green
+      // "Accepted" state, then schedule their removal after the hold
+      // window. We compare against the latest pipeline via the functional
+      // updater so we don't miss anything that was added between polls.
+      setPipeline((prev) => {
+        let changed = false;
+        const next = { ...prev };
+        for (const id of Object.keys(prev)) {
+          if (acceptedIds.has(id) && prev[id].status === 'requested') {
+            next[id] = { ...prev[id], status: 'accepted' };
+            changed = true;
+            // Schedule removal (side effect — fine here, but only run it
+            // once per id since we only enter this branch when the status
+            // transitions from requested → accepted).
+            setTimeout(() => {
+              setPipeline((curr) => {
+                if (!curr[id]) return curr;
+                const { [id]: _gone, ...rest } = curr;
+                return rest;
+              });
+            }, ACCEPTED_HOLD_MS);
+          }
+        }
+        return changed ? next : prev;
+      });
+
+      // Backend suggestions, minus already-accepted users (they live in
+      // your contacts list, not Discover). No sticky merging — the
+      // pipeline cards are added in the render layer.
+      setSuggestions(
+        buildSuggestions(suggResp?.suggestions || suggResp || []).filter(
+          (u) => !acceptedIds.has(u.id)
+        )
+      );
+
+      if (searchResp) {
+        const users = (searchResp.users || []).map((u) => ({
+          id: u.id,
+          name: u.name,
+          photo: u.photo,
+          avatar: u.avatar,
+          email: u.email,
+          mutualFriends: 0,
+          reason: u.email || 'Tap to send a request',
+        }));
+        setSearchResults(users.filter((u) => !acceptedIds.has(u.id)));
+      }
+    } catch (error) {
+      console.log('Discover refresh failed:', error.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  // Fetch on focus, then poll every 12s while focused so a card flips off
+  // the screen as soon as the recipient accepts — even when the user
+  // never leaves Discover. Polling stops on blur.
   useFocusEffect(
     useCallback(() => {
-      fetchSuggestions();
-      const interval = setInterval(fetchSuggestions, 12000);
+      refreshAll();
+      const interval = setInterval(refreshAll, 12000);
       return () => clearInterval(interval);
-    }, [fetchSuggestions])
+    }, [refreshAll])
   );
 
   const handleRefresh = () => {
     setRefreshing(true);
-    fetchSuggestions();
+    // Pull-to-refresh runs the same full refresh as the background poll
+    // so the search list also re-runs and accepted users get removed.
+    refreshAll().finally(() => setRefreshing(false));
   };
 
   // Debounced user search (300ms). Re-runs whenever searchQuery changes.
   useEffect(() => {
+    // Mirror the live query so the polling closure can read it.
+    searchQueryRef.current = searchQuery;
+
     if (searchDebounce.current) clearTimeout(searchDebounce.current);
 
     const q = searchQuery.trim();
@@ -208,28 +294,37 @@ const DiscoverScreen = ({ navigation }) => {
     const userId = user._id || user.id;
 
     try {
-      setAddingIds(prev => ({ ...prev, [userId]: true }));
+      setAddingIds((prev) => ({ ...prev, [userId]: true }));
 
       await quickAddToCircle(userId, 'Friend');
 
-      // Remember the request so background polling re-applies the flag.
-      requestedIdsRef.current[userId] = true;
+      // Put the user into the pipeline so the card renders as "Requested"
+      // and stays on screen until the other party accepts (or 2s after
+      // they do). The render combines this with the backend list, so the
+      // card is guaranteed visible even though the backend immediately
+      // dismisses the suggestion when quickAdd runs.
+      setPipeline((prev) => ({
+        ...prev,
+        [userId]: {
+          id: userId,
+          name: user.name,
+          photo: user.photo,
+          avatar: user.avatar,
+          email: user.email,
+          mutualFriends: user.mutualFriends || 0,
+          reason: user.reason,
+          status: 'requested',
+        },
+      }));
 
-      // Mark this user as requested locally in BOTH lists so the button label
-      // flips no matter which list the card was rendered from.
-      const markRequested = (list) =>
-        list.map((s) =>
-          (s._id || s.id) === userId ? { ...s, requested: true } : s
-        );
-      setSuggestions(markRequested);
-      setSearchResults(markRequested);
-
-      showSuccess(`Request sent to ${user.name}. You'll see their preferences once they accept.`);
+      showSuccess(
+        `Request sent to ${user.name}. You'll see their preferences once they accept.`
+      );
     } catch (error) {
       console.log('Error sending friend request:', error);
       showError('Failed to send request. Please try again.');
     } finally {
-      setAddingIds(prev => ({ ...prev, [userId]: false }));
+      setAddingIds((prev) => ({ ...prev, [userId]: false }));
     }
   };
 
@@ -286,19 +381,30 @@ const DiscoverScreen = ({ navigation }) => {
 
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => !user.requested && handleAddToCircle(user)}
-          disabled={isAdding || user.requested}
-          activeOpacity={user.requested ? 1 : 0.7}
+          onPress={() => !user.status && handleAddToCircle(user)}
+          disabled={isAdding || !!user.status}
+          activeOpacity={user.status ? 1 : 0.7}
         >
           <LinearGradient
-            colors={user.requested ? ['#e8dced', '#e8dced'] : ['#ca9ad6', '#70d0dd']}
+            colors={
+              user.status === 'accepted'
+                ? ['#4caf50', '#66bb6a']
+                : user.status === 'requested'
+                  ? ['#e8dced', '#e8dced']
+                  : ['#ca9ad6', '#70d0dd']
+            }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.addButtonGradient}
           >
             {isAdding ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : user.requested ? (
+            ) : user.status === 'accepted' ? (
+              <>
+                <CheckIcon size={18} color="#FFFFFF" />
+                <Text style={styles.addButtonText}>Accepted</Text>
+              </>
+            ) : user.status === 'requested' ? (
               <Text style={[styles.addButtonText, { color: '#6b3a8a' }]}>Requested</Text>
             ) : (
               <>
@@ -351,6 +457,23 @@ const DiscoverScreen = ({ navigation }) => {
       </View>
     );
   }
+
+  // Combine backend lists with the pipeline so request/accept cards stay
+  // on screen regardless of what the backend returns. Pipeline cards take
+  // precedence (they carry the live `status`).
+  const pipelineCards = Object.values(pipeline);
+  const displayedSuggestions = [
+    ...suggestions.filter((s) => !pipeline[s.id]),
+    ...pipelineCards,
+  ];
+  const _q = searchQuery.trim().toLowerCase();
+  const matchingPipelineCards = _q
+    ? pipelineCards.filter((p) => p.name?.toLowerCase().includes(_q))
+    : [];
+  const displayedSearchResults = [
+    ...searchResults.filter((s) => !pipeline[s.id]),
+    ...matchingPipelineCards,
+  ];
 
   return (
     <View style={styles.container}>
@@ -437,7 +560,7 @@ const DiscoverScreen = ({ navigation }) => {
               <Text style={styles.resultMetaText}>
                 {searching
                   ? 'Searching…'
-                  : `${searchResults.length} ${searchResults.length === 1 ? 'result' : 'results'} for "${searchQuery.trim()}"`}
+                  : `${displayedSearchResults.length} ${displayedSearchResults.length === 1 ? 'result' : 'results'} for "${searchQuery.trim()}"`}
               </Text>
             </View>
 
@@ -445,8 +568,8 @@ const DiscoverScreen = ({ navigation }) => {
               <View style={styles.searchLoading}>
                 <ActivityIndicator size="small" color="#ca9ad6" />
               </View>
-            ) : searchResults.length > 0 ? (
-              searchResults.map((user, index) => renderSuggestionCard(user, index))
+            ) : displayedSearchResults.length > 0 ? (
+              displayedSearchResults.map((user, index) => renderSuggestionCard(user, index))
             ) : (
               <View style={styles.emptyCompact}>
                 <View style={styles.emptyIconSmall}>
@@ -461,7 +584,7 @@ const DiscoverScreen = ({ navigation }) => {
           </Animated.View>
         ) : (
           <Animated.View style={{ opacity: contentAnim }}>
-            {suggestions.length > 0 ? (
+            {displayedSuggestions.length > 0 ? (
               <>
                 {/* Section header only appears when there ARE suggestions */}
                 <View style={styles.sectionHeader}>
@@ -475,7 +598,7 @@ const DiscoverScreen = ({ navigation }) => {
                     </Text>
                   </View>
                 </View>
-                {suggestions.map((user, index) => renderSuggestionCard(user, index))}
+                {displayedSuggestions.map((user, index) => renderSuggestionCard(user, index))}
               </>
             ) : (
               <View style={styles.emptyCompact}>

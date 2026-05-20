@@ -9,7 +9,6 @@ import { supabase } from '../config/supabase';
 
 const BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL || 'http://116.202.96.159:3000';
-console.log('[api] BASE_URL resolved to:', BASE_URL, '(env was:', process.env.EXPO_PUBLIC_API_BASE_URL, ')');
 
 /**
  * Check (server-side, bypasses RLS) whether an email already has an account.
@@ -18,23 +17,15 @@ console.log('[api] BASE_URL resolved to:', BASE_URL, '(env was:', process.env.EX
  *          (network/error — caller should not block login on null).
  */
 export const checkEmailRegistered = async (email) => {
-  const url = `${BASE_URL}/api/auth/check-email`;
-  console.log(`[api →] POST ${url} body={email:${(email || '').trim().toLowerCase()}}`);
-  const startedAt = Date.now();
   try {
-    const res = await fetch(url, {
+    const res = await fetch(`${BASE_URL}/api/auth/check-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: (email || '').trim().toLowerCase() }),
     });
-    const elapsed = Date.now() - startedAt;
     const data = await res.json();
-    console.log(`[api ←] POST ${url} ${res.status} in ${elapsed}ms`);
     return typeof data.registered === 'boolean' ? data.registered : null;
   } catch (e) {
-    const elapsed = Date.now() - startedAt;
-    console.log(`[api ✗] POST ${url} failed after ${elapsed}ms — ${e.name || 'Error'}: ${e.message}`);
-    if (e.stack) console.log(`[api ✗ stack] ${e.stack}`);
     return null; // network/unknown — fall back to normal sign-in
   }
 };
@@ -167,7 +158,6 @@ const getUploadHeaders = async () => {
  */
 const apiRequest = async (endpoint, options = {}) => {
   const url = `${BASE_URL}${endpoint}`;
-  const method = (options.method || 'GET').toUpperCase();
 
   const headers = await getHeaders();
   const config = {
@@ -175,43 +165,9 @@ const apiRequest = async (endpoint, options = {}) => {
     ...options,
   };
 
-  // ── Detailed request log ────────────────────────────────────────────
-  // Tells us exactly which URL the device tried, the method, whether an
-  // auth header was sent, and a preview of the body. Helps pinpoint which
-  // call is producing "Network request failed" (the bare fetch error
-  // doesn't include the URL on its own).
-  const startedAt = Date.now();
-  const hasAuth = !!(headers && headers.Authorization);
-  let bodyPreview = '';
-  if (options.body && typeof options.body === 'string') {
-    bodyPreview = options.body.length > 200
-      ? options.body.slice(0, 200) + `…(+${options.body.length - 200} more)`
-      : options.body;
-  } else if (options.body && typeof FormData !== 'undefined' && options.body instanceof FormData) {
-    bodyPreview = '<FormData>';
-  }
-  console.log(`[api →] ${method} ${url}${hasAuth ? ' (auth)' : ''}${bodyPreview ? ' body=' + bodyPreview : ''}`);
-
   try {
     const response = await fetch(url, config);
-    const elapsed = Date.now() - startedAt;
-
-    // Parse body defensively — server might return HTML on a 502/CORS-ish
-    // error and response.json() would otherwise throw a confusing
-    // "Unexpected token <" instead of the real status.
-    const rawText = await response.text();
-    let data = {};
-    try {
-      data = rawText ? JSON.parse(rawText) : {};
-    } catch (parseErr) {
-      console.log(`[api ←] ${method} ${url} ${response.status} in ${elapsed}ms — non-JSON body (${rawText.length} bytes): ${rawText.slice(0, 200)}`);
-      const err = new Error(`Server returned non-JSON (status ${response.status})`);
-      err.status = response.status;
-      err.body = rawText;
-      throw err;
-    }
-
-    console.log(`[api ←] ${method} ${url} ${response.status} in ${elapsed}ms`);
+    const data = await response.json();
 
     if (!response.ok) {
       // Include field-level validation details (backend sends `details`)
@@ -224,21 +180,15 @@ const apiRequest = async (endpoint, options = {}) => {
         message += ` (${fields})`;
       }
       const err = new Error(message);
-      err.status = response.status;
       err.details = data.details;
       throw err;
     }
 
     return data;
   } catch (error) {
-    const elapsed = Date.now() - startedAt;
-    // Verbose error log so "Network request failed" is no longer mystery:
-    // print the attempted URL, the underlying error name/message, and the
-    // stack so we can tell *which* call failed and how.
-    console.log(
-      `[api ✗] ${method} ${url} failed after ${elapsed}ms — ${error.name || 'Error'}: ${error.message}`
-    );
-    if (error.stack) console.log(`[api ✗ stack] ${error.stack}`);
+    // Use log (not error) so the dev LogBox doesn't pop a toast.
+    // Callers handle the error via try/catch and show user-friendly alerts.
+    console.log(`API Error [${endpoint}]:`, error.message);
     throw error;
   }
 };
@@ -287,25 +237,15 @@ export const uploadProfilePhoto = async (formData) => {
   const url = `${BASE_URL}/api/users/me/photo`;
   const headers = await getUploadHeaders();
 
-  console.log(`[api →] POST ${url} body=<FormData>`);
-  const startedAt = Date.now();
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
-    const elapsed = Date.now() - startedAt;
-    const data = await response.json();
-    console.log(`[api ←] POST ${url} ${response.status} in ${elapsed}ms`);
-    if (!response.ok) throw new Error(data.error || 'Upload failed');
-    return data;
-  } catch (e) {
-    const elapsed = Date.now() - startedAt;
-    console.log(`[api ✗] POST ${url} failed after ${elapsed}ms — ${e.name || 'Error'}: ${e.message}`);
-    if (e.stack) console.log(`[api ✗ stack] ${e.stack}`);
-    throw e;
-  }
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Upload failed');
+  return data;
 };
 
 /**

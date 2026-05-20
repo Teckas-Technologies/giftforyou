@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -19,9 +19,11 @@ const { width, height } = Dimensions.get('window');
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
+// Minimum time the splash stays visible so the onboarding/login decision
+// never flashes through — but no longer than necessary on fast launches.
+const MIN_SPLASH_MS = 2200;
+
 const SplashScreenComponent = ({ navigation }) => {
-  const [nextScreen, setNextScreen] = useState(null); // null until determined
-  const [isReady, setIsReady] = useState(false);
 
   // Animation refs
   const logoScale = useRef(new Animated.Value(0)).current;
@@ -42,32 +44,43 @@ const SplashScreenComponent = ({ navigation }) => {
   // Fade out
   const fadeOut = useRef(new Animated.Value(1)).current;
 
-  // Initialize user and check onboarding status
+  // Run init + a minimum-display delay in parallel, then navigate exactly
+  // once when BOTH resolve. The previous setup had two effects racing — a
+  // 3500ms timer with [isReady, nextScreen] deps that reset on every state
+  // change and silently did nothing if it fired before isReady was true.
+  // That race let onboarding flash by (or never appear) on some launches.
   useEffect(() => {
-    const initializeApp = async () => {
+    let cancelled = false;
+
+    const decideNextScreen = async () => {
       try {
-        // First, initialize user (load or create unique ID)
         await initUserCredentials();
-
-        // Check local storage for onboarding status (faster than API)
         const hasSeenOnboarding = await hasSeenOnboardingLocal();
-
-        if (hasSeenOnboarding) {
-          // User has seen onboarding, go to Login (auth required)
-          setNextScreen('Login');
-        } else {
-          // Show onboarding for new users
-          setNextScreen('Onboarding');
-        }
+        return hasSeenOnboarding ? 'Login' : 'Onboarding';
       } catch (error) {
         console.log('Initialization error:', error.message);
-        setNextScreen('Onboarding');
-      } finally {
-        setIsReady(true);
+        // Default to Onboarding on failure — a first-time user must still
+        // see the intro instead of being dropped on Login with no context.
+        return 'Onboarding';
       }
     };
 
-    initializeApp();
+    const minDelay = new Promise((resolve) => setTimeout(resolve, MIN_SPLASH_MS));
+
+    Promise.all([decideNextScreen(), minDelay]).then(([target]) => {
+      if (cancelled) return;
+      Animated.timing(fadeOut, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }).start(() => {
+        if (!cancelled) navigation.replace(target);
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Hide native splash screen when layout is ready
@@ -164,21 +177,9 @@ const SplashScreenComponent = ({ navigation }) => {
       ]),
     ]).start();
 
-    // Navigate after 3.5 seconds, but only if ready
-    const timer = setTimeout(() => {
-      if (isReady && nextScreen) {
-        Animated.timing(fadeOut, {
-          toValue: 0,
-          duration: 400,
-          useNativeDriver: true,
-        }).start(() => {
-          navigation.replace(nextScreen);
-        });
-      }
-    }, 3500);
-
-    return () => clearTimeout(timer);
-  }, [isReady, nextScreen]);
+    // Navigation is handled by the init effect above; this effect only
+    // drives splash animations, so its deps stay empty.
+  }, []);
 
   return (
     <Animated.View
