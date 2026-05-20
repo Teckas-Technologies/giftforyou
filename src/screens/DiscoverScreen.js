@@ -99,6 +99,8 @@ const DiscoverScreen = ({ navigation }) => {
   // owns the card visually until the request resolves.
   const [pipeline, setPipeline] = useState({});  // { [userId]: { id, name, ..., status } }
   const ACCEPTED_HOLD_MS = 2000;
+  const DECLINED_HOLD_MS = 2000;  // how long the red "Declined" stays before
+                                  // flipping to "Add to Circle Again"
 
   // Latest searchQuery, mirrored into a ref so the polling interval below
   // can read the current value without stale-closure issues.
@@ -170,21 +172,30 @@ const DiscoverScreen = ({ navigation }) => {
           .map((c) => c.member?.id || c.member_id || c.memberId)
           .filter(Boolean)
       );
+      // Pending = a friend request you sent that the other side hasn't
+      // acted on yet. If a pipeline card's user is NEITHER in pending NOR
+      // accepted, the request was declined (backend deletes the row on
+      // reject) — so we flip the card to 'declined' but keep it visible.
+      const pendingIds = new Set(
+        contacts
+          .filter((c) => c.status === 'pending')
+          .map((c) => c.member?.id || c.member_id || c.memberId)
+          .filter(Boolean)
+      );
 
-      // Flip any pipeline cards whose user just accepted into the green
-      // "Accepted" state, then schedule their removal after the hold
-      // window. We compare against the latest pipeline via the functional
-      // updater so we don't miss anything that was added between polls.
+      // Flip pipeline cards based on the new circle status:
+      //   requested → accepted  (auto-remove after ACCEPTED_HOLD_MS)
+      //   requested → declined  (stays on screen with red button)
       setPipeline((prev) => {
         let changed = false;
         const next = { ...prev };
         for (const id of Object.keys(prev)) {
-          if (acceptedIds.has(id) && prev[id].status === 'requested') {
+          if (prev[id].status !== 'requested') continue;
+          if (acceptedIds.has(id)) {
             next[id] = { ...prev[id], status: 'accepted' };
             changed = true;
-            // Schedule removal (side effect — fine here, but only run it
-            // once per id since we only enter this branch when the status
-            // transitions from requested → accepted).
+            // Schedule removal (side effect — only runs once per id since
+            // we only enter this branch on requested → accepted).
             setTimeout(() => {
               setPipeline((curr) => {
                 if (!curr[id]) return curr;
@@ -192,6 +203,20 @@ const DiscoverScreen = ({ navigation }) => {
                 return rest;
               });
             }, ACCEPTED_HOLD_MS);
+          } else if (!pendingIds.has(id)) {
+            // Backend deleted the row → request was declined / withdrawn.
+            // Show the red "Declined" briefly, then flip the card to a
+            // re-engageable "Add to Circle Again" state (status field
+            // stays so we can label the button differently than a fresh
+            // suggestion).
+            next[id] = { ...prev[id], status: 'declined' };
+            changed = true;
+            setTimeout(() => {
+              setPipeline((curr) => {
+                if (!curr[id] || curr[id].status !== 'declined') return curr;
+                return { ...curr, [id]: { ...curr[id], status: 'declined_acknowledged' } };
+              });
+            }, DECLINED_HOLD_MS);
           }
         }
         return changed ? next : prev;
@@ -381,17 +406,31 @@ const DiscoverScreen = ({ navigation }) => {
 
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => !user.status && handleAddToCircle(user)}
-          disabled={isAdding || !!user.status}
-          activeOpacity={user.status ? 1 : 0.7}
+          // Tappable when nothing is in-flight (no status) OR when the
+          // user has acknowledged a previous decline (status flipped to
+          // 'declined_acknowledged' after the red hold) and wants to try
+          // again.
+          onPress={() =>
+            (!user.status || user.status === 'declined_acknowledged') &&
+            handleAddToCircle(user)
+          }
+          disabled={
+            isAdding ||
+            (!!user.status && user.status !== 'declined_acknowledged')
+          }
+          activeOpacity={
+            !user.status || user.status === 'declined_acknowledged' ? 0.7 : 1
+          }
         >
           <LinearGradient
             colors={
               user.status === 'accepted'
                 ? ['#4caf50', '#66bb6a']
-                : user.status === 'requested'
-                  ? ['#e8dced', '#e8dced']
-                  : ['#ca9ad6', '#70d0dd']
+                : user.status === 'declined'
+                  ? ['#e57373', '#ef5350']
+                  : user.status === 'requested'
+                    ? ['#e8dced', '#e8dced']
+                    : ['#ca9ad6', '#70d0dd']
             }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -404,8 +443,15 @@ const DiscoverScreen = ({ navigation }) => {
                 <CheckIcon size={18} color="#FFFFFF" />
                 <Text style={styles.addButtonText}>Accepted</Text>
               </>
+            ) : user.status === 'declined' ? (
+              <Text style={styles.addButtonText}>Declined</Text>
             ) : user.status === 'requested' ? (
               <Text style={[styles.addButtonText, { color: '#6b3a8a' }]}>Requested</Text>
+            ) : user.status === 'declined_acknowledged' ? (
+              <>
+                <UserPlusIcon size={18} color="#FFFFFF" />
+                <Text style={styles.addButtonText}>Add to Circle Again</Text>
+              </>
             ) : (
               <>
                 <UserPlusIcon size={18} color="#FFFFFF" />
