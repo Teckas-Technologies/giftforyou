@@ -15,7 +15,12 @@ module.exports = {
   expo: {
     name: 'GiftBox4you',
     slug: 'GiftBox4you',
-    version: '1.0.0',
+    // User-visible version (semver MAJOR.MINOR.PATCH). Bump for every
+    // release: a patch fix → 0.3.1, a feature release → 0.4.0, etc.
+    // Keep aligned with package.json, android.versionCode (integer), and
+    // ios.buildNumber. Previous client APKs were v0.1 and v0.2, so the
+    // next ship is v0.3.0 with versionCode 3.
+    version: '0.3.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
@@ -28,6 +33,9 @@ module.exports = {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.giftbox4you.app',
+      // iOS equivalent of versionCode — must increase with every release.
+      // Convention is to keep it identical to `version`.
+      buildNumber: '0.3.0',
       infoPlist: {
         NSPhotoLibraryUsageDescription:
           'GiftBox4you needs access to your photos so you can set a profile picture.',
@@ -42,6 +50,12 @@ module.exports = {
       },
       edgeToEdgeEnabled: true,
       package: 'com.giftbox4you.app',
+      // Integer Android uses to decide whether an APK is an upgrade.
+      // MUST increase by at least 1 every release, otherwise installs
+      // fail with INSTALL_FAILED_VERSION_DOWNGRADE. Prior client APKs
+      // (v0.1 and v0.2) used auto-derived values; v0.3 is the third
+      // release so this is 3.
+      versionCode: 3,
       googleServicesFile: './google-services.json',
       // Android Auto Backup is disabled via the inline `withAllowBackupFalse`
       // plugin (registered below). The top-level `allowBackup` field is not
