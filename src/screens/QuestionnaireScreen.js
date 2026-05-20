@@ -11,6 +11,7 @@ import {
   Dimensions,
   ActivityIndicator,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -1047,13 +1048,21 @@ const QuestionnaireScreen = ({ navigation, route }) => {
         </View>
       )}
 
+      <KeyboardAvoidingView
+        // Lifts the scroll so the focused input is never hidden behind
+        // the on-screen keyboard. Use `padding` on both platforms —
+        // `height` resized the wrapper rapidly on Android and caused a
+        // visible blink as the keyboard animated in; `padding` just
+        // appends bottom padding equal to keyboard height and is smooth.
+        style={styles.keyboardAvoider}
+        behavior="padding"
+      >
       <ScrollView
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="none"
-        automaticallyAdjustKeyboardInsets={false}
+        keyboardDismissMode="on-drag"
         removeClippedSubviews={false}
       >
         {!loading && <Animated.View style={[
@@ -1098,8 +1107,13 @@ const QuestionnaireScreen = ({ navigation, route }) => {
           {section.questions.map(renderQuestion)}
         </Animated.View>}
 
+        {/* Bottom spacer just clears the absolutely-positioned Back /
+            Continue buttons (nav sits at bottom:30 + ~50px tall). The
+            keyboard itself is handled by KeyboardAvoidingView above, so
+            no extra room is needed here for the keyboard. */}
         <View style={{ height: 120 }} />
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Navigation Buttons */}
       <View style={styles.navButtons}>
@@ -1229,6 +1243,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 10,
+  },
+  keyboardAvoider: {
+    flex: 1,
   },
   sectionContainer: {
     gap: 24,
