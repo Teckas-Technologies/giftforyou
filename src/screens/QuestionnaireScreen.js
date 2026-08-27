@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
@@ -140,20 +141,20 @@ const sections = [
       {
         id: 'favorite_activities',
         type: 'multiselect',
-        question: '\vorite activities',
+        question: 'Favorite activities',
         required: true,
         options: [
           { id: 'hiking', label: 'Hiking', emoji: '🥾' },
           { id: 'shopping', label: 'Shopping', emoji: '🛍️' },
           { id: 'travelling', label: 'Travelling', emoji: '✈️' },
-          { id: 'food', label: 'Food', emoji: '🍴' },
+          { id: 'food', label: 'Food', emoji: '🍽️' },
           { id: 'sports', label: 'Sports', emoji: '⚽' },
           { id: 'exercise', label: 'Exercise', emoji: '💪' },
           { id: 'concerts', label: 'Concerts', emoji: '🎤' },
           { id: 'picnics', label: 'Picnics', emoji: '🧺' },
           { id: 'collector', label: 'Collector', emoji: '🏆' },
-          { id: 'antiquing', label: 'Antiquing', emoji: '🏺' },
-          { id: 'dining_out', label: 'Dining Out', emoji: '🍽️' },
+          { id: 'antiquing', label: 'Antiquing', emoji: '🕰️' },
+          { id: 'dining_out', label: 'Dining Out', emoji: '🍷' },
           { id: 'movies', label: 'Movies', emoji: '🎬' },
           { id: 'other', label: 'Other', emoji: '✨' },
         ],
@@ -200,9 +201,9 @@ const sections = [
         question: 'How would you describe your style?',
         required: true,
         options: [
-          { id: 'minimalist', label: 'Minimalist', emoji: '⬜' },
+          { id: 'minimalist', label: 'Minimalist', emoji: '🍃' },
           { id: 'vintage', label: 'Vintage', emoji: '📻' },
-          { id: 'modern', label: 'Modern', emoji: '🔲' },
+          { id: 'modern', label: 'Modern', emoji: '👗' },
           { id: 'bohemian', label: 'Bohemian', emoji: '🌸' },
           { id: 'classic', label: 'Classic', emoji: '👔' },
           { id: 'colorful', label: 'Colorful', emoji: '🌈' },
@@ -221,17 +222,17 @@ const sections = [
         question: 'Your favorite colors',
         required: true,
         options: [
-          { id: 'blue', label: 'Blue', color: '#4A90D9' },
-          { id: 'green', label: 'Green', color: '#4CAF50' },
-          { id: 'red', label: 'Red', color: '#E53935' },
-          { id: 'purple', label: 'Purple', color: '#9C27B0' },
-          { id: 'black', label: 'Black', color: '#333333' },
-          { id: 'pink', label: 'Pink', color: '#E91E8C' },
-          { id: 'orange', label: 'Orange', color: '#FF9800' },
-          { id: 'yellow', label: 'Yellow', color: '#FDD835' },
-          { id: 'teal', label: 'Teal', color: '#009688' },
-          { id: 'white', label: 'White', color: '#FFFFFF' },
-          { id: 'other', label: 'Other', color: '#9E9E9E' },
+          { id: 'blue', label: 'Blue', emoji: '💙' },
+          { id: 'green', label: 'Green', emoji: '💚' },
+          { id: 'red', label: 'Red', emoji: '❤️' },
+          { id: 'purple', label: 'Purple', emoji: '💜' },
+          { id: 'black', label: 'Black', emoji: '🖤' },
+          { id: 'pink', label: 'Pink', emoji: '💗' },
+          { id: 'orange', label: 'Orange', emoji: '🧡' },
+          { id: 'yellow', label: 'Yellow', emoji: '💛' },
+          { id: 'teal', label: 'Teal', emoji: '💙' },
+          { id: 'white', label: 'White', emoji: '🤍' },
+          { id: 'other', label: 'Other', image: require('../../assets/emoji-gray-heart.png') },
         ],
       },
       {
@@ -293,15 +294,14 @@ const sections = [
         options: [
           { id: 'rose', label: 'Rose', emoji: '🌹' },
           { id: 'tulip', label: 'Tulip', emoji: '🌷' },
-          { id: 'lavender', label: 'Lavender', emoji: '💜' },
+          { id: 'lavender', label: 'Lavender', image: require('../../assets/emoji-lavender.png') },
           { id: 'sunflower', label: 'Sunflower', emoji: '🌻' },
-          { id: 'orchid', label: 'Orchid', emoji: '🪻' },
-          { id: 'lily', label: 'Lily', emoji: '🪷' },
+          { id: 'lily', label: 'Lily', image: require('../../assets/emoji-lotus.png') },
           { id: 'daisy', label: 'Daisy', emoji: '🌼' },
           { id: 'peony', label: 'Peony', emoji: '🌺' },
           { id: 'cherry_blossom', label: 'Cherry Blossom', emoji: '🌸' },
           { id: 'hydrangea', label: 'Hydrangea', emoji: '💐' },
-          { id: 'other', label: 'Other', emoji: '🌿' },
+          { id: 'other', label: 'Other', emoji: '✨' },
         ],
       },
       {
@@ -324,7 +324,7 @@ const sections = [
         question: 'Favorite cuisines',
         required: true,
         options: [
-          { id: 'barbecue', label: 'Barbecue', emoji: '🍖' },
+          { id: 'barbecue', label: 'Barbecue', emoji: '🔥' },
           { id: 'chinese', label: 'Chinese', emoji: '🥡' },
           { id: 'french', label: 'French', emoji: '🥐' },
           { id: 'hamburger', label: 'Hamburger', emoji: '🍔' },
@@ -337,7 +337,7 @@ const sections = [
           { id: 'steak', label: 'Steak', emoji: '🥩' },
           { id: 'sushi', label: 'Sushi', emoji: '🍣' },
           { id: 'thai', label: 'Thai', emoji: '🍜' },
-          { id: 'other', label: 'Other', emoji: '🍴' },
+          { id: 'other', label: 'Other', emoji: '✨' },
         ],
       },
       {
@@ -358,27 +358,6 @@ const sections = [
         question: 'Your favorite meal at that restaurant',
         placeholder: 'E.g., Chicken Alfredo with garlic bread...',
       },
-      {
-        id: 'favorite_desserts',
-        type: 'multiselect',
-        question: 'Favorite desserts',
-        required: true,
-        options: [
-          { id: 'chocolate', label: 'Chocolate', emoji: '🍫' },
-          { id: 'candy', label: 'Candy', emoji: '🍬' },
-          { id: 'ice_cream', label: 'Ice Cream', emoji: '🍦' },
-          { id: 'cookies', label: 'Cookies', emoji: '🍪' },
-          { id: 'cake', label: 'Cake', emoji: '🎂' },
-          { id: 'fruity', label: 'Fruity', emoji: '🍓' },
-          { id: 'other', label: 'Other', emoji: '🍰' },
-        ],
-      },
-      {
-        id: 'dessert_details',
-        type: 'text',
-        question: 'Dessert preferences',
-        placeholder: 'E.g., Dark chocolate and mint ice cream...',
-      },
     ],
   },
   {
@@ -387,6 +366,29 @@ const sections = [
     subtitle: 'What gifts do you prefer?',
     emoji: '🎁',
     questions: [
+      {
+        id: 'favorite_desserts',
+        type: 'multiselect',
+        question: 'What is your favorite sweet?',
+        required: true,
+        options: [
+          { id: 'chocolate', label: 'Chocolate', image: require('../../assets/emoji-chocolate.png') },
+          { id: 'candy', label: 'Candy', emoji: '🍭' },
+          { id: 'ice_cream', label: 'Ice Cream', emoji: '🍦' },
+          { id: 'cookies', label: 'Cookies', emoji: '🍪' },
+          { id: 'cake', label: 'Cake', emoji: '🎂' },
+          { id: 'fruity', label: 'Fruity', emoji: '🫐' },
+          { id: 'milkshake', label: 'Milkshake', emoji: '🥤' },
+          { id: 'latte', label: 'Latte', emoji: '☕' },
+          { id: 'other', label: 'Other', emoji: '✨' },
+        ],
+      },
+      {
+        id: 'dessert_details',
+        type: 'text',
+        question: 'Dessert preferences',
+        placeholder: 'E.g., Dark chocolate and mint ice cream...',
+      },
       {
         id: 'gift_types',
         type: 'multiselect',
@@ -430,7 +432,7 @@ const sections = [
           { id: 'drama', label: 'Drama', emoji: '🎭' },
           { id: 'thriller', label: 'Thriller', emoji: '😱' },
           { id: 'documentary', label: 'Documentary', emoji: '📹' },
-          { id: 'other', label: 'Other', emoji: '🎬' },
+          { id: 'other', label: 'Other', emoji: '✨' },
         ],
       },
       {
@@ -450,7 +452,7 @@ const sections = [
           { id: 'rock', label: 'Rock', emoji: '🎸' },
           { id: 'country', label: 'Country', emoji: '🤠' },
           { id: 'classical', label: 'Classical', emoji: '🎻' },
-          { id: 'other', label: 'Other', emoji: '🎵' },
+          { id: 'other', label: 'Other', emoji: '✨' },
         ],
       },
       {
@@ -808,7 +810,8 @@ const QuestionnaireScreen = ({ navigation, route }) => {
             end={{ x: 1, y: 1 }}
             style={styles.optionActive}
           >
-            {option.emoji && <Text style={styles.optionEmoji}>{option.emoji}</Text>}
+            {option.image && <Image source={option.image} style={styles.optionImage} />}
+            {!option.image && option.emoji && <Text style={styles.optionEmoji}>{option.emoji}</Text>}
             {option.color && (
               <View style={[styles.colorDot, { backgroundColor: option.color }]} />
             )}
@@ -819,7 +822,8 @@ const QuestionnaireScreen = ({ navigation, route }) => {
           </LinearGradient>
         ) : (
           <View style={styles.option}>
-            {option.emoji && <Text style={styles.optionEmoji}>{option.emoji}</Text>}
+            {option.image && <Image source={option.image} style={styles.optionImage} />}
+            {!option.image && option.emoji && <Text style={styles.optionEmoji}>{option.emoji}</Text>}
             {option.color && (
               <View style={[styles.colorDot, { backgroundColor: option.color }]} />
             )}
@@ -1348,6 +1352,11 @@ const styles = StyleSheet.create({
   },
   optionEmoji: {
     fontSize: 18,
+  },
+  optionImage: {
+    width: 20,
+    height: 20,
+    resizeMode: 'contain',
   },
   colorDot: {
     width: 20,

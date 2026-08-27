@@ -11,6 +11,22 @@ const withAllowBackupFalse = (config) =>
     return cfg;
   });
 
+// Inline config plugin: set android:windowSoftInputMode="adjustResize" on the
+// main activity, so the screen resizes (rather than doing nothing) when the
+// keyboard opens. Needed now that Login/SignUp no longer have a ScrollView to
+// fall back on — without this, Android leaves focused inputs hidden behind
+// the keyboard. iOS gets the equivalent via each screen's KeyboardAvoidingView
+// behavior="padding".
+const withAdjustResize = (config) =>
+  withAndroidManifest(config, (cfg) => {
+    const app = cfg.modResults.manifest.application?.[0];
+    const activity = app?.activity?.find(
+      (a) => a.$['android:name'] === '.MainActivity'
+    );
+    if (activity) activity.$['android:windowSoftInputMode'] = 'adjustResize';
+    return cfg;
+  });
+
 module.exports = {
   expo: {
     name: 'GiftBox4you',
@@ -114,6 +130,7 @@ module.exports = {
       // installs deterministic. Implemented as an inline plugin because
       // the top-level `android.allowBackup` field is ignored here.
       withAllowBackupFalse,
+      withAdjustResize,
     ],
     extra: {
       eas: {

@@ -1,20 +1,18 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import {
   View,
-  Text,
+  Image,
   StyleSheet,
   Animated,
-  Dimensions,
   Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import MaskedView from '@react-native-masked-view/masked-view';
 import * as SplashScreen from 'expo-splash-screen';
 import { colors } from '../theme';
 import { GiftBoxIcon } from '../components';
 import { initUserCredentials, hasSeenOnboardingLocal } from '../services/api';
 
-const { width, height } = Dimensions.get('window');
+const wordmarkSource = require('../../assets/thoughtfully-wordmark.png');
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -214,7 +212,7 @@ const SplashScreenComponent = ({ navigation }) => {
           </View>
         </Animated.View>
 
-        {/* App name with gradient "Box" */}
+        {/* App name wordmark */}
         <Animated.View
           style={[
             styles.textContainer,
@@ -224,21 +222,7 @@ const SplashScreenComponent = ({ navigation }) => {
             },
           ]}
         >
-          <Text style={styles.appName}>Gift</Text>
-          <MaskedView
-            maskElement={
-              <Text style={styles.appNameMask}>Box</Text>
-            }
-          >
-            <LinearGradient
-              colors={['#ca9ad6', '#70d0dd']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Text style={[styles.appNameMask, { opacity: 0 }]}>Box</Text>
-            </LinearGradient>
-          </MaskedView>
-          <Text style={styles.appName}>4you</Text>
+          <Image source={wordmarkSource} style={styles.wordmark} resizeMode="contain" />
         </Animated.View>
 
         {/* Tagline */}
@@ -291,20 +275,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   textContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
     marginBottom: 8,
   },
-  appName: {
-    fontSize: 38,
-    fontFamily: 'StyleScript_400Regular',
-    color: colors.textDark,
-    letterSpacing: 0.5,
-  },
-  appNameMask: {
-    fontSize: 38,
-    fontFamily: 'StyleScript_400Regular',
-    letterSpacing: 0.5,
+  wordmark: {
+    width: 220,
+    height: 80,
   },
   tagline: {
     fontSize: 15,

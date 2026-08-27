@@ -3,8 +3,14 @@
 
 export const APP_CONFIG = {
   // App Info
-  appName: 'GiftBox4you',
+  appName: 'Thoughtfully',
   version: '1.0.0',
+  // NOTE: packageName below, plus all URLs/emails/social handles further down
+  // this file, still point at the old giftbox4you domain/package. Left
+  // unchanged pending client confirmation these should move to the new
+  // "Thoughtfully" branding (packageName in particular is the Android/iOS
+  // bundle identifier — changing it creates a brand-new app listing, not a
+  // rename of the existing one, so it needs an explicit decision).
   packageName: 'com.giftbox4you',
 
   // Support

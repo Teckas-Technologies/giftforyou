@@ -328,7 +328,7 @@ const InvitationsScreen = ({ navigation, route }) => {
     try {
       await Share.share({
         message: `Hey ${inviteeName}! I'd love to give you the perfect gift. Fill out this quick questionnaire so I know what you'd love: ${inviteLink}`,
-        title: 'GiftBox4you Invitation',
+        title: 'Thoughtfully Invitation',
       });
     } catch (error) {
       console.log('Share error:', error);

@@ -2,25 +2,25 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   Animated,
   Easing,
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line } from 'react-native-svg';
 import { useAuth } from '../../contexts/AuthContext';
 import { CustomAlert, GiftBoxIcon } from '../../components';
 import useAlert from '../../hooks/useAlert';
 
 const { height } = Dimensions.get('window');
+const wordmarkSource = require('../../../assets/thoughtfully-wordmark.png');
 
 // Icons
 const MailIcon = ({ size = 20, color = '#6b3a8a' }) => (
@@ -143,11 +143,7 @@ const LoginScreen = ({ navigation }) => {
         style={StyleSheet.absoluteFill}
       />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
+      <View style={styles.scrollContent}>
         {/* Logo Section */}
         <Animated.View style={[
           styles.logoSection,
@@ -165,21 +161,7 @@ const LoginScreen = ({ navigation }) => {
             <GiftBoxIcon size={60} />
           </View>
           <View style={styles.appNameContainer}>
-            <Text style={styles.appName}>Gift</Text>
-            <MaskedView
-              maskElement={
-                <Text style={styles.appNameMask}>Box</Text>
-              }
-            >
-              <LinearGradient
-                colors={['#ca9ad6', '#70d0dd']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Text style={[styles.appNameMask, { opacity: 0 }]}>Box</Text>
-              </LinearGradient>
-            </MaskedView>
-            <Text style={styles.appName}>4you</Text>
+            <Image source={wordmarkSource} style={styles.wordmark} resizeMode="contain" />
           </View>
           <Text style={styles.tagline}>Never miss a birthday</Text>
         </Animated.View>
@@ -315,7 +297,7 @@ const LoginScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
         </Animated.View>
-      </ScrollView>
+      </View>
 
       <CustomAlert {...alertConfig} onClose={hideAlert} />
     </KeyboardAvoidingView>
@@ -328,7 +310,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   scrollContent: {
-    flexGrow: 1,
+    flex: 1,
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 50,
@@ -353,20 +335,12 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   appNameContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
     marginBottom: 6,
   },
-  appName: {
-    fontSize: 34,
-    fontFamily: 'StyleScript_400Regular',
-    color: '#330c54',
-    letterSpacing: 0.5,
-  },
-  appNameMask: {
-    fontSize: 34,
-    fontFamily: 'StyleScript_400Regular',
-    letterSpacing: 0.5,
+  wordmark: {
+    width: 190,
+    height: 68,
   },
   tagline: {
     fontSize: 14,

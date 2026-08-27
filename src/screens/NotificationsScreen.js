@@ -59,7 +59,7 @@ const getNotificationIcon = (type, title = '') => {
       // Reminders carry only free text, so infer the event type from the
       // title: birthdays get a heart-with-bow, anniversaries champagne.
       const t = String(title).toLowerCase();
-      if (t.includes('anniversary')) return '🍾🍾';
+      if (t.includes('anniversary')) return '🥂';
       if (t.includes('birthday')) return '💝';
       return '🎂';
     }
