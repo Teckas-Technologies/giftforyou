@@ -11,6 +11,22 @@ const withAllowBackupFalse = (config) =>
     return cfg;
   });
 
+// Inline config plugin: set android:windowSoftInputMode="adjustResize" on the
+// main activity, so the screen resizes (rather than doing nothing) when the
+// keyboard opens. Needed now that Login/SignUp no longer have a ScrollView to
+// fall back on — without this, Android leaves focused inputs hidden behind
+// the keyboard. iOS gets the equivalent via each screen's KeyboardAvoidingView
+// behavior="padding".
+const withAdjustResize = (config) =>
+  withAndroidManifest(config, (cfg) => {
+    const app = cfg.modResults.manifest.application?.[0];
+    const activity = app?.activity?.find(
+      (a) => a.$['android:name'] === '.MainActivity'
+    );
+    if (activity) activity.$['android:windowSoftInputMode'] = 'adjustResize';
+    return cfg;
+  });
+
 module.exports = {
   expo: {
     name: 'GiftBox4you',
@@ -18,9 +34,9 @@ module.exports = {
     // User-visible version (semver MAJOR.MINOR.PATCH). Bump for every
     // release: a patch fix → 0.3.1, a feature release → 0.4.0, etc.
     // Keep aligned with package.json, android.versionCode (integer), and
-    // ios.buildNumber. Previous client APKs were v0.1 and v0.2, so the
-    // next ship is v0.3.0 with versionCode 3.
-    version: '0.3.0',
+    // ios.buildNumber. Previous client APKs were v0.1, v0.2, v0.3.0, so this
+    // ship (logo/emoji rebrand + Azure API URL) is v0.3.1 with versionCode 4.
+    version: '0.3.1',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
@@ -35,7 +51,7 @@ module.exports = {
       bundleIdentifier: 'com.giftbox4you.app',
       // iOS equivalent of versionCode — must increase with every release.
       // Convention is to keep it identical to `version`.
-      buildNumber: '0.3.0',
+      buildNumber: '0.3.1',
       infoPlist: {
         NSPhotoLibraryUsageDescription:
           'GiftBox4you needs access to your photos so you can set a profile picture.',
@@ -53,9 +69,8 @@ module.exports = {
       // Integer Android uses to decide whether an APK is an upgrade.
       // MUST increase by at least 1 every release, otherwise installs
       // fail with INSTALL_FAILED_VERSION_DOWNGRADE. Prior client APKs
-      // (v0.1 and v0.2) used auto-derived values; v0.3 is the third
-      // release so this is 3.
-      versionCode: 3,
+      // (v0.1, v0.2, v0.3.0) used 3 or lower; this release is 4.
+      versionCode: 4,
       googleServicesFile: './google-services.json',
       // Android Auto Backup is disabled via the inline `withAllowBackupFalse`
       // plugin (registered below). The top-level `allowBackup` field is not
@@ -114,6 +129,7 @@ module.exports = {
       // installs deterministic. Implemented as an inline plugin because
       // the top-level `android.allowBackup` field is ignored here.
       withAllowBackupFalse,
+      withAdjustResize,
     ],
     extra: {
       eas: {
