@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../config/supabase';
 
 const BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL || 'http://116.202.96.159:3000';
+  process.env.EXPO_PUBLIC_API_BASE_URL || 'https://thoughtfully-backend-bxccfxcrb8cra0b2.canadacentral-01.azurewebsites.net';
 
 /**
  * Check (server-side, bypasses RLS) whether an email already has an account.
