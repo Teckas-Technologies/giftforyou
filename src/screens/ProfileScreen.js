@@ -12,7 +12,6 @@ import {
   Image,
   ActivityIndicator,
   Modal,
-  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
@@ -20,7 +19,7 @@ import Svg, { Path, Circle, Polyline, Rect, Line } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../theme';
-import { getProfile, getDashboardStats, clearUserCredentials, uploadProfilePhoto, createLoveNoteSubmissionLink } from '../services/api';
+import { getProfile, getDashboardStats, clearUserCredentials, uploadProfilePhoto } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { CustomAlert } from '../components';
 import useAlert from '../hooks/useAlert';
@@ -104,7 +103,7 @@ const menuItems = [
   { id: '3', icon: MailIcon, title: 'Invite Friends', route: 'Invitations' },
   { id: '4', icon: CalendarPlusIcon, title: 'Add Event', route: 'AddEvent' },
   { id: '6', icon: LoveNoteIcon, title: 'Send a Love Note', route: 'SendLoveNote', sectionHeader: 'Love Notes' },
-  { id: '7', icon: LoveNoteIcon, title: 'Submit a Love Note', action: 'submitLoveNote' },
+  { id: '7', icon: LoveNoteIcon, title: 'Submit a Love Note', route: 'SubmitLoveNote' },
   { id: '5', icon: SettingsIcon, title: 'Settings', route: 'Settings' },
 ];
 
@@ -145,21 +144,7 @@ const GradientStatValue = ({ value, glowAnim }) => (
 const ProfileScreen = ({ navigation }) => {
   const { signOut } = useAuth();
   const scrollViewRef = useRef(null);
-  const { alertConfig, showAlert, showError, hideAlert } = useAlert();
-  const [submittingLoveNote, setSubmittingLoveNote] = useState(false);
-
-  const handleSubmitLoveNote = async () => {
-    if (submittingLoveNote) return;
-    setSubmittingLoveNote(true);
-    try {
-      const { link } = await createLoveNoteSubmissionLink();
-      await Linking.openURL(link);
-    } catch (error) {
-      showError(error.message || 'Failed to open the submission link');
-    } finally {
-      setSubmittingLoveNote(false);
-    }
-  };
+  const { alertConfig, showAlert, hideAlert } = useAlert();
 
   // Scroll to top when screen is focused
   useFocusEffect(
@@ -749,20 +734,13 @@ const ProfileScreen = ({ navigation }) => {
           {menuItems.map((item, index) => {
             const IconComponent = item.icon;
             const isAlternate = index % 2 === 1;
-            const handlePress = () => {
-              if (item.action === 'submitLoveNote') {
-                handleSubmitLoveNote();
-              } else if (item.route) {
-                navigation.navigate(item.route, item.params);
-              }
-            };
             return (
               <React.Fragment key={item.id}>
                 {item.sectionHeader && (
                   <Text style={styles.menuSectionHeader}>{item.sectionHeader}</Text>
                 )}
                 <Animated.View style={[styles.menuItem, createSlideStyle(menuAnims[index])]}>
-                  <TouchableOpacity style={styles.menuItemInner} activeOpacity={0.7} onPress={handlePress}>
+                  <TouchableOpacity style={styles.menuItemInner} activeOpacity={0.7} onPress={() => item.route && navigation.navigate(item.route, item.params)}>
                     <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
                       <LinearGradient
                         colors={isAlternate ? ['#ccf9ff', '#fbe5f5'] : ['#fbe5f5', '#ccf9ff']}

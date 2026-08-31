@@ -707,10 +707,14 @@ export const sendLoveNote = (circleId, text) =>
   });
 
 /**
- * Create a "Submit a Love Note" web link for the current user
+ * Submit a new love note idea for admin review
+ * @param {string} text - The suggested love note text
  */
-export const createLoveNoteSubmissionLink = () =>
-  apiRequest('/api/love-notes/submissions', { method: 'POST' });
+export const submitLoveNoteIdea = (text) =>
+  apiRequest('/api/love-notes/submissions', {
+    method: 'POST',
+    body: JSON.stringify({ text }),
+  });
 
 // ═══════════════════════════════════════════════════════════════
 // DEFAULT EXPORT
@@ -804,5 +808,5 @@ export default {
   getLoveNotes,
   getRandomLoveNote,
   sendLoveNote,
-  createLoveNoteSubmissionLink,
+  submitLoveNoteIdea,
 };

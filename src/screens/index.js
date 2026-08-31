@@ -20,6 +20,7 @@ export { default as ContactDetailScreen } from './ContactDetailScreen';
 export { default as SettingsScreen } from './SettingsScreen';
 export { default as DiscoverScreen } from './DiscoverScreen';
 export { default as SendLoveNoteScreen } from './SendLoveNoteScreen';
+export { default as SubmitLoveNoteScreen } from './SubmitLoveNoteScreen';
 
 // Legacy exports for compatibility
 export { default as CirclesScreen } from './CirclesScreen';
