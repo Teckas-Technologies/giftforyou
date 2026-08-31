@@ -5,18 +5,29 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Polyline } from 'react-native-svg';
-import { getCircles, getLoveNotes, sendLoveNote } from '../services/api';
+import { getCircles, sendLoveNote } from '../services/api';
 import { CustomAlert } from '../components';
 import useAlert from '../hooks/useAlert';
+
+const MAX_NOTE_LENGTH = 500;
 
 const BackIcon = ({ size = 24, color = '#6b3a8a' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <Polyline points="15 18 9 12 15 6" />
+  </Svg>
+);
+
+const CheckIcon = ({ size = 16, color = '#FFFFFF' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <Polyline points="20 6 9 17 4 12" />
   </Svg>
 );
 
@@ -37,19 +48,25 @@ const SendLoveNoteScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [friends, setFriends] = useState([]);
-  const [notes, setNotes] = useState([]);
-  const [selectedCircleId, setSelectedCircleId] = useState(preselectedCircleId);
-  const [selectedNoteId, setSelectedNoteId] = useState(null);
+  const [selectedCircleIds, setSelectedCircleIds] = useState(
+    preselectedCircleId ? [preselectedCircleId] : []
+  );
+  const [noteText, setNoteText] = useState('');
+
+  const toggleFriend = (circleId) => {
+    setSelectedCircleIds((prev) =>
+      prev.includes(circleId)
+        ? prev.filter((id) => id !== circleId)
+        : [...prev, circleId]
+    );
+  };
 
   const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [circlesRes, notesRes] = await Promise.all([
-        getCircles({ status: 'accepted' }),
-        getLoveNotes(),
-      ]);
+      const circlesRes = await getCircles({ status: 'accepted' });
 
       const contactsList = circlesRes.contacts || [];
       const transformedFriends = contactsList.map((contact) => {
@@ -58,9 +75,8 @@ const SendLoveNoteScreen = ({ navigation, route }) => {
       });
 
       setFriends(transformedFriends);
-      setNotes(notesRes.notes || []);
     } catch (error) {
-      showError(error.message || 'Failed to load love notes');
+      showError(error.message || 'Failed to load your friends');
     } finally {
       setLoading(false);
     }
@@ -71,13 +87,17 @@ const SendLoveNoteScreen = ({ navigation, route }) => {
   }, [loadData]);
 
   const handleSend = async () => {
-    if (!selectedCircleId || !selectedNoteId || sending) return;
+    if (selectedCircleIds.length === 0 || !noteText.trim() || sending) return;
 
     setSending(true);
     try {
-      await sendLoveNote(selectedCircleId, selectedNoteId);
-      const friendName = friends.find((f) => f.id === selectedCircleId)?.name || 'your friend';
-      showSuccess(`Love note sent to ${friendName}! 💌`, () => navigation.goBack());
+      const text = noteText.trim();
+      await Promise.all(selectedCircleIds.map((circleId) => sendLoveNote(circleId, text)));
+
+      const message = selectedCircleIds.length === 1
+        ? `Love note sent to ${friends.find((f) => f.id === selectedCircleIds[0])?.name || 'your friend'}! 💌`
+        : `Love note sent to ${selectedCircleIds.length} friends! 💌`;
+      showSuccess(message, () => navigation.goBack());
     } catch (error) {
       showError(error.message || 'Failed to send love note');
     } finally {
@@ -85,12 +105,12 @@ const SendLoveNoteScreen = ({ navigation, route }) => {
     }
   };
 
-  const canSend = !!selectedCircleId && !!selectedNoteId && !sending;
+  const canSend = selectedCircleIds.length > 0 && !!noteText.trim() && !sending;
 
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#FFFFFF', '#fbe5f5', '#FDEEF3', '#FFFFFF']}
+        colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
         locations={[0, 0.3, 0.7, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -116,53 +136,70 @@ const SendLoveNoteScreen = ({ navigation, route }) => {
           <ActivityIndicator size="large" color="#ca9ad6" />
         </View>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.sectionLabel}>To</Text>
-          {friends.length === 0 ? (
-            <Text style={styles.emptyText}>Add some friends first to send them a love note 💌</Text>
-          ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.friendsRow}>
-              {friends.map((friend) => {
-                const selected = friend.id === selectedCircleId;
-                return (
-                  <TouchableOpacity
-                    key={friend.id}
-                    style={styles.friendItem}
-                    onPress={() => setSelectedCircleId(friend.id)}
-                    activeOpacity={0.7}
-                  >
-                    <LinearGradient
-                      colors={selected ? ['#ca9ad6', '#70d0dd'] : ['#fbe5f5', '#f4cae8']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.friendAvatar}
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <Text style={styles.sectionLabel}>To</Text>
+            <Text style={styles.sectionHint}>
+              {selectedCircleIds.length > 0
+                ? `${selectedCircleIds.length} selected`
+                : 'Tap to select a friend'}
+            </Text>
+            {friends.length === 0 ? (
+              <Text style={styles.emptyText}>Add some friends first to send them a love note 💌</Text>
+            ) : (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.friendsRow}>
+                {friends.map((friend) => {
+                  const selected = selectedCircleIds.includes(friend.id);
+                  return (
+                    <TouchableOpacity
+                      key={friend.id}
+                      style={styles.friendItem}
+                      onPress={() => toggleFriend(friend.id)}
+                      activeOpacity={0.7}
                     >
-                      <Text style={[styles.friendInitials, selected && { color: '#FFFFFF' }]}>
-                        {friend.initials}
+                      <View style={[styles.friendAvatarRing, selected && styles.friendAvatarRingSelected]}>
+                        <LinearGradient
+                          colors={selected ? ['#ca9ad6', '#70d0dd'] : ['#fbe5f5', '#f4cae8']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={styles.friendAvatar}
+                        >
+                          <Text style={[styles.friendInitials, selected && { color: '#FFFFFF' }]}>
+                            {friend.initials}
+                          </Text>
+                        </LinearGradient>
+                        {selected && (
+                          <View style={styles.checkBadge}>
+                            <CheckIcon size={12} color="#FFFFFF" />
+                          </View>
+                        )}
+                      </View>
+                      <Text style={[styles.friendName, selected && styles.friendNameSelected]} numberOfLines={1}>
+                        {friend.name}
                       </Text>
-                    </LinearGradient>
-                    <Text style={styles.friendName} numberOfLines={1}>{friend.name}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            )}
 
-          <Text style={styles.sectionLabel}>Pick a note</Text>
-          {notes.map((note) => {
-            const selected = note.id === selectedNoteId;
-            return (
-              <TouchableOpacity
-                key={note.id}
-                style={[styles.noteCard, selected && styles.noteCardSelected]}
-                onPress={() => setSelectedNoteId(note.id)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.noteText}>{note.text}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+            <Text style={styles.sectionLabel}>Your love note</Text>
+            <TextInput
+              style={styles.noteInput}
+              value={noteText}
+              onChangeText={setNoteText}
+              placeholder="Write something sweet..."
+              placeholderTextColor="#b8a5c4"
+              multiline
+              maxLength={MAX_NOTE_LENGTH}
+              textAlignVertical="top"
+            />
+            <Text style={styles.charCount}>{noteText.length}/{MAX_NOTE_LENGTH}</Text>
+          </ScrollView>
+        </KeyboardAvoidingView>
       )}
 
       {!loading && (
@@ -239,13 +276,20 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   sectionLabel: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Handlee_400Regular',
+    fontSize: 17,
     color: '#6b3a8a',
     marginTop: 16,
+    marginBottom: 2,
+  },
+  sectionHint: {
+    fontFamily: 'Handlee_400Regular',
+    fontSize: 13,
+    color: '#999',
     marginBottom: 10,
   },
   emptyText: {
+    fontFamily: 'Handlee_400Regular',
     fontSize: 14,
     color: '#999',
     marginBottom: 10,
@@ -255,32 +299,65 @@ const styles = StyleSheet.create({
   },
   friendItem: {
     alignItems: 'center',
-    marginRight: 16,
-    width: 68,
+    marginRight: 18,
+    width: 72,
   },
-  friendAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  friendAvatarRing: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 6,
+    borderWidth: 2.5,
+    borderColor: 'transparent',
+  },
+  friendAvatarRingSelected: {
+    borderColor: '#ca9ad6',
+  },
+  friendAvatar: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   friendInitials: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontFamily: 'Handlee_400Regular',
+    fontSize: 20,
     color: '#ca9ad6',
   },
+  checkBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#ca9ad6',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   friendName: {
-    fontSize: 12,
+    fontFamily: 'Handlee_400Regular',
+    fontSize: 13,
     color: '#333',
     textAlign: 'center',
   },
-  noteCard: {
+  friendNameSelected: {
+    color: '#6b3a8a',
+  },
+  noteInput: {
+    fontFamily: 'Handlee_400Regular',
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     padding: 16,
-    marginBottom: 10,
+    minHeight: 140,
+    fontSize: 16,
+    color: '#333',
+    lineHeight: 22,
     borderWidth: 2,
     borderColor: '#f4cae8',
     shadowColor: '#000',
@@ -289,14 +366,12 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
-  noteCardSelected: {
-    borderColor: '#ca9ad6',
-    backgroundColor: '#fbe5f5',
-  },
-  noteText: {
-    fontSize: 15,
-    color: '#333',
-    lineHeight: 21,
+  charCount: {
+    fontFamily: 'Handlee_400Regular',
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'right',
+    marginTop: 6,
   },
   footer: {
     position: 'absolute',
@@ -316,8 +391,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sendButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Handlee_400Regular',
+    fontSize: 18,
     color: '#FFFFFF',
   },
 });

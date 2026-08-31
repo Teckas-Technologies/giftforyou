@@ -21,7 +21,7 @@ import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
 import { getDashboardStats, getUpcomingEvents, getProfile, getRandomLoveNote } from '../services/api';
 import { getDateParts, daysUntil as appDaysUntil } from '../utils/date';
-import { hasShownLoveNoteThisSession, markLoveNoteShown } from '../services/loveNoteSession';
+import { hasShownLoveNoteToday, markLoveNoteShownToday } from '../services/loveNoteSession';
 import { CustomAlert } from '../components';
 
 // Users Icon SVG
@@ -310,20 +310,28 @@ const HomeScreen = ({ navigation }) => {
     ).start();
   }, []);
 
-  // Show a random love note once per app open (client asked for it to
+  // Show a random love note at most once per day (client asked for it to
   // appear "on or after" the splash screen — showing it here, right after
   // Home mounts, is simplest and avoids touching splash's timing logic).
   useEffect(() => {
-    if (hasShownLoveNoteThisSession()) return;
+    let cancelled = false;
 
-    getRandomLoveNote()
-      .then(({ note }) => {
-        if (note) {
-          markLoveNoteShown();
-          setLoveNote(note);
-        }
-      })
-      .catch(() => {});
+    hasShownLoveNoteToday().then((alreadyShown) => {
+      if (alreadyShown || cancelled) return;
+
+      getRandomLoveNote()
+        .then(({ note }) => {
+          if (note && !cancelled) {
+            markLoveNoteShownToday();
+            setLoveNote(note);
+          }
+        })
+        .catch(() => {});
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const getGreeting = () => {
@@ -631,15 +639,15 @@ const HomeScreen = ({ navigation }) => {
           </View>
 
           <TouchableOpacity style={styles.quickBtnFull} activeOpacity={0.8} onPress={() => navigation.navigate('SendLoveNote')}>
-            <Animated.View style={{ transform: [{ scale: breatheAnim }] }}>
+            <Animated.View style={{ width: '100%', transform: [{ scale: breatheAnim }] }}>
               <LinearGradient
-                colors={['#fbe5f5', '#f4cae8']}
+                colors={['#ca9ad6', '#70d0dd']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.quickBtnWide}
               >
                 <Text style={styles.quickBtnIcon}>💕</Text>
-                <Text style={styles.quickBtnTextBlue}>Send a Love Note</Text>
+                <Text style={styles.quickBtnTextWhite}>Send a Love Note</Text>
               </LinearGradient>
             </Animated.View>
           </TouchableOpacity>
@@ -897,9 +905,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   quickBtnFull: {
+    width: '100%',
+    marginTop: 12,
     marginBottom: 12,
   },
   quickBtnWide: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

@@ -698,12 +698,12 @@ export const getRandomLoveNote = () => apiRequest('/api/love-notes/random');
 /**
  * Send a love note to a friend
  * @param {string} circleId - The accepted friend's circle/contact ID
- * @param {string} noteId - The love note ID to send
+ * @param {string} text - The love note message to send
  */
-export const sendLoveNote = (circleId, noteId) =>
+export const sendLoveNote = (circleId, text) =>
   apiRequest('/api/love-notes/send', {
     method: 'POST',
-    body: JSON.stringify({ circleId, noteId }),
+    body: JSON.stringify({ circleId, text }),
   });
 
 /**
