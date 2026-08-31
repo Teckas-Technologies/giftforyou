@@ -19,6 +19,7 @@ export { default as EventDetailScreen } from './EventDetailScreen';
 export { default as ContactDetailScreen } from './ContactDetailScreen';
 export { default as SettingsScreen } from './SettingsScreen';
 export { default as DiscoverScreen } from './DiscoverScreen';
+export { default as SendLoveNoteScreen } from './SendLoveNoteScreen';
 
 // Legacy exports for compatibility
 export { default as CirclesScreen } from './CirclesScreen';

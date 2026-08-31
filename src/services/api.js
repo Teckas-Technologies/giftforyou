@@ -682,6 +682,37 @@ export const searchUsers = (query, limit = 20) =>
   );
 
 // ═══════════════════════════════════════════════════════════════
+// LOVE NOTES API
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Get the fixed list of love notes (to pick from when sending)
+ */
+export const getLoveNotes = () => apiRequest('/api/love-notes');
+
+/**
+ * Get a random love note (for the "on app open" popup)
+ */
+export const getRandomLoveNote = () => apiRequest('/api/love-notes/random');
+
+/**
+ * Send a love note to a friend
+ * @param {string} circleId - The accepted friend's circle/contact ID
+ * @param {string} noteId - The love note ID to send
+ */
+export const sendLoveNote = (circleId, noteId) =>
+  apiRequest('/api/love-notes/send', {
+    method: 'POST',
+    body: JSON.stringify({ circleId, noteId }),
+  });
+
+/**
+ * Create a "Submit a Love Note" web link for the current user
+ */
+export const createLoveNoteSubmissionLink = () =>
+  apiRequest('/api/love-notes/submissions', { method: 'POST' });
+
+// ═══════════════════════════════════════════════════════════════
 // DEFAULT EXPORT
 // ═══════════════════════════════════════════════════════════════
 
@@ -768,4 +799,10 @@ export default {
   getPeopleYouMayKnow,
   dismissSuggestion,
   searchUsers,
+
+  // Love Notes
+  getLoveNotes,
+  getRandomLoveNote,
+  sendLoveNote,
+  createLoveNoteSubmissionLink,
 };

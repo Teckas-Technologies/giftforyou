@@ -19,8 +19,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
-import { getDashboardStats, getUpcomingEvents, getProfile } from '../services/api';
+import { getDashboardStats, getUpcomingEvents, getProfile, getRandomLoveNote } from '../services/api';
 import { getDateParts, daysUntil as appDaysUntil } from '../utils/date';
+import { hasShownLoveNoteThisSession, markLoveNoteShown } from '../services/loveNoteSession';
+import { CustomAlert } from '../components';
 
 // Users Icon SVG
 const UsersIcon = ({ size = 18, color = '#ca9ad6' }) => (
@@ -116,6 +118,7 @@ const HomeScreen = ({ navigation }) => {
   });
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [activeEventIndex, setActiveEventIndex] = useState(0);
+  const [loveNote, setLoveNote] = useState(null);
 
   // Animation values
   const headerAnim = useRef(new Animated.Value(0)).current;
@@ -305,6 +308,22 @@ const HomeScreen = ({ navigation }) => {
         }),
       ])
     ).start();
+  }, []);
+
+  // Show a random love note once per app open (client asked for it to
+  // appear "on or after" the splash screen — showing it here, right after
+  // Home mounts, is simplest and avoids touching splash's timing logic).
+  useEffect(() => {
+    if (hasShownLoveNoteThisSession()) return;
+
+    getRandomLoveNote()
+      .then(({ note }) => {
+        if (note) {
+          markLoveNoteShown();
+          setLoveNote(note);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const getGreeting = () => {
@@ -610,8 +629,31 @@ const HomeScreen = ({ navigation }) => {
               </Animated.View>
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity style={styles.quickBtnFull} activeOpacity={0.8} onPress={() => navigation.navigate('SendLoveNote')}>
+            <Animated.View style={{ transform: [{ scale: breatheAnim }] }}>
+              <LinearGradient
+                colors={['#fbe5f5', '#f4cae8']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.quickBtnWide}
+              >
+                <Text style={styles.quickBtnIcon}>💕</Text>
+                <Text style={styles.quickBtnTextBlue}>Send a Love Note</Text>
+              </LinearGradient>
+            </Animated.View>
+          </TouchableOpacity>
         </Animated.View>
       </ScrollView>
+
+      <CustomAlert
+        visible={!!loveNote}
+        type="info"
+        title="💌 A Love Note for You"
+        message={loveNote?.text}
+        buttons={[{ text: 'Close', onPress: () => setLoveNote(null) }]}
+        onClose={() => setLoveNote(null)}
+      />
     </View>
   );
 };
