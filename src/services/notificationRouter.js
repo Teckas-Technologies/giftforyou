@@ -51,6 +51,11 @@ export function getRouteForNotification(notif) {
     case 'profile_incomplete':
       return { screen: 'MainApp', params: { screen: 'Profile' } };
 
+    case 'love_note_received':
+      // The note text is already shown in the notification row/body — just
+      // land on the bell screen rather than a dedicated detail screen.
+      return { screen: 'Notifications', params: {} };
+
     default:
       return null;
   }

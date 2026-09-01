@@ -70,6 +70,12 @@ const CalendarPlusIcon = ({ size = 20, color = '#ca9ad6' }) => (
 );
 
 // Settings Icon SVG
+const LoveNoteIcon = ({ size = 20, color = '#ca9ad6' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </Svg>
+);
+
 const SettingsIcon = ({ size = 20, color = '#ca9ad6' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <Circle cx="12" cy="12" r="3" />
@@ -96,6 +102,8 @@ const menuItems = [
   { id: '2', icon: BellIcon, title: 'Notifications', route: 'Notifications' },
   { id: '3', icon: MailIcon, title: 'Invite Friends', route: 'Invitations' },
   { id: '4', icon: CalendarPlusIcon, title: 'Add Event', route: 'AddEvent' },
+  { id: '6', icon: LoveNoteIcon, title: 'Send a Love Note', route: 'SendLoveNote', sectionHeader: 'Love Notes' },
+  { id: '7', icon: LoveNoteIcon, title: 'Submit a Love Note', route: 'SubmitLoveNote' },
   { id: '5', icon: SettingsIcon, title: 'Settings', route: 'Settings' },
 ];
 
@@ -727,32 +735,34 @@ const ProfileScreen = ({ navigation }) => {
             const IconComponent = item.icon;
             const isAlternate = index % 2 === 1;
             return (
-              <Animated.View
-                key={item.id}
-                style={[styles.menuItem, createSlideStyle(menuAnims[index])]}
-              >
-                <TouchableOpacity style={styles.menuItemInner} activeOpacity={0.7} onPress={() => item.route && navigation.navigate(item.route, item.params)}>
-                  <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-                    <LinearGradient
-                      colors={isAlternate ? ['#ccf9ff', '#fbe5f5'] : ['#fbe5f5', '#ccf9ff']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.menuIcon}
-                    >
-                      <IconComponent size={20} color="#ca9ad6" />
-                    </LinearGradient>
-                  </Animated.View>
-                  <Text style={styles.menuText}>{item.title}</Text>
-                  <Animated.View style={{
-                    opacity: glowAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.6, 1],
-                    }),
-                  }}>
-                    <ChevronRightIcon size={16} color="#6b3a8a" />
-                  </Animated.View>
-                </TouchableOpacity>
-              </Animated.View>
+              <React.Fragment key={item.id}>
+                {item.sectionHeader && (
+                  <Text style={styles.menuSectionHeader}>{item.sectionHeader}</Text>
+                )}
+                <Animated.View style={[styles.menuItem, createSlideStyle(menuAnims[index])]}>
+                  <TouchableOpacity style={styles.menuItemInner} activeOpacity={0.7} onPress={() => item.route && navigation.navigate(item.route, item.params)}>
+                    <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                      <LinearGradient
+                        colors={isAlternate ? ['#ccf9ff', '#fbe5f5'] : ['#fbe5f5', '#ccf9ff']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.menuIcon}
+                      >
+                        <IconComponent size={20} color="#ca9ad6" />
+                      </LinearGradient>
+                    </Animated.View>
+                    <Text style={styles.menuText}>{item.title}</Text>
+                    <Animated.View style={{
+                      opacity: glowAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.6, 1],
+                      }),
+                    }}>
+                      <ChevronRightIcon size={16} color="#6b3a8a" />
+                    </Animated.View>
+                  </TouchableOpacity>
+                </Animated.View>
+              </React.Fragment>
             );
           })}
         </View>
@@ -957,6 +967,13 @@ const styles = StyleSheet.create({
   },
   menuSection: {
     marginBottom: 16,
+  },
+  menuSectionHeader: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#6b3a8a',
+    marginBottom: 8,
+    marginTop: 6,
   },
   menuItem: {
     marginBottom: 10,

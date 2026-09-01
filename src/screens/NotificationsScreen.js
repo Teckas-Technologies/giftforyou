@@ -77,6 +77,8 @@ const getNotificationIcon = (type, title = '') => {
       return '🎉';
     case 'friend_request_declined':
       return '🙁';
+    case 'love_note_received':
+      return '💌';
     default:
       return '🔔';
   }
