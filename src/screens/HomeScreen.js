@@ -22,7 +22,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { getDashboardStats, getUpcomingEvents, getProfile, getRandomLoveNote } from '../services/api';
 import { getDateParts, daysUntil as appDaysUntil } from '../utils/date';
 import { hasShownLoveNoteToday, markLoveNoteShownToday } from '../services/loveNoteSession';
-import { CustomAlert } from '../components';
+import { LoveNotePopup } from '../components';
 
 // Users Icon SVG
 const UsersIcon = ({ size = 18, color = '#ca9ad6' }) => (
@@ -654,12 +654,9 @@ const HomeScreen = ({ navigation }) => {
         </Animated.View>
       </ScrollView>
 
-      <CustomAlert
+      <LoveNotePopup
         visible={!!loveNote}
-        type="info"
-        title="💌 A Love Note for You"
-        message={loveNote?.text}
-        buttons={[{ text: 'Close', onPress: () => setLoveNote(null) }]}
+        text={loveNote?.text}
         onClose={() => setLoveNote(null)}
       />
     </View>
