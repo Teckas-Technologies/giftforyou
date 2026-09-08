@@ -181,6 +181,7 @@ const apiRequest = async (endpoint, options = {}) => {
       }
       const err = new Error(message);
       err.details = data.details;
+      err.code = data.code;
       throw err;
     }
 
@@ -717,6 +718,27 @@ export const submitLoveNoteIdea = (text) =>
   });
 
 // ═══════════════════════════════════════════════════════════════
+// BILLING API
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Get the current user's plan ('free' | 'individual' | 'organization')
+ */
+export const getPlanStatus = () => apiRequest('/api/billing/status');
+
+/**
+ * Redeem a company coupon code for Organization Plan access
+ * @param {string} code - The coupon code
+ * @param {string} workEmail - Email at the company's domain, used only to
+ *   check the domain matches — not stored as the user's login email
+ */
+export const redeemCoupon = (code, workEmail) =>
+  apiRequest('/api/billing/redeem-coupon', {
+    method: 'POST',
+    body: JSON.stringify({ code, workEmail }),
+  });
+
+// ═══════════════════════════════════════════════════════════════
 // DEFAULT EXPORT
 // ═══════════════════════════════════════════════════════════════
 
@@ -809,4 +831,8 @@ export default {
   getRandomLoveNote,
   sendLoveNote,
   submitLoveNoteIdea,
+
+  // Billing
+  getPlanStatus,
+  redeemCoupon,
 };

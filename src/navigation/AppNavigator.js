@@ -32,6 +32,8 @@ import {
   DiscoverScreen,
   SendLoveNoteScreen,
   SubmitLoveNoteScreen,
+  SubscriptionScreen,
+  RedeemCouponScreen,
 } from '../screens';
 import { colors } from '../theme';
 
@@ -138,6 +140,8 @@ const MainStack = ({ initialRoute = 'MainApp' }) => {
       <Stack.Screen name="Discover" component={DiscoverScreen} />
       <Stack.Screen name="SendLoveNote" component={SendLoveNoteScreen} />
       <Stack.Screen name="SubmitLoveNote" component={SubmitLoveNoteScreen} />
+      <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+      <Stack.Screen name="RedeemCoupon" component={RedeemCouponScreen} />
     </Stack.Navigator>
   );
 };
