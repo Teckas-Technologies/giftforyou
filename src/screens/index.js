@@ -23,6 +23,7 @@ export { default as SendLoveNoteScreen } from './SendLoveNoteScreen';
 export { default as SubmitLoveNoteScreen } from './SubmitLoveNoteScreen';
 export { default as SubscriptionScreen } from './SubscriptionScreen';
 export { default as RedeemCouponScreen } from './RedeemCouponScreen';
+export { default as CompanyCodeIntroScreen } from './CompanyCodeIntroScreen';
 
 // Legacy exports for compatibility
 export { default as CirclesScreen } from './CirclesScreen';

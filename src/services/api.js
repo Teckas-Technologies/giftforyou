@@ -727,15 +727,27 @@ export const submitLoveNoteIdea = (text) =>
 export const getPlanStatus = () => apiRequest('/api/billing/status');
 
 /**
- * Redeem a company coupon code for Organization Plan access
+ * Validate a company coupon code + work email, and — if valid — email a
+ * 6-digit verification code to that address. Nothing is granted yet; call
+ * verifyCouponCode with the code the user receives to complete it.
  * @param {string} code - The coupon code
- * @param {string} workEmail - Email at the company's domain, used only to
- *   check the domain matches — not stored as the user's login email
+ * @param {string} workEmail - Email at the company's domain
  */
-export const redeemCoupon = (code, workEmail) =>
-  apiRequest('/api/billing/redeem-coupon', {
+export const requestCouponCode = (code, workEmail) =>
+  apiRequest('/api/billing/coupon/request-code', {
     method: 'POST',
     body: JSON.stringify({ code, workEmail }),
+  });
+
+/**
+ * Submit the 6-digit code sent by requestCouponCode. Grants Organization
+ * Plan access only if it matches and hasn't expired.
+ * @param {string} code - The 6-digit verification code
+ */
+export const verifyCouponCode = (code) =>
+  apiRequest('/api/billing/coupon/verify-code', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
   });
 
 // ═══════════════════════════════════════════════════════════════
@@ -834,5 +846,6 @@ export default {
 
   // Billing
   getPlanStatus,
-  redeemCoupon,
+  requestCouponCode,
+  verifyCouponCode,
 };

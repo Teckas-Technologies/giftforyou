@@ -13,9 +13,10 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Polyline } from 'react-native-svg';
-import { redeemCoupon } from '../services/api';
+import { requestCouponCode, verifyCouponCode } from '../services/api';
 import { CustomAlert } from '../components';
 import useAlert from '../hooks/useAlert';
+import { useAuth } from '../contexts/AuthContext';
 
 const BackIcon = ({ size = 24, color = '#6b3a8a' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -23,28 +24,69 @@ const BackIcon = ({ size = 24, color = '#6b3a8a' }) => (
   </Svg>
 );
 
-const RedeemCouponScreen = ({ navigation }) => {
+const RedeemCouponScreen = ({ navigation, route }) => {
+  const { user } = useAuth();
+  // Set only when reached from the post-signup "Have a company code?"
+  // intro screen — success should continue into the app instead of going
+  // back to a Settings screen that was never opened.
+  const nextRoute = route?.params?.nextRoute;
+  const [step, setStep] = useState('code'); // 'code' | 'verify'
   const [code, setCode] = useState('');
-  const [workEmail, setWorkEmail] = useState('');
+  // Pre-filled with the account's own email — most people sign up with
+  // their work email already, so this saves re-typing it. Still editable
+  // for anyone who signed up with a personal email instead.
+  const [workEmail, setWorkEmail] = useState(user?.email || '');
+  const [verificationCode, setVerificationCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [sentToEmail, setSentToEmail] = useState('');
 
   const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
 
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const canSubmit = !!code.trim() && isValidEmail(workEmail.trim()) && !submitting;
+  const canSendCode = !!code.trim() && isValidEmail(workEmail.trim()) && !submitting;
+  const canVerify = verificationCode.trim().length === 6 && !submitting;
 
-  const handleSubmit = async () => {
-    if (!canSubmit) return;
+  const handleSendCode = async () => {
+    if (!canSendCode) return;
 
     setSubmitting(true);
     try {
-      await redeemCoupon(code.trim(), workEmail.trim());
-      showSuccess('Coupon redeemed! Your account now has Organization Plan access. 🎉', () => navigation.goBack());
+      const result = await requestCouponCode(code.trim(), workEmail.trim());
+      setSentToEmail(result.workEmail);
+      setStep('verify');
     } catch (error) {
-      showError(error.message || 'Failed to redeem coupon');
+      showError(error.message || 'Failed to send verification code');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleVerify = async () => {
+    if (!canVerify) return;
+
+    setSubmitting(true);
+    try {
+      await verifyCouponCode(verificationCode.trim());
+      showSuccess('Verified! Your account now has Organization Plan access. 🎉', () => {
+        if (nextRoute) {
+          // reset, not replace — clears CompanyCodeIntro + this screen from
+          // the stack entirely, so the back button can't loop into this
+          // one-time flow again.
+          navigation.reset({ index: 0, routes: [{ name: nextRoute }] });
+        } else {
+          navigation.goBack();
+        }
+      });
+    } catch (error) {
+      showError(error.message || 'Failed to verify code');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleResend = () => {
+    setStep('code');
+    setVerificationCode('');
   };
 
   return (
@@ -76,41 +118,79 @@ const RedeemCouponScreen = ({ navigation }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.sectionHint}>
-            If your company gives you access to Thoughtfully, enter the code they shared and your work email below.
-          </Text>
+          {step === 'code' ? (
+            <>
+              <Text style={styles.sectionHint}>
+                {nextRoute
+                  ? 'If your company gives you access to Thoughtfully, enter the code they shared below.'
+                  : 'If your company gives you access to Thoughtfully, enter the code they shared and your work email below.'}
+              </Text>
 
-          <Text style={styles.sectionLabel}>Company Code</Text>
-          <TextInput
-            style={styles.input}
-            value={code}
-            onChangeText={setCode}
-            placeholder="E.g., ACMECORP2026"
-            placeholderTextColor="#b8a5c4"
-            autoCapitalize="characters"
-            autoCorrect={false}
-          />
+              <Text style={styles.sectionLabel}>Company Code</Text>
+              <TextInput
+                style={styles.input}
+                value={code}
+                onChangeText={setCode}
+                placeholder="E.g., ACMECORP2026"
+                placeholderTextColor="#b8a5c4"
+                autoCapitalize="characters"
+                autoCorrect={false}
+              />
 
-          <Text style={styles.sectionLabel}>Work Email</Text>
-          <TextInput
-            style={styles.input}
-            value={workEmail}
-            onChangeText={setWorkEmail}
-            placeholder="you@yourcompany.com"
-            placeholderTextColor="#b8a5c4"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
+              {nextRoute ? (
+                // Reached right after signup — the email is already known,
+                // so just confirm it instead of asking for it again.
+                <>
+                  <Text style={styles.sectionLabel}>Work Email</Text>
+                  <Text style={styles.confirmedEmail}>We'll verify {workEmail}</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.sectionLabel}>Work Email</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={workEmail}
+                    onChangeText={setWorkEmail}
+                    placeholder="you@yourcompany.com"
+                    placeholderTextColor="#b8a5c4"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              <Text style={styles.sectionHint}>
+                We sent a 6-digit code to {sentToEmail}. Enter it below to confirm this is your work email.
+              </Text>
+
+              <Text style={styles.sectionLabel}>Verification Code</Text>
+              <TextInput
+                style={styles.input}
+                value={verificationCode}
+                onChangeText={(text) => setVerificationCode(text.replace(/[^0-9]/g, '').slice(0, 6))}
+                placeholder="123456"
+                placeholderTextColor="#b8a5c4"
+                keyboardType="number-pad"
+                maxLength={6}
+              />
+
+              <TouchableOpacity onPress={handleResend} style={styles.resendLink}>
+                <Text style={styles.resendLinkText}>Resend code</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
 
       <View style={styles.footer}>
         <TouchableOpacity
-          disabled={!canSubmit}
-          onPress={handleSubmit}
+          disabled={step === 'code' ? !canSendCode : !canVerify}
+          onPress={step === 'code' ? handleSendCode : handleVerify}
           activeOpacity={0.8}
-          style={{ opacity: canSubmit ? 1 : 0.5 }}
+          style={{ opacity: (step === 'code' ? canSendCode : canVerify) ? 1 : 0.5 }}
         >
           <LinearGradient
             colors={['#ca9ad6', '#70d0dd']}
@@ -121,7 +201,7 @@ const RedeemCouponScreen = ({ navigation }) => {
             {submitting ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Text style={styles.submitButtonText}>Redeem Code</Text>
+              <Text style={styles.submitButtonText}>{step === 'code' ? 'Send Code' : 'Verify'}</Text>
             )}
           </LinearGradient>
         </TouchableOpacity>
@@ -184,6 +264,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#330c54',
     marginBottom: 8,
+  },
+  confirmedEmail: {
+    fontFamily: 'Handlee_400Regular',
+    fontSize: 16,
+    color: '#330c54',
+    marginBottom: 20,
+  },
+  resendLink: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  resendLinkText: {
+    fontFamily: 'Handlee_400Regular',
+    fontSize: 14,
+    color: '#6b3a8a',
   },
   input: {
     fontFamily: 'Handlee_400Regular',
