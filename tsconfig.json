@@ -1,0 +1,11 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    // `catch (error) { error.message }` is used throughout this codebase —
+    // requiring `unknown` + a type guard at every one of those call sites
+    // is more churn than value for a JS->TS migration. Every other strict
+    // check stays on.
+    "useUnknownInCatchVariables": false
+  }
+}
