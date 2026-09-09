@@ -2,7 +2,7 @@
 // subscription). Backend calls (plan status, coupon redemption) live in
 // api.js alongside every other endpoint — this file only talks to the
 // native purchases SDK.
-import { Platform } from 'react-native';
+import { Platform, Linking } from 'react-native';
 import Purchases from 'react-native-purchases';
 
 const REVENUECAT_API_KEY = Platform.select({
@@ -56,4 +56,19 @@ export const purchasePackage = async (pkg) => {
 export const restorePurchases = async () => {
   const customerInfo = await Purchases.restorePurchases();
   return customerInfo;
+};
+
+/**
+ * Opens the platform's own subscription management screen (where the real
+ * Cancel button lives — neither store gives apps an API to cancel directly).
+ * iOS: Purchases.showManageSubscriptions() only works on iOS 13+; Android
+ * has no equivalent SDK method, so we deep-link to the Play Store's
+ * subscriptions page for this app instead.
+ */
+export const openManageSubscriptions = async () => {
+  if (Platform.OS === 'ios') {
+    await Purchases.showManageSubscriptions();
+  } else {
+    await Linking.openURL('https://play.google.com/store/account/subscriptions?package=com.giftbox4you.app');
+  }
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,18 +9,27 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Animated,
+  Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import MaskedView from '@react-native-masked-view/masked-view';
-import Svg, { Polyline } from 'react-native-svg';
+import Svg, { Polyline, Path } from 'react-native-svg';
 import { requestCouponCode, verifyCouponCode } from '../services/api';
 import { CustomAlert } from '../components';
 import useAlert from '../hooks/useAlert';
 import { useAuth } from '../contexts/AuthContext';
+import { colors } from '../theme';
 
-const BackIcon = ({ size = 24, color = '#6b3a8a' }) => (
+const BackIcon = ({ size = 22, color = colors.textLight }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <Polyline points="15 18 9 12 15 6" />
+  </Svg>
+);
+
+const MailIcon = ({ size = 16, color = colors.secondary }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+    <Polyline points="22,6 12,13 2,6" />
   </Svg>
 );
 
@@ -37,8 +46,36 @@ const RedeemCouponScreen = ({ navigation, route }) => {
   // for anyone who signed up with a personal email instead.
   const [workEmail, setWorkEmail] = useState(user?.email || '');
   const [verificationCode, setVerificationCode] = useState('');
+  const [codeInputFocused, setCodeInputFocused] = useState(false);
+  const [codeFieldFocused, setCodeFieldFocused] = useState(false);
+  const [emailFieldFocused, setEmailFieldFocused] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [sentToEmail, setSentToEmail] = useState('');
+  const codeInputRef = useRef(null);
+
+  // Whole-screen entrance, once on mount.
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+  // Re-triggered whenever `step` changes, so switching from the code form
+  // to the verify screen feels like a deliberate transition, not a hard cut.
+  const stepFade = useRef(new Animated.Value(1)).current;
+  const stepSlide = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 400, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 400, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  useEffect(() => {
+    stepFade.setValue(0);
+    stepSlide.setValue(16);
+    Animated.parallel([
+      Animated.timing(stepFade, { toValue: 1, duration: 320, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+      Animated.timing(stepSlide, { toValue: 0, duration: 320, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+    ]).start();
+  }, [step]);
 
   const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
 
@@ -92,7 +129,7 @@ const RedeemCouponScreen = ({ navigation, route }) => {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
+        colors={[colors.background, colors.primaryLight, colors.primaryBg, colors.background]}
         locations={[0, 0.3, 0.7, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -100,16 +137,10 @@ const RedeemCouponScreen = ({ navigation, route }) => {
       />
 
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <BackIcon size={24} color="#6b3a8a" />
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+          <BackIcon size={22} color={colors.textLight} />
         </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <MaskedView maskElement={<Text style={styles.headerTitleMask}>Redeem Company Code</Text>}>
-            <LinearGradient colors={['#ca9ad6', '#70d0dd']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-              <Text style={[styles.headerTitleMask, { opacity: 0 }]}>Redeem Company Code</Text>
-            </LinearGradient>
-          </MaskedView>
-        </View>
+        <Text style={styles.headerTitle}>Company Access</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -117,71 +148,111 @@ const RedeemCouponScreen = ({ navigation, route }) => {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+          <View style={styles.stepIndicator}>
+            <View style={[styles.stepBar, styles.stepBarActive]} />
+            <View style={[styles.stepBar, step === 'verify' && styles.stepBarActive]} />
+          </View>
+
+          <Animated.View style={{ opacity: stepFade, transform: [{ translateX: stepSlide }] }}>
           {step === 'code' ? (
             <>
+              <Text style={styles.title}>Enter your code</Text>
               <Text style={styles.sectionHint}>
                 {nextRoute
-                  ? 'If your company gives you access to Thoughtfully, enter the code they shared below.'
-                  : 'If your company gives you access to Thoughtfully, enter the code they shared and your work email below.'}
+                  ? "Your company's code unlocks everything, instantly."
+                  : "Your company's code unlocks everything, instantly — verify your work email to redeem it."}
               </Text>
 
               <Text style={styles.sectionLabel}>Company Code</Text>
-              <TextInput
-                style={styles.input}
-                value={code}
-                onChangeText={setCode}
-                placeholder="E.g., ACMECORP2026"
-                placeholderTextColor="#b8a5c4"
-                autoCapitalize="characters"
-                autoCorrect={false}
-              />
+              <View style={[styles.inputWrap, codeFieldFocused && styles.inputWrapFocused]}>
+                <TextInput
+                  style={styles.input}
+                  value={code}
+                  onChangeText={setCode}
+                  onFocus={() => setCodeFieldFocused(true)}
+                  onBlur={() => setCodeFieldFocused(false)}
+                  placeholder="ACMECORP2026"
+                  placeholderTextColor="#d9d0e3"
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                />
+              </View>
 
               {nextRoute ? (
                 // Reached right after signup — the email is already known,
                 // so just confirm it instead of asking for it again.
-                <>
-                  <Text style={styles.sectionLabel}>Work Email</Text>
-                  <Text style={styles.confirmedEmail}>We'll verify {workEmail}</Text>
-                </>
+                <View style={styles.confirmedEmailRow}>
+                  <MailIcon size={15} color={colors.secondary} />
+                  <Text style={styles.confirmedEmail}>
+                    Verifying <Text style={styles.confirmedEmailBold}>{workEmail}</Text>
+                  </Text>
+                </View>
               ) : (
                 <>
                   <Text style={styles.sectionLabel}>Work Email</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={workEmail}
-                    onChangeText={setWorkEmail}
-                    placeholder="you@yourcompany.com"
-                    placeholderTextColor="#b8a5c4"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
+                  <View style={[styles.inputWrap, emailFieldFocused && styles.inputWrapFocused]}>
+                    <TextInput
+                      style={styles.input}
+                      value={workEmail}
+                      onChangeText={setWorkEmail}
+                      onFocus={() => setEmailFieldFocused(true)}
+                      onBlur={() => setEmailFieldFocused(false)}
+                      placeholder="you@yourcompany.com"
+                      placeholderTextColor="#d9d0e3"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                  </View>
                 </>
               )}
             </>
           ) : (
             <>
+              <Text style={styles.title}>Check your inbox</Text>
               <Text style={styles.sectionHint}>
-                We sent a 6-digit code to {sentToEmail}. Enter it below to confirm this is your work email.
+                We sent a 6-digit code to <Text style={styles.sectionHintBold}>{sentToEmail}</Text>
               </Text>
 
-              <Text style={styles.sectionLabel}>Verification Code</Text>
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={() => codeInputRef.current?.focus()}
+                style={styles.otpRow}
+              >
+                {Array.from({ length: 6 }).map((_, i) => {
+                  const digit = verificationCode[i];
+                  const isCursor = codeInputFocused && i === verificationCode.length;
+                  return (
+                    <View
+                      key={i}
+                      style={[styles.otpBox, (isCursor || (codeInputFocused && digit)) && styles.otpBoxActive]}
+                    >
+                      <Text style={styles.otpDigit}>{digit || ''}</Text>
+                    </View>
+                  );
+                })}
+              </TouchableOpacity>
               <TextInput
-                style={styles.input}
+                ref={codeInputRef}
                 value={verificationCode}
                 onChangeText={(text) => setVerificationCode(text.replace(/[^0-9]/g, '').slice(0, 6))}
-                placeholder="123456"
-                placeholderTextColor="#b8a5c4"
+                onFocus={() => setCodeInputFocused(true)}
+                onBlur={() => setCodeInputFocused(false)}
                 keyboardType="number-pad"
                 maxLength={6}
+                style={styles.hiddenInput}
+                autoFocus
               />
 
               <TouchableOpacity onPress={handleResend} style={styles.resendLink}>
-                <Text style={styles.resendLinkText}>Resend code</Text>
+                <Text style={styles.resendLinkText}>Didn't get it? Resend</Text>
               </TouchableOpacity>
             </>
           )}
+          </Animated.View>
+        </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -189,11 +260,11 @@ const RedeemCouponScreen = ({ navigation, route }) => {
         <TouchableOpacity
           disabled={step === 'code' ? !canSendCode : !canVerify}
           onPress={step === 'code' ? handleSendCode : handleVerify}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
           style={{ opacity: (step === 'code' ? canSendCode : canVerify) ? 1 : 0.5 }}
         >
           <LinearGradient
-            colors={['#ca9ad6', '#70d0dd']}
+            colors={[colors.secondary, colors.primary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.submitButton}
@@ -215,7 +286,7 @@ const RedeemCouponScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -238,58 +309,58 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerTitleMask: {
-    fontSize: 18,
+  headerTitle: {
     fontFamily: 'Handlee_400Regular',
-    textAlign: 'center',
+    fontSize: 18,
+    color: colors.textDark,
   },
   scrollContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
+    paddingTop: 12,
     paddingBottom: 40,
+  },
+  stepIndicator: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 24,
+  },
+  stepBar: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.secondaryBg,
+  },
+  stepBarActive: {
+    backgroundColor: colors.secondary,
+  },
+  title: {
+    fontSize: 24,
+    fontFamily: 'Handlee_400Regular',
+    color: colors.textDark,
+    marginBottom: 8,
   },
   sectionHint: {
     fontFamily: 'Handlee_400Regular',
     fontSize: 14,
-    color: '#6b3a8a',
     lineHeight: 20,
-    marginTop: 8,
-    marginBottom: 20,
+    color: colors.textLight,
+    marginBottom: 24,
+  },
+  sectionHintBold: {
+    fontFamily: 'Handlee_400Regular',
+    color: colors.textDark,
   },
   sectionLabel: {
     fontFamily: 'Handlee_400Regular',
     fontSize: 15,
-    color: '#330c54',
+    color: colors.textDark,
     marginBottom: 8,
   },
-  confirmedEmail: {
-    fontFamily: 'Handlee_400Regular',
-    fontSize: 16,
-    color: '#330c54',
-    marginBottom: 20,
-  },
-  resendLink: {
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  resendLinkText: {
-    fontFamily: 'Handlee_400Regular',
-    fontSize: 14,
-    color: '#6b3a8a',
-  },
-  input: {
-    fontFamily: 'Handlee_400Regular',
+  inputWrap: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#333',
     borderWidth: 2,
-    borderColor: '#f4cae8',
+    borderColor: colors.inputBorder,
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -297,12 +368,83 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
-  footer: {
-    padding: 16,
-    paddingBottom: 30,
+  inputWrapFocused: {
+    borderColor: colors.inputFocusBorder,
+  },
+  input: {
+    fontFamily: 'Handlee_400Regular',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: '#333',
+  },
+  confirmedEmailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.secondaryBg,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 20,
+  },
+  confirmedEmail: {
+    fontFamily: 'Handlee_400Regular',
+    fontSize: 14,
+    color: colors.textLight,
+    flexShrink: 1,
+  },
+  confirmedEmailBold: {
+    fontFamily: 'Handlee_400Regular',
+    color: colors.textDark,
+  },
+  otpRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  otpBox: {
+    width: 46,
+    height: 56,
+    borderRadius: 14,
     backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderWidth: 2,
+    borderColor: colors.inputBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  otpBoxActive: {
+    borderColor: colors.inputFocusBorder,
+  },
+  otpDigit: {
+    fontFamily: 'Handlee_400Regular',
+    fontSize: 22,
+    color: colors.textDark,
+  },
+  hiddenInput: {
+    position: 'absolute',
+    opacity: 0,
+    height: 1,
+    width: 1,
+  },
+  resendLink: {
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  resendLinkText: {
+    fontFamily: 'Handlee_400Regular',
+    fontSize: 14,
+    color: colors.textLight,
+  },
+  footer: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 30,
   },
   submitButton: {
     borderRadius: 16,
