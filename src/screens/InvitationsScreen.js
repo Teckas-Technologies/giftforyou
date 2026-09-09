@@ -180,7 +180,7 @@ const InvitationsScreen = ({ navigation, route }) => {
   const [prefillContactId, setPrefillContactId] = useState(null);
 
   // Custom alert hook
-  const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
+  const { alertConfig, showSuccess, showError, showOptions, hideAlert } = useAlert();
 
   // Fetch invitations from API
   // `silent` skips the loading/refreshing spinners — used by the background
@@ -370,7 +370,17 @@ const InvitationsScreen = ({ navigation, route }) => {
       // Show user-friendly message for the two "already" cases the backend returns.
       // Backend error strings: 'Already invited' (pending) or 'Already completed' (questionnaire done).
       const msg = error.message?.toLowerCase() || '';
-      if (msg.includes('already invited') || msg.includes('already sent')) {
+      if (error.code === 'UPGRADE_REQUIRED') {
+        showOptions(
+          'Upgrade to invite more',
+          'Free plan is limited to 1 contact. Upgrade to send more invites.',
+          [
+            { text: 'Have a company code? Redeem it here', onPress: () => navigation.navigate('RedeemCoupon'), style: 'cancel' },
+            { text: 'Not now', style: 'cancel' },
+            { text: 'Upgrade', onPress: () => navigation.navigate('Subscription') },
+          ]
+        );
+      } else if (msg.includes('already invited') || msg.includes('already sent')) {
         showError(
           `You've already sent an invitation to ${newEmail.trim().toLowerCase()}. Open the Pending tab to resend it.`
         );

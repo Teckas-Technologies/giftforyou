@@ -5,6 +5,7 @@ import {
 } from '@react-native-google-signin/google-signin';
 import { supabase } from '../config/supabase';
 import { registerForPushNotifications } from '../services/notifications';
+import { initPurchases } from '../services/billing';
 import { checkEmailRegistered } from '../services/api';
 
 GoogleSignin.configure({
@@ -59,6 +60,10 @@ export const AuthProvider = ({ children }) => {
         }
       }).catch(err => {
         console.log('Push registration error:', err);
+      });
+
+      initPurchases(user.id).catch(err => {
+        console.log('RevenueCat init error:', err);
       });
     }
   }, [session, user]);

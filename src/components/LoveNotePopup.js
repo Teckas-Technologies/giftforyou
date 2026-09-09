@@ -21,9 +21,22 @@ const HeartIcon = ({ size = 26, color = '#FFFFFF' }) => (
   </Svg>
 );
 
-// Drifts a heart/sparkle emoji upward on a loop, fading in then out —
-// ambient background warmth behind the card, like the mockup.
-const FloatingHeart = ({ emoji, left, delay }) => {
+const HeartIconFilled = ({ size = 22, color = '#ca9ad6' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none">
+    <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </Svg>
+);
+
+const SparkleIcon = ({ size = 18, color = '#ffffff' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none">
+    <Path d="M12 2c.6 3.6 1.9 5.9 5 7-3.1 1.1-4.4 3.4-5 7-.6-3.6-1.9-5.9-5-7 3.1-1.1 4.4-3.4 5-7z" />
+  </Svg>
+);
+
+// Drifts a small heart/sparkle icon upward on a loop, fading in then out —
+// ambient background warmth behind the card, like the mockup. Real vector
+// icons instead of emoji, so it renders consistently across devices.
+const FloatingHeart = ({ Icon, left, delay }) => {
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -48,11 +61,11 @@ const FloatingHeart = ({ emoji, left, delay }) => {
   const scale = progress.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.05] });
 
   return (
-    <Animated.Text
+    <Animated.View
       style={[styles.floatHeart, { left, opacity, transform: [{ translateY }, { scale }] }]}
     >
-      {emoji}
-    </Animated.Text>
+      <Icon />
+    </Animated.View>
   );
 };
 
@@ -89,9 +102,9 @@ const LoveNotePopup = ({ visible, text, onClose }) => {
     <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
         <Animated.View style={[styles.overlay, { opacity: opacityAnim }]}>
-          <FloatingHeart emoji="💕" left="18%" delay={200} />
-          <FloatingHeart emoji="💗" left="72%" delay={1400} />
-          <FloatingHeart emoji="✨" left="46%" delay={2500} />
+          <FloatingHeart Icon={() => <HeartIconFilled size={20} color="#f4a6de" />} left="18%" delay={200} />
+          <FloatingHeart Icon={() => <HeartIconFilled size={16} color="#a3e8f0" />} left="72%" delay={1400} />
+          <FloatingHeart Icon={() => <SparkleIcon size={18} color="#e8c9f0" />} left="46%" delay={2500} />
           <TouchableWithoutFeedback>
             <Animated.View style={[styles.card, { transform: [{ scale: scaleAnim }] }]}>
               <View style={styles.iconWrap}>
@@ -143,7 +156,7 @@ const LoveNotePopup = ({ visible, text, onClose }) => {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(51, 12, 84, 0.45)',
+    backgroundColor: 'rgba(20, 10, 30, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -151,7 +164,6 @@ const styles = StyleSheet.create({
   floatHeart: {
     position: 'absolute',
     bottom: 160,
-    fontSize: 20,
   },
   card: {
     width: width - 64,

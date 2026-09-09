@@ -113,7 +113,7 @@ const DiscoverScreen = ({ navigation }) => {
   const searchDebounce = useRef(null);
 
   // Custom alert hook
-  const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
+  const { alertConfig, showSuccess, showError, showOptions, hideAlert } = useAlert();
 
   // Animations
   const headerAnim = useRef(new Animated.Value(0)).current;
@@ -347,7 +347,19 @@ const DiscoverScreen = ({ navigation }) => {
       );
     } catch (error) {
       console.log('Error sending friend request:', error);
-      showError('Failed to send request. Please try again.');
+      if (error.code === 'UPGRADE_REQUIRED') {
+        showOptions(
+          'Upgrade to add more',
+          'Free plan is limited to 1 contact. Upgrade to connect with more people.',
+          [
+            { text: 'Have a company code? Redeem it here', onPress: () => navigation.navigate('RedeemCoupon'), style: 'cancel' },
+            { text: 'Not now', style: 'cancel' },
+            { text: 'Upgrade', onPress: () => navigation.navigate('Subscription') },
+          ]
+        );
+      } else {
+        showError('Failed to send request. Please try again.');
+      }
     } finally {
       setAddingIds((prev) => ({ ...prev, [userId]: false }));
     }

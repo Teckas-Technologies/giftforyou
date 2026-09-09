@@ -32,6 +32,9 @@ import {
   DiscoverScreen,
   SendLoveNoteScreen,
   SubmitLoveNoteScreen,
+  SubscriptionScreen,
+  RedeemCouponScreen,
+  CompanyCodeIntroScreen,
 } from '../screens';
 import { colors } from '../theme';
 
@@ -117,7 +120,7 @@ const AuthStack = () => {
 };
 
 // Main App Stack Navigator (for authenticated users)
-const MainStack = ({ initialRoute = 'MainApp' }) => {
+const MainStack = ({ initialRoute = 'MainApp', initialRouteParams }) => {
   return (
     <Stack.Navigator
       screenOptions={{
@@ -129,6 +132,11 @@ const MainStack = ({ initialRoute = 'MainApp' }) => {
       <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
       <Stack.Screen name="AddContact" component={AddContactScreen} />
       <Stack.Screen name="Questionnaire" component={QuestionnaireScreen} />
+      <Stack.Screen
+        name="CompanyCodeIntro"
+        component={CompanyCodeIntroScreen}
+        initialParams={initialRouteParams}
+      />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="Invitations" component={InvitationsScreen} />
       <Stack.Screen name="AddEvent" component={AddEventScreen} />
@@ -138,6 +146,8 @@ const MainStack = ({ initialRoute = 'MainApp' }) => {
       <Stack.Screen name="Discover" component={DiscoverScreen} />
       <Stack.Screen name="SendLoveNote" component={SendLoveNoteScreen} />
       <Stack.Screen name="SubmitLoveNote" component={SubmitLoveNoteScreen} />
+      <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+      <Stack.Screen name="RedeemCoupon" component={RedeemCouponScreen} />
     </Stack.Navigator>
   );
 };
@@ -161,6 +171,7 @@ const AppNavigator = () => {
   const { isAuthenticated, loading } = useAuth();
   const [checkingProfile, setCheckingProfile] = useState(false);
   const [initialRoute, setInitialRoute] = useState('MainApp');
+  const [initialRouteParams, setInitialRouteParams] = useState(undefined);
   const [profileChecked, setProfileChecked] = useState(false);
 
   // Check if questionnaire is completed when user is authenticated
@@ -182,7 +193,16 @@ const AppNavigator = () => {
             (user?.questionnaireCompletionPercent || 0) > 0;
 
           if (user && !hasAnyAnswers) {
-            setInitialRoute('Questionnaire');
+            // Same "genuinely new user" signal also gates the one-time
+            // "Have a company code?" prompt — shown once, right before the
+            // questionnaire, never again on later logins. Free-plan users
+            // only; anyone already upgraded has no reason to see it.
+            if ((user.plan || 'free') === 'free') {
+              setInitialRoute('CompanyCodeIntro');
+              setInitialRouteParams({ nextRoute: 'Questionnaire' });
+            } else {
+              setInitialRoute('Questionnaire');
+            }
           } else {
             setInitialRoute('MainApp');
           }
@@ -219,7 +239,11 @@ const AppNavigator = () => {
 
   return (
     <NavigationContainer ref={navigationRef}>
-      {isAuthenticated ? <MainStack initialRoute={initialRoute} /> : <AuthStack />}
+      {isAuthenticated ? (
+        <MainStack initialRoute={initialRoute} initialRouteParams={initialRouteParams} />
+      ) : (
+        <AuthStack />
+      )}
     </NavigationContainer>
   );
 };

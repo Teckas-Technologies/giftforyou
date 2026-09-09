@@ -181,6 +181,7 @@ const apiRequest = async (endpoint, options = {}) => {
       }
       const err = new Error(message);
       err.details = data.details;
+      err.code = data.code;
       throw err;
     }
 
@@ -717,6 +718,39 @@ export const submitLoveNoteIdea = (text) =>
   });
 
 // ═══════════════════════════════════════════════════════════════
+// BILLING API
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Get the current user's plan ('free' | 'individual' | 'organization')
+ */
+export const getPlanStatus = () => apiRequest('/api/billing/status');
+
+/**
+ * Validate a company coupon code + work email, and — if valid — email a
+ * 6-digit verification code to that address. Nothing is granted yet; call
+ * verifyCouponCode with the code the user receives to complete it.
+ * @param {string} code - The coupon code
+ * @param {string} workEmail - Email at the company's domain
+ */
+export const requestCouponCode = (code, workEmail) =>
+  apiRequest('/api/billing/coupon/request-code', {
+    method: 'POST',
+    body: JSON.stringify({ code, workEmail }),
+  });
+
+/**
+ * Submit the 6-digit code sent by requestCouponCode. Grants Organization
+ * Plan access only if it matches and hasn't expired.
+ * @param {string} code - The 6-digit verification code
+ */
+export const verifyCouponCode = (code) =>
+  apiRequest('/api/billing/coupon/verify-code', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  });
+
+// ═══════════════════════════════════════════════════════════════
 // DEFAULT EXPORT
 // ═══════════════════════════════════════════════════════════════
 
@@ -809,4 +843,9 @@ export default {
   getRandomLoveNote,
   sendLoveNote,
   submitLoveNoteIdea,
+
+  // Billing
+  getPlanStatus,
+  requestCouponCode,
+  verifyCouponCode,
 };

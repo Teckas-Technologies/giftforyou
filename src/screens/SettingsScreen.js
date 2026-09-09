@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
-import { updateSettings, clearUserCredentials } from '../services/api';
+import { useFocusEffect } from '@react-navigation/native';
+import { updateSettings, clearUserCredentials, getPlanStatus } from '../services/api';
 import { scheduleLocalNotification } from '../services/notifications';
 import { CustomAlert, GiftBoxIcon, Toast } from '../components';
 import useAlert from '../hooks/useAlert';
@@ -48,6 +49,20 @@ const UserIcon = ({ size = 22, color = '#ca9ad6' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
     <Circle cx="12" cy="7" r="4" />
+  </Svg>
+);
+
+const CreditCardIcon = ({ size = 22, color = '#ca9ad6' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+    <Line x1="1" y1="10" x2="23" y2="10" />
+  </Svg>
+);
+
+const TagIcon = ({ size = 22, color = '#ca9ad6' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+    <Line x1="7" y1="7" x2="7.01" y2="7" />
   </Svg>
 );
 
@@ -107,6 +122,18 @@ const SettingsScreen = ({ navigation }) => {
   });
 
   const [toast, setToast] = useState({ visible: false, message: '' });
+
+  const [plan, setPlan] = useState('free');
+  const PLAN_LABELS = { free: 'Free', individual: 'Individual', organization: 'Organization' };
+  const planLabel = PLAN_LABELS[plan] || 'Free';
+
+  useFocusEffect(
+    useCallback(() => {
+      getPlanStatus()
+        .then(({ plan: currentPlan }) => setPlan(currentPlan || 'free'))
+        .catch(() => {});
+    }, [])
+  );
 
   const showToast = (message) => {
     setToast({ visible: true, message });
@@ -401,6 +428,22 @@ const SettingsScreen = ({ navigation }) => {
                 channelId: 'reminders',
               })
             }
+          />
+        </Animated.View>
+
+        {/* Plan & Billing Section */}
+        <Animated.View style={[styles.section, createSlideStyle(sectionAnims[2])]}>
+          <Text style={styles.sectionTitle}>Plan & Billing</Text>
+          <SettingRow
+            icon={CreditCardIcon}
+            label="Manage Subscription"
+            value={planLabel}
+            onPress={() => navigation.navigate('Subscription')}
+          />
+          <SettingRow
+            icon={TagIcon}
+            label="Redeem Company Code"
+            onPress={() => navigation.navigate('RedeemCoupon')}
           />
         </Animated.View>
 

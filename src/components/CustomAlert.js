@@ -136,7 +136,7 @@ const CustomAlert = ({
             <View style={styles.iconContainer}>{getIcon()}</View>
             <Text style={styles.title}>{title}</Text>
             {message && <Text style={styles.message}>{message}</Text>}
-            <View style={styles.buttonContainer}>
+            <View style={[styles.buttonContainer, buttons.length > 2 && styles.buttonContainerStacked]}>
               {buttons.map((button, index) => (
                 <TouchableOpacity
                   key={index}
@@ -223,6 +223,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'stretch',
     marginTop: 4,
+  },
+  buttonContainerStacked: {
+    flexDirection: 'column-reverse',
   },
   button: {
     flex: 1,

@@ -969,8 +969,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   menuSectionHeader: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontFamily: 'Handlee_400Regular',
+    fontSize: 15,
     color: '#6b3a8a',
     marginBottom: 8,
     marginTop: 6,
