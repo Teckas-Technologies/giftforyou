@@ -8,6 +8,8 @@ export interface ProfileInfo {
   email: string;
   photoUrl: string | null;
   avatarType: string | null;
+  isFoundingMember: boolean;
+  foundingMemberNumber: number | null;
 }
 
 export interface ProfileStats {
@@ -51,6 +53,9 @@ async function fetchProfileDashboard(): Promise<ProfileDashboard> {
         profileRes.user.profile_photo ||
         null,
       avatarType: profileRes.user.avatarType || profileRes.user.avatar_type || null,
+      isFoundingMember: !!(profileRes.user.isFoundingMember ?? profileRes.user.is_founding_member),
+      foundingMemberNumber:
+        profileRes.user.foundingMemberNumber ?? profileRes.user.founding_member_number ?? null,
     },
     stats: {
       contactsCount: statsRes.contactsCount || 0,
@@ -61,7 +66,14 @@ async function fetchProfileDashboard(): Promise<ProfileDashboard> {
 }
 
 export const emptyProfileDashboard: ProfileDashboard = {
-  profile: { name: '', email: '', photoUrl: null, avatarType: null },
+  profile: {
+    name: '',
+    email: '',
+    photoUrl: null,
+    avatarType: null,
+    isFoundingMember: false,
+    foundingMemberNumber: null,
+  },
   stats: { contactsCount: 0, upcomingEventsCount: 0, giftsGivenCount: 0 },
 };
 

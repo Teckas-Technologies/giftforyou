@@ -63,6 +63,15 @@ export function getRouteForNotification(
       // land on the bell screen rather than a dedicated detail screen.
       return { screen: 'Notifications', params: {} };
 
+    case 'preference_updated':
+      // related_id is the recipient's own gift_circles row id (see backend
+      // Notification.createPreferenceUpdated) — same contract as the
+      // invitation/friend cases above.
+      return {
+        screen: 'ContactDetail',
+        params: { contactId: relatedId || data.contactId || null },
+      };
+
     default:
       return null;
   }

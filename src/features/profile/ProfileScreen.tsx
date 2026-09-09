@@ -21,7 +21,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../../theme';
 import { clearUserCredentials } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { CustomAlert } from '../../components';
+import { CustomAlert, FoundingMemberBadge } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import { useProfileDashboard, useUploadProfilePhoto, emptyProfileDashboard } from './hooks';
 import type { ScreenProps, IconProps } from '../../types/navigation';
@@ -758,6 +758,12 @@ const ProfileScreen = ({ navigation }: ScreenProps) => {
               {profile.email || 'No email'}
             </Animated.Text>
 
+            {profile.isFoundingMember && profile.foundingMemberNumber && (
+              <View style={styles.foundingBadgeWrap}>
+                <FoundingMemberBadge number={profile.foundingMemberNumber} />
+              </View>
+            )}
+
             {/* Stats with gradient values */}
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
@@ -1008,6 +1014,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
+    marginBottom: 20,
+  },
+  foundingBadgeWrap: {
+    marginTop: -12,
     marginBottom: 20,
   },
   statsRow: {
