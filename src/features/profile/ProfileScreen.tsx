@@ -1,0 +1,1217 @@
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Pressable,
+  Animated,
+  Easing,
+  Dimensions,
+  Image,
+  ActivityIndicator,
+  Modal,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import MaskedView from '@react-native-masked-view/masked-view';
+import Svg, { Path, Circle, Polyline, Rect, Line } from 'react-native-svg';
+import { useFocusEffect } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
+import { colors } from '../../theme';
+import { clearUserCredentials } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
+import { CustomAlert } from '../../components';
+import useAlert from '../../hooks/useAlert';
+import { useProfileDashboard, useUploadProfilePhoto, emptyProfileDashboard } from './hooks';
+import type { ScreenProps, IconProps } from '../../types/navigation';
+
+const { width } = Dimensions.get('window');
+
+// User Icon SVG
+const UserIcon = ({ size = 32, color = 'white' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+    <Circle cx="12" cy="7" r="4" />
+  </Svg>
+);
+
+// Bell Icon SVG
+const BellIcon = ({ size = 20, color = '#ca9ad6' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+    <Path d="M13.73 21a2 2 0 0 1-3.46 0" />
+  </Svg>
+);
+
+// Chevron Right Icon SVG
+const ChevronRightIcon = ({ size = 16, color = '#6b3a8a' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Polyline points="9 18 15 12 9 6" />
+  </Svg>
+);
+
+// Mail Icon SVG (Invitations)
+const MailIcon = ({ size = 20, color = '#ca9ad6' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+    <Polyline points="22,6 12,13 2,6" />
+  </Svg>
+);
+
+// Calendar Plus Icon SVG (Add Event)
+const CalendarPlusIcon = ({ size = 20, color = '#ca9ad6' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+    <Line x1="16" y1="2" x2="16" y2="6" />
+    <Line x1="8" y1="2" x2="8" y2="6" />
+    <Line x1="3" y1="10" x2="21" y2="10" />
+    <Line x1="12" y1="14" x2="12" y2="18" />
+    <Line x1="10" y1="16" x2="14" y2="16" />
+  </Svg>
+);
+
+// Settings Icon SVG
+const LoveNoteIcon = ({ size = 20, color = '#ca9ad6' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </Svg>
+);
+
+const SettingsIcon = ({ size = 20, color = '#ca9ad6' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Circle cx="12" cy="12" r="3" />
+    <Path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+  </Svg>
+);
+
+// Heart/Gift Preferences Icon SVG
+const GiftPreferencesIcon = ({ size = 20, color = '#ca9ad6' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </Svg>
+);
+
+// Sparkle decoration component
+const Sparkle = ({
+  style,
+  size = 8,
+  color = '#f4cae8',
+}: {
+  style?: any;
+  size?: number;
+  color?: string;
+}) => (
+  <Animated.View style={[styles.sparkle, style]}>
+    <View style={[styles.sparkleInner, { width: size, height: size, backgroundColor: color }]} />
+  </Animated.View>
+);
+
+const menuItems = [
+  {
+    id: '1',
+    icon: GiftPreferencesIcon,
+    title: 'My Gift Preferences',
+    route: 'Questionnaire',
+    params: { isFirstTime: false },
+  },
+  { id: '2', icon: BellIcon, title: 'Notifications', route: 'Notifications' },
+  { id: '3', icon: MailIcon, title: 'Invite Friends', route: 'Invitations' },
+  { id: '4', icon: CalendarPlusIcon, title: 'Add Event', route: 'AddEvent' },
+  {
+    id: '6',
+    icon: LoveNoteIcon,
+    title: 'Send a Love Note',
+    route: 'SendLoveNote',
+    sectionHeader: 'Love Notes',
+  },
+  { id: '7', icon: LoveNoteIcon, title: 'Submit a Love Note', route: 'SubmitLoveNote' },
+  { id: '5', icon: SettingsIcon, title: 'Settings', route: 'Settings' },
+];
+
+// Avatar types matching ProfileSetupScreen
+const avatarTypes: Record<string, string> = {
+  turtle: '🐢',
+  pig: '🐷',
+  cow: '🐮',
+  flowers: '🌸',
+};
+
+// Gradient Text Component for stat values
+const GradientStatValue = ({ value, glowAnim }: { value: string; glowAnim: Animated.Value }) => (
+  <Animated.View
+    style={{
+      transform: [
+        {
+          scale: glowAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [1, 1.05],
+          }),
+        },
+      ],
+    }}
+  >
+    <MaskedView maskElement={<Text style={styles.statValueMask}>{value}</Text>}>
+      <LinearGradient colors={['#ca9ad6', '#70d0dd']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+        <Text style={[styles.statValueMask, { opacity: 0 }]}>{value}</Text>
+      </LinearGradient>
+    </MaskedView>
+  </Animated.View>
+);
+
+const ProfileScreen = ({ navigation }: ScreenProps) => {
+  const { signOut } = useAuth();
+  const scrollViewRef = useRef<any>(null);
+  const { alertConfig, showAlert, hideAlert } = useAlert();
+
+  // Scroll to top when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+    }, []),
+  );
+
+  // Profile info + dashboard stats, via React Query — see hooks.js for why
+  // revisiting this tab no longer re-shows the loading overlay.
+  const { data: dashboard, isLoading: isDashboardLoading } = useProfileDashboard();
+  const uploadPhoto = useUploadProfilePhoto();
+  const loading = isDashboardLoading && !dashboard;
+  const profile = dashboard?.profile || emptyProfileDashboard.profile;
+  const stats = dashboard?.stats || emptyProfileDashboard.stats;
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  // Upload the picked image to the backend. Used by both camera + gallery
+  // paths so the FormData/multer wiring lives in one place. Optimistic
+  // update + rollback happens inside uploadPhoto against the query cache.
+  const uploadPickedImage = async (asset: any) => {
+    setUploadingPhoto(true);
+    try {
+      await uploadPhoto(asset);
+      showAlert({
+        type: 'success',
+        title: 'Photo updated',
+        message: 'Looking good!',
+        buttons: [{ text: 'OK' }],
+      });
+    } catch (error) {
+      // Log everything so we can see exactly what the backend returned —
+      // helps diagnose 'bucket missing', auth, network etc.
+      console.log('Upload photo error:', error?.message || error);
+      console.log('Error full:', JSON.stringify(error, null, 2));
+      showAlert({
+        type: 'error',
+        title: 'Upload failed',
+        message: error?.message || "Couldn't upload photo. Try again.",
+        buttons: [{ text: 'OK' }],
+      });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const pickFromGallery = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      showAlert({
+        type: 'warning',
+        title: 'Permission needed',
+        message: 'Photo library permission is required to pick a photo.',
+        buttons: [{ text: 'OK' }],
+      });
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled && result.assets?.[0]) {
+      await uploadPickedImage(result.assets[0]);
+    }
+  };
+
+  const takePhoto = async () => {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      showAlert({
+        type: 'warning',
+        title: 'Permission needed',
+        message: 'Camera permission is required to take a photo.',
+        buttons: [{ text: 'OK' }],
+      });
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled && result.assets?.[0]) {
+      await uploadPickedImage(result.assets[0]);
+    }
+  };
+
+  // Opens our themed photo-source bottom sheet (rendered at the end of the
+  // component). No native action sheet so the look matches the rest of the
+  // app — gradient buttons, soft shadows, Handlee font.
+  const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
+
+  const handleAvatarTap = () => {
+    if (uploadingPhoto) return;
+    setPhotoSheetVisible(true);
+  };
+
+  const handleTakePhoto = () => {
+    setPhotoSheetVisible(false);
+    takePhoto();
+  };
+
+  const handlePickFromGallery = () => {
+    setPhotoSheetVisible(false);
+    pickFromGallery();
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    showAlert({
+      type: 'warning',
+      title: 'Log Out',
+      message: 'Are you sure you want to log out?',
+      buttons: [
+        {
+          text: 'Cancel',
+          onPress: () => {},
+        },
+        {
+          text: 'Log Out',
+          onPress: async () => {
+            try {
+              await clearUserCredentials();
+              await signOut();
+            } catch (error) {
+              console.log('Logout error:', error);
+            }
+          },
+        },
+      ],
+    });
+  };
+
+  // Animation values
+  const cardAnim = useRef(new Animated.Value(0)).current;
+  const menuAnims = useRef(menuItems.map(() => new Animated.Value(0))).current;
+  const logoutAnim = useRef(new Animated.Value(0)).current;
+
+  // Premium animations
+  const floatAnim = useRef(new Animated.Value(0)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const avatarPulse = useRef(new Animated.Value(1)).current;
+  const sparkleAnim1 = useRef(new Animated.Value(0)).current;
+  const sparkleAnim2 = useRef(new Animated.Value(0)).current;
+  const sparkleAnim3 = useRef(new Animated.Value(0)).current;
+
+  // Get initials from name
+  const getInitials = (name?: string) => {
+    if (!name) return 'U';
+    const parts = name.split(' ').filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  useEffect(() => {
+    // Entry animations
+    Animated.sequence([
+      Animated.spring(cardAnim, {
+        toValue: 1,
+        friction: 7,
+        tension: 50,
+        useNativeDriver: true,
+      }),
+      Animated.stagger(
+        100,
+        menuAnims.map((anim) =>
+          Animated.spring(anim, {
+            toValue: 1,
+            friction: 7,
+            tension: 50,
+            useNativeDriver: true,
+          }),
+        ),
+      ),
+      Animated.timing(logoutAnim, {
+        toValue: 1,
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Floating animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, {
+          toValue: 1,
+          duration: 3000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim, {
+          toValue: 0,
+          duration: 3000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+
+    // Glow animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 2000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0,
+          duration: 2000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+
+    // Avatar pulse
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(avatarPulse, {
+          toValue: 1.08,
+          duration: 1500,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(avatarPulse, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+
+    // Menu icon pulse
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.1,
+          duration: 1200,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1200,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+
+    // Sparkle animations
+    const createSparkleAnimation = (anim: Animated.Value, delay: number) => {
+      setTimeout(() => {
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(anim, {
+              toValue: 1,
+              duration: 2500,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+            Animated.timing(anim, {
+              toValue: 0,
+              duration: 2500,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+          ]),
+        ).start();
+      }, delay);
+    };
+
+    createSparkleAnimation(sparkleAnim1, 0);
+    createSparkleAnimation(sparkleAnim2, 800);
+    createSparkleAnimation(sparkleAnim3, 1600);
+  }, []);
+
+  const createSlideStyle = (anim: Animated.Value) => ({
+    opacity: anim,
+    transform: [
+      {
+        translateX: anim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [-20, 0],
+        }),
+      },
+    ],
+  });
+
+  // Sparkle styles
+  const sparkle1Style = {
+    opacity: sparkleAnim1,
+    transform: [
+      {
+        translateY: floatAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -12],
+        }),
+      },
+      {
+        rotate: sparkleAnim1.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['0deg', '180deg'],
+        }),
+      },
+      {
+        scale: sparkleAnim1.interpolate({
+          inputRange: [0, 0.5, 1],
+          outputRange: [0.8, 1.2, 0.8],
+        }),
+      },
+    ],
+  };
+
+  const sparkle2Style = {
+    opacity: sparkleAnim2,
+    transform: [
+      {
+        translateY: floatAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -15],
+        }),
+      },
+      {
+        rotate: sparkleAnim2.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['45deg', '225deg'],
+        }),
+      },
+      {
+        scale: sparkleAnim2.interpolate({
+          inputRange: [0, 0.5, 1],
+          outputRange: [0.6, 1, 0.6],
+        }),
+      },
+    ],
+  };
+
+  const sparkle3Style = {
+    opacity: sparkleAnim3,
+    transform: [
+      {
+        translateY: floatAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -10],
+        }),
+      },
+      {
+        rotate: sparkleAnim3.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['90deg', '270deg'],
+        }),
+      },
+      {
+        scale: sparkleAnim3.interpolate({
+          inputRange: [0, 0.5, 1],
+          outputRange: [1, 0.7, 1],
+        }),
+      },
+    ],
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Background Gradient - Diagonal */}
+      <LinearGradient
+        colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
+        locations={[0, 0.3, 0.7, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* Floating Sparkles */}
+      <Sparkle style={[{ top: 60, right: 30 }, sparkle1Style]} size={10} color="#f4cae8" />
+      <Sparkle style={[{ top: 140, left: 25 }, sparkle2Style]} size={7} color="#70d0dd" />
+      <Sparkle style={[{ top: 100, right: 70 }, sparkle3Style]} size={8} color="#ca9ad6" />
+
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#ca9ad6" />
+        </View>
+      )}
+
+      <ScrollView
+        ref={scrollViewRef}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Profile Card */}
+        <Animated.View
+          style={[
+            styles.profileCardContainer,
+            {
+              opacity: cardAnim,
+              transform: [
+                {
+                  scale: cardAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.9, 1],
+                  }),
+                },
+                {
+                  translateY: cardAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [30, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <LinearGradient
+            colors={['#fbe5f5', '#ccf9ff']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.profileCard}
+          >
+            {/* Avatar with glow ring */}
+            <Animated.View
+              style={[
+                styles.avatarContainer,
+                {
+                  transform: [{ scale: avatarPulse }],
+                },
+              ]}
+            >
+              {/* Glow ring */}
+              <Animated.View
+                style={[
+                  styles.avatarGlowRing,
+                  {
+                    opacity: glowAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.3, 0.7],
+                    }),
+                    transform: [
+                      {
+                        scale: glowAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [1, 1.2],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              />
+              <TouchableOpacity
+                onPress={handleAvatarTap}
+                activeOpacity={0.85}
+                disabled={uploadingPhoto}
+              >
+                <LinearGradient
+                  colors={['#f4cae8', '#70d0dd']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.avatar}
+                >
+                  {profile.photoUrl ? (
+                    <Image source={{ uri: profile.photoUrl }} style={styles.avatarImage} />
+                  ) : profile.avatarType && avatarTypes[profile.avatarType] ? (
+                    <Text style={styles.avatarEmoji}>{avatarTypes[profile.avatarType]}</Text>
+                  ) : profile.name ? (
+                    <Text style={styles.avatarInitials}>{getInitials(profile.name)}</Text>
+                  ) : (
+                    <UserIcon size={32} color="white" />
+                  )}
+
+                  {/* Uploading overlay */}
+                  {uploadingPhoto && (
+                    <View style={styles.avatarUploadingOverlay}>
+                      <ActivityIndicator size="small" color="#ffffff" />
+                    </View>
+                  )}
+                </LinearGradient>
+
+                {/* Camera icon hint — tells users the avatar is tappable */}
+                <View style={styles.avatarCameraBadge}>
+                  <Svg
+                    width={14}
+                    height={14}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#6b3a8a"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <Circle cx="12" cy="13" r="4" />
+                  </Svg>
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+
+            <Text style={styles.profileName}>{profile.name || 'User'}</Text>
+            <Animated.Text
+              style={[
+                styles.profileEmail,
+                {
+                  opacity: glowAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.8, 1],
+                  }),
+                },
+              ]}
+            >
+              {profile.email || 'No email'}
+            </Animated.Text>
+
+            {/* Stats with gradient values */}
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <GradientStatValue value={String(stats.contactsCount)} glowAnim={glowAnim} />
+                <Text style={styles.statLabel}>Contacts</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <GradientStatValue value={String(stats.upcomingEventsCount)} glowAnim={glowAnim} />
+                <Text style={styles.statLabel}>Events</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <GradientStatValue value={String(stats.giftsGivenCount)} glowAnim={glowAnim} />
+                <Text style={styles.statLabel}>Gifts</Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Menu Items */}
+        <View style={styles.menuSection}>
+          {menuItems.map((item, index) => {
+            const IconComponent = item.icon;
+            const isAlternate = index % 2 === 1;
+            return (
+              <React.Fragment key={item.id}>
+                {item.sectionHeader && (
+                  <Text style={styles.menuSectionHeader}>{item.sectionHeader}</Text>
+                )}
+                <Animated.View style={[styles.menuItem, createSlideStyle(menuAnims[index])]}>
+                  <TouchableOpacity
+                    style={styles.menuItemInner}
+                    activeOpacity={0.7}
+                    onPress={() => item.route && navigation.navigate(item.route, item.params)}
+                  >
+                    <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                      <LinearGradient
+                        colors={isAlternate ? ['#ccf9ff', '#fbe5f5'] : ['#fbe5f5', '#ccf9ff']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.menuIcon}
+                      >
+                        <IconComponent size={20} color="#ca9ad6" />
+                      </LinearGradient>
+                    </Animated.View>
+                    <Text style={styles.menuText}>{item.title}</Text>
+                    <Animated.View
+                      style={{
+                        opacity: glowAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0.6, 1],
+                        }),
+                      }}
+                    >
+                      <ChevronRightIcon size={16} color="#6b3a8a" />
+                    </Animated.View>
+                  </TouchableOpacity>
+                </Animated.View>
+              </React.Fragment>
+            );
+          })}
+        </View>
+
+        {/* Logout Button */}
+        <Animated.View
+          style={[
+            styles.logoutContainer,
+            {
+              opacity: logoutAnim,
+              transform: [
+                {
+                  translateY: logoutAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [20, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <Pressable onPress={handleLogout}>
+            {({ pressed }) => (
+              <LinearGradient
+                colors={pressed ? ['#e8d0f0', '#dba8e0'] : ['#fbe5f5', '#f4cae8']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.logoutBtn}
+              >
+                <Text style={styles.logoutText}>Log Out</Text>
+              </LinearGradient>
+            )}
+          </Pressable>
+        </Animated.View>
+
+        <View style={{ height: 120 }} />
+      </ScrollView>
+
+      {/* Custom Alert */}
+      <CustomAlert {...alertConfig} onClose={hideAlert} />
+
+      {/* Themed photo-source bottom sheet */}
+      <Modal
+        visible={photoSheetVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPhotoSheetVisible(false)}
+      >
+        <Pressable style={styles.photoSheetOverlay} onPress={() => setPhotoSheetVisible(false)}>
+          <Pressable style={styles.photoSheetCard} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.photoSheetHandle} />
+            <Text style={styles.photoSheetTitle}>Profile Photo</Text>
+            <Text style={styles.photoSheetSubtitle}>Choose a source</Text>
+
+            <TouchableOpacity
+              style={styles.photoSheetButton}
+              onPress={handleTakePhoto}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={['#ca9ad6', '#70d0dd']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.photoSheetButtonGradient}
+              >
+                <Svg
+                  width={20}
+                  height={20}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#FFFFFF"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <Circle cx="12" cy="13" r="4" />
+                </Svg>
+                <Text style={styles.photoSheetButtonText}>Take Photo</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.photoSheetButton}
+              onPress={handlePickFromGallery}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={['#ca9ad6', '#70d0dd']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.photoSheetButtonGradient}
+              >
+                <Svg
+                  width={20}
+                  height={20}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#FFFFFF"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <Rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <Circle cx="8.5" cy="8.5" r="1.5" />
+                  <Path d="M21 15l-5-5L5 21" />
+                </Svg>
+                <Text style={styles.photoSheetButtonText}>Choose from Gallery</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.photoSheetCancel}
+              onPress={() => setPhotoSheetVisible(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.photoSheetCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  sparkle: {
+    position: 'absolute',
+    zIndex: 10,
+  },
+  sparkleInner: {
+    borderRadius: 50,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 50,
+    paddingBottom: 120,
+  },
+  profileCardContainer: {
+    marginBottom: 24,
+  },
+  profileCard: {
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#ca9ad6',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  avatarContainer: {
+    marginBottom: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarGlowRing: {
+    position: 'absolute',
+    width: 95,
+    height: 95,
+    borderRadius: 47.5,
+    backgroundColor: '#f4cae8',
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    shadowColor: '#ca9ad6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  profileName: {
+    fontSize: 20,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+  },
+  profileEmail: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    marginBottom: 20,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    gap: 16,
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: 'rgba(202,154,214,0.3)',
+  },
+  statValueMask: {
+    fontSize: 24,
+    fontFamily: 'Handlee_400Regular',
+  },
+  statLabel: {
+    fontSize: 12,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    marginTop: 4,
+  },
+  menuSection: {
+    marginBottom: 16,
+  },
+  menuSectionHeader: {
+    fontFamily: 'Handlee_400Regular',
+    fontSize: 15,
+    color: '#6b3a8a',
+    marginBottom: 8,
+    marginTop: 6,
+  },
+  menuItem: {
+    marginBottom: 10,
+  },
+  menuItemInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 14,
+    gap: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  menuIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuText: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+  },
+  logoutContainer: {
+    marginTop: 8,
+  },
+  logoutBtn: {
+    borderRadius: 18,
+    paddingVertical: 16,
+    alignItems: 'center',
+    shadowColor: '#ca9ad6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  logoutText: {
+    fontSize: 15,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    zIndex: 100,
+  },
+  avatarImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+  },
+  avatarCameraBadge: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  avatarUploadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(51, 12, 84, 0.4)',
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitials: {
+    fontSize: 24,
+    fontFamily: 'Handlee_400Regular',
+    color: 'white',
+  },
+  avatarEmoji: {
+    fontSize: 36,
+  },
+
+  // Themed photo-source bottom sheet
+  photoSheetOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    justifyContent: 'flex-end',
+  },
+  photoSheetCard: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  photoSheetHandle: {
+    alignSelf: 'center',
+    width: 44,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#e8dced',
+    marginBottom: 16,
+  },
+  photoSheetTitle: {
+    fontSize: 20,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    textAlign: 'center',
+  },
+  photoSheetSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  photoSheetButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  photoSheetButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 10,
+  },
+  photoSheetButtonText: {
+    fontSize: 16,
+    fontFamily: 'Handlee_400Regular',
+    color: '#FFFFFF',
+  },
+  photoSheetCancel: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  photoSheetCancelText: {
+    fontSize: 15,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+  },
+});
+
+export default ProfileScreen;

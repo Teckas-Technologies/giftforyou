@@ -1,0 +1,1791 @@
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Animated,
+  Easing,
+  ActivityIndicator,
+  Linking,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import MaskedView from '@react-native-masked-view/masked-view';
+import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
+import { cancelFriendRequest } from '../../services/api';
+import { CustomAlert } from '../../components';
+import useAlert from '../../hooks/useAlert';
+import { formatDate as formatAppDate, daysUntil as appDaysUntil } from '../../utils/date';
+import { useContactRaw } from './hooks';
+import type { ScreenProps, IconProps } from '../../types/navigation';
+
+// Turn a stored preference value into a clean, human-readable list.
+// Values may be a real array, a single string, or — for some legacy/
+// migrated rows — a multiply JSON-encoded string (e.g. favorite_flower
+// came through as `["[","\"","l","i","l","y" ...]`). We unwrap JSON as
+// far as it parses, flatten, drop punctuation/char fragments, and keep
+// only real tokens.
+const prettyLabel = (s: any) =>
+  String(s)
+    .replace(/[_-]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+const cleanList = (value: any): string[] => {
+  let v = value;
+  // Unwrap JSON-encoded strings, up to a few levels deep.
+  for (let i = 0; i < 4 && typeof v === 'string'; i++) {
+    const t = v.trim();
+    if (!(t.startsWith('[') || t.startsWith('"'))) break;
+    try {
+      v = JSON.parse(t);
+    } catch {
+      break;
+    }
+  }
+  let flat: string[] = (Array.isArray(v) ? v : v == null || v === '' ? [] : [v])
+    .flat(Infinity)
+    .map((x: any) => String(x).trim());
+  // Unparseable corrupted string (e.g. `["[","\"","l","i" ...`): recover
+  // real words by splitting on anything that isn't a word char.
+  if (flat.length === 1 && /[[\]"\\]/.test(flat[0])) {
+    flat = flat[0].split(/[^a-z0-9_]+/i);
+  }
+  const seen = new Set();
+  return flat.filter((tok) => {
+    // Drop empties, lone punctuation, and single-char fragments left by a
+    // corrupted char-by-char encoding. Keep real words/codes (2+ chars).
+    if (!/[a-z0-9]/i.test(tok) || tok.replace(/[^a-z0-9]/gi, '').length < 2) {
+      return false;
+    }
+    const key = tok.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+const cleanLabels = (value: any) => cleanList(value).map(prettyLabel);
+
+// Per-option emoji, matching the questionnaire. Keyed by the option id
+// with separators stripped; we look up by normalizing the displayed
+// label the same way ("Dining Out" -> "diningout").
+const OPTION_EMOJI: Record<string, string> = {
+  hiking: '🥾',
+  shopping: '🛍️',
+  travelling: '✈️',
+  food: '🍴',
+  sports: '⚽',
+  exercise: '💪',
+  concerts: '🎤',
+  picnics: '🧺',
+  collector: '🏆',
+  antiquing: '🏺',
+  diningout: '🍽️',
+  movies: '🎬',
+  minimalist: '⬜',
+  vintage: '📻',
+  modern: '🔲',
+  bohemian: '🌸',
+  classic: '👔',
+  colorful: '🌈',
+  ecofriendly: '🌍',
+  handmade: '🧶',
+  locallysourced: '📍',
+  charitable: '💕',
+  rose: '🌹',
+  tulip: '🌷',
+  lavender: '💜',
+  sunflower: '🌻',
+  orchid: '🪻',
+  lily: '🪷',
+  daisy: '🌼',
+  peony: '🌺',
+  cherryblossom: '🌸',
+  hydrangea: '💐',
+  barbecue: '🍖',
+  chinese: '🥡',
+  french: '🥐',
+  hamburger: '🍔',
+  indian: '🍛',
+  italian: '🍝',
+  japanese: '🍱',
+  mexican: '🌮',
+  pizza: '🍕',
+  seafood: '🦐',
+  steak: '🥩',
+  sushi: '🍣',
+  thai: '🍜',
+  chocolate: '🍫',
+  candy: '🍬',
+  icecream: '🍦',
+  cookies: '🍪',
+  cake: '🎂',
+  fruity: '🍓',
+  experiences: '🎟️',
+  jewelry: '💎',
+  fooddrink: '🍷',
+  beauty: '💄',
+  tech: '📱',
+  books: '📚',
+  home: '🏠',
+  fashion: '👗',
+  action: '💥',
+  comedy: '😂',
+  crime: '🔍',
+  drama: '🎭',
+  thriller: '😱',
+  documentary: '📹',
+  hiphop: '🎧',
+  pop: '🎤',
+  rock: '🎸',
+  country: '🤠',
+  classical: '🎻',
+  other: '✨',
+};
+
+// The questionnaire uses a section-specific emoji for its "Other" option
+// (✨ for activities/style/values, 🍴 cuisines, 🍰 desserts, 🎬 movies,
+// 🎵 music). A flat map can't disambiguate "Other", so callers pass the
+// section's "Other" emoji to match the questionnaire exactly.
+const emojiFor = (value: any, otherEmoji = '✨') => {
+  const key = String(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+  if (key === 'other') return otherEmoji;
+  return OPTION_EMOJI[key] || '';
+};
+
+// Icons
+const BackIcon = ({ size = 24, color = '#6b3a8a' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Polyline points="15 18 9 12 15 6" />
+  </Svg>
+);
+
+const EditIcon = ({ size = 20, color = '#6b3a8a' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <Path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </Svg>
+);
+
+const MailIcon = ({ size = 20, color = '#FFFFFF' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+    <Polyline points="22,6 12,13 2,6" />
+  </Svg>
+);
+
+const CalendarIcon = ({ size = 20, color = '#ca9ad6' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+    <Line x1="16" y1="2" x2="16" y2="6" />
+    <Line x1="8" y1="2" x2="8" y2="6" />
+    <Line x1="3" y1="10" x2="21" y2="10" />
+  </Svg>
+);
+
+const GiftIcon = ({ size = 20, color = '#ca9ad6' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Polyline points="20 12 20 22 4 22 4 12" />
+    <Rect x="2" y="7" width="20" height="5" />
+    <Line x1="12" y1="22" x2="12" y2="7" />
+    <Path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+    <Path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+  </Svg>
+);
+
+const HeartIcon = ({ size = 20, color = '#ca9ad6' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </Svg>
+);
+
+const StarIcon = ({ size = 16, color = '#f9a825' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke={color} strokeWidth={1}>
+    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+  </Svg>
+);
+
+const PhoneIcon = ({ size = 18, color = '#6b3a8a' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+  </Svg>
+);
+
+const EmailIcon = ({ size = 18, color = '#6b3a8a' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Circle cx="12" cy="12" r="4" />
+    <Path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94" />
+  </Svg>
+);
+
+const ClipboardIcon = ({ size = 20, color = '#ca9ad6' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+    <Rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+  </Svg>
+);
+
+const ChevronRightIcon = ({ size = 20, color = '#ca9ad6' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Polyline points="9 18 15 12 9 6" />
+  </Svg>
+);
+
+// Default empty contact
+const emptyContact = {
+  id: '',
+  name: '',
+  email: '',
+  phone: '',
+  birthday: null,
+  relationship: 'friend',
+  nickname: '',
+  notes: '',
+  avatar: null,
+  hasQuestionnaire: false,
+  invitationSent: false,
+  preferences: {
+    activities: [],
+    activityDetails: '',
+    style: [],
+    styleOther: '',
+    colors: [],
+    colorsOther: '',
+    sizes: {},
+    giftTypes: [],
+    giftDetails: '',
+    causes: [],
+    causesOther: '',
+    flower: [],
+    flowerDetails: '',
+    cuisines: [],
+    restaurant: '',
+    cuisineOther: '',
+    favoriteMeal: '',
+    desserts: [],
+    dessertDetails: '',
+    movieGenre: [],
+    favoriteMovies: '',
+    musicGenre: [],
+    favoriteArtists: '',
+    likesSurprises: null,
+    wishlistText: '',
+    wishlistLinks: [],
+    registryLink: '',
+    registryDetails: '',
+    registryExpiry: '',
+  },
+  upcomingEvents: [],
+  specialDates: [],
+};
+
+const getRelationshipLabel = (relationship?: string) => {
+  const labels: Record<string, string> = {
+    family: 'Family',
+    friend: 'Friend',
+    colleague: 'Colleague',
+    partner: 'Partner',
+    other: 'Other',
+  };
+  return (relationship && labels[relationship]) || 'Contact';
+};
+
+const getRelationshipEmoji = (relationship?: string) => {
+  const emojis: Record<string, string> = {
+    family: '👨‍👩‍👧',
+    friend: '👫',
+    colleague: '💼',
+    partner: '💕',
+    other: '👤',
+  };
+  return (relationship && emojis[relationship]) || '👤';
+};
+
+const formatDate = (date: any) => formatAppDate(date, { month: 'long', day: 'numeric' }, 'Not set');
+
+const getInitials = (name?: string) => {
+  if (!name) return '?';
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase();
+};
+
+const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
+  const contactId = route?.params?.contactId;
+
+  // Custom alert hook
+  const { alertConfig, showError, hideAlert } = useAlert();
+
+  // Animations
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const avatarAnim = useRef(new Animated.Value(0)).current;
+  const contentAnim = useRef(new Animated.Value(0)).current;
+  const avatarPulse = useRef(new Animated.Value(1)).current;
+  const sectionAnims = useRef([...Array(5)].map(() => new Animated.Value(0))).current;
+
+  // Raw contact + preferences payload via React Query — see hooks.js for
+  // why revisiting this same contact no longer re-shows a spinner, while
+  // navigating to a genuinely different contact still shows one.
+  const { data: rawData, isLoading: isContactLoading, isError } = useContactRaw(contactId);
+  const loading = isContactLoading && !rawData;
+
+  useEffect(() => {
+    if (isError) showError('Failed to load contact details');
+  }, [isError]);
+
+  // Transform API data to component format (handle both snake_case and
+  // nested member object) — unchanged from before this migration, just
+  // re-run as a derivation instead of inline in the fetch.
+  const contact: any = useMemo<any>(() => {
+    if (!rawData) return emptyContact;
+    const { contactData, preferencesData }: any = rawData;
+    try {
+      const rawContact = contactData.contact || contactData;
+      const memberName =
+        rawContact.member?.name ||
+        rawContact.guest_name ||
+        rawContact.guestName ||
+        rawContact.memberName ||
+        'Unknown';
+      const memberEmail =
+        rawContact.member?.email ||
+        rawContact.guest_email ||
+        rawContact.guestEmail ||
+        rawContact.memberEmail ||
+        '';
+      const memberBirthday =
+        rawContact.member?.birthday ||
+        rawContact.guest_birthday ||
+        rawContact.guestBirthday ||
+        rawContact.memberBirthday;
+      const memberPhoto =
+        rawContact.member?.profile_photo || rawContact.member?.photo || rawContact.memberPhoto;
+
+      const transformedContact = {
+        id: rawContact._id || rawContact.id || contactId,
+        name: memberName,
+        email: memberEmail,
+        phone: rawContact.phone || '',
+        birthday: memberBirthday || null,
+        relationship: rawContact.relationship?.toLowerCase() || 'friend',
+        nickname: rawContact.nickname || '',
+        notes: rawContact.notes || '',
+        avatar: memberPhoto || null,
+        isPending: rawContact.status === 'pending' || preferencesData?.contact?.isPending,
+        hasQuestionnaire: !!preferencesData?.preferences,
+        invitationSent: preferencesData?.invitationSent || false,
+        preferences: preferencesData?.preferences
+          ? {
+              activities: cleanLabels(preferencesData.preferences.favoriteActivities),
+              activityDetails: preferencesData.preferences.activityDetails || '',
+              style: cleanLabels(preferencesData.preferences.personalStyle),
+              styleOther: preferencesData.preferences.personalStyleOther || '',
+              colors: cleanLabels(preferencesData.preferences.favoriteColors),
+              colorsOther: preferencesData.preferences.favoriteColorsOther || '',
+              // clothing_sizes is saved as a single free-text string by the
+              // questionnaire ("Top: M, Pants: 8, Shoes: 7.5, Ring: 6").
+              // Keep it as-is; the render handles string vs. legacy object.
+              sizes: preferencesData.preferences.clothingSizes || '',
+              giftTypes: cleanLabels(preferencesData.preferences.giftTypes),
+              giftDetails: preferencesData.preferences.giftDetails || '',
+              causes: cleanLabels(preferencesData.preferences.causesValues),
+              causesOther: preferencesData.preferences.causesOther || '',
+              // Keep as an array so the contact page renders flowers as chips
+              // (with their per-flower emojis) — matching the invite form's
+              // multiselect for this section.
+              flower: cleanLabels(preferencesData.preferences.favoriteFlower),
+              flowerDetails: preferencesData.preferences.flowerDetails || '',
+              cuisines: cleanLabels(preferencesData.preferences.favoriteCuisines),
+              restaurant: preferencesData.preferences.favoriteRestaurant || '',
+              cuisineOther: preferencesData.preferences.cuisineOther || '',
+              favoriteMeal: preferencesData.preferences.favoriteMeal || '',
+              desserts: cleanLabels(preferencesData.preferences.favoriteDesserts),
+              dessertDetails: preferencesData.preferences.dessertDetails || '',
+              movieGenre: cleanLabels(preferencesData.preferences.movieGenre),
+              favoriteMovies: preferencesData.preferences.favoriteMovies || '',
+              musicGenre: cleanLabels(preferencesData.preferences.musicGenre),
+              favoriteArtists: preferencesData.preferences.favoriteArtists || '',
+              // Stored as the option id ('yes'/'no'), but legacy data may be a
+              // label ('Yes, love them!') or boolean. Treat anything that starts
+              // with "yes" (or true) as loving surprises; empty/absent → null so
+              // the badge is hidden rather than showing a wrong default.
+              likesSurprises: (() => {
+                const ls = preferencesData.preferences.likesSurprises;
+                if (ls === true) return true;
+                if (ls === false) return false;
+                if (ls == null || String(ls).trim() === '') return null;
+                return /^yes/i.test(String(ls).trim());
+              })(),
+              wishlistText: preferencesData.preferences.wishlistText || '',
+              wishlistLinks: [
+                preferencesData.preferences.wishlistLink1,
+                preferencesData.preferences.wishlistLink2,
+                preferencesData.preferences.wishlistLink3,
+              ].filter((u) => u && String(u).trim()),
+              registryLink: preferencesData.preferences.registryLink || '',
+              registryDetails: preferencesData.preferences.registryDetails || '',
+              registryExpiry: preferencesData.preferences.registryExpiry || '',
+            }
+          : emptyContact.preferences,
+        upcomingEvents: (preferencesData?.upcomingEvents || rawContact.upcomingEvents || []).map(
+          (event: any) => ({
+            id: event._id || event.id,
+            name: event.title || event.event_type || event.eventType,
+            date: event.event_date || event.eventDate,
+            type: (event.event_type || event.eventType)?.toLowerCase() || 'event',
+            daysUntil: appDaysUntil(event.event_date || event.eventDate),
+          }),
+        ),
+        // Special dates the contact entered in the questionnaire's basic-info
+        // step. They live in their own table (not events), so the API now
+        // returns them separately for the Basic Info section.
+        specialDates: (preferencesData?.specialDates || [])
+          .map((d: any) => ({
+            date: d.date || d.anniversary_date,
+            title: d.title || '',
+          }))
+          .filter((d: any) => d.date),
+      };
+
+      return transformedContact;
+    } catch (error) {
+      console.error('Error transforming contact details:', error);
+      return emptyContact;
+    }
+  }, [rawData]);
+
+  useEffect(() => {
+    if (!loading) {
+      // Always show header once loading finishes, even if contact failed to load
+      Animated.timing(headerAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+    if (!loading && contact.name) {
+      // Run remaining animations only when contact actually loaded
+      Animated.sequence([
+        Animated.parallel([
+          Animated.spring(avatarAnim, {
+            toValue: 1,
+            friction: 6,
+            tension: 50,
+            useNativeDriver: true,
+          }),
+          Animated.timing(contentAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.stagger(
+          80,
+          sectionAnims.map((anim) =>
+            Animated.spring(anim, {
+              toValue: 1,
+              friction: 7,
+              tension: 50,
+              useNativeDriver: true,
+            }),
+          ),
+        ),
+      ]).start();
+
+      // Avatar pulse animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(avatarPulse, {
+            toValue: 1.05,
+            duration: 2000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(avatarPulse, {
+            toValue: 1,
+            duration: 2000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+      ).start();
+    }
+  }, [loading, contact.name]);
+
+  const createSlideStyle = (anim: Animated.Value) => ({
+    opacity: anim,
+    transform: [
+      {
+        translateY: anim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [20, 0],
+        }),
+      },
+    ],
+  });
+
+  const handleSendInvitation = () => {
+    // Navigate to Invitations screen with contact info for auto-fill
+    navigation.navigate('Invitations', {
+      contact: {
+        id: contact.id,
+        name: contact.name,
+        email: contact.email,
+        relationship: getRelationshipLabel(contact.relationship),
+      },
+    });
+  };
+
+  const [cancellingRequest, setCancellingRequest] = useState(false);
+  const handleCancelRequest = async () => {
+    if (cancellingRequest) return;
+    setCancellingRequest(true);
+    try {
+      await cancelFriendRequest(contact.id);
+      navigation.goBack();
+    } catch (error) {
+      console.log('Cancel request failed:', error.message);
+    } finally {
+      setCancellingRequest(false);
+    }
+  };
+
+  // Questionnaire is handled via web form only - commented for potential future use
+  // const handleViewQuestionnaire = () => {
+  //   navigation.navigate('Questionnaire', { contactId: contact.id, viewOnly: true });
+  // };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <LinearGradient
+          colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
+          locations={[0, 0.3, 0.7, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <BackIcon size={24} color="#6b3a8a" />
+          </TouchableOpacity>
+          <MaskedView maskElement={<Text style={styles.headerTitleMask}>Contact</Text>}>
+            <LinearGradient
+              colors={['#ca9ad6', '#70d0dd']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Text style={[styles.headerTitleMask, { opacity: 0 }]}>Contact</Text>
+            </LinearGradient>
+          </MaskedView>
+          <View style={styles.editButton} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#ca9ad6" />
+          <Text style={styles.loadingText}>Loading contact...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <LinearGradient
+        colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
+        locations={[0, 0.3, 0.7, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* Header */}
+      <Animated.View
+        style={[
+          styles.header,
+          {
+            opacity: headerAnim,
+            transform: [
+              {
+                translateY: headerAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-20, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <BackIcon size={24} color="#6b3a8a" />
+        </TouchableOpacity>
+        <MaskedView maskElement={<Text style={styles.headerTitleMask}>Contact</Text>}>
+          <LinearGradient
+            colors={['#ca9ad6', '#70d0dd']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Text style={[styles.headerTitleMask, { opacity: 0 }]}>Contact</Text>
+          </LinearGradient>
+        </MaskedView>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => navigation.navigate('AddContact', { contact: contact })}
+        >
+          <EditIcon size={20} color="#6b3a8a" />
+        </TouchableOpacity>
+      </Animated.View>
+
+      {!contact.name && !loading && (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+          <Text
+            style={{
+              fontSize: 16,
+              color: '#6b3a8a',
+              textAlign: 'center',
+              fontFamily: 'Handlee_400Regular',
+            }}
+          >
+            Contact not found
+            {contactId ? ` (id: ${String(contactId).slice(0, 12)}…)` : ' — no id provided'}
+          </Text>
+        </View>
+      )}
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* Profile Header */}
+        <Animated.View
+          style={[
+            styles.profileHeader,
+            {
+              opacity: avatarAnim,
+              transform: [{ scale: Animated.multiply(avatarAnim, avatarPulse) }],
+            },
+          ]}
+        >
+          <LinearGradient
+            colors={['#ca9ad6', '#70d0dd']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.avatarContainer}
+          >
+            <Text style={styles.avatarText}>{getInitials(contact.name)}</Text>
+          </LinearGradient>
+          <Text style={styles.contactName}>{contact.name}</Text>
+          {contact.nickname && <Text style={styles.nickname}>"{contact.nickname}"</Text>}
+          <View style={styles.relationshipBadge}>
+            <Text style={styles.relationshipEmoji}>
+              {getRelationshipEmoji(contact.relationship)}
+            </Text>
+            <Text style={styles.relationshipText}>
+              {getRelationshipLabel(contact.relationship)}
+            </Text>
+          </View>
+        </Animated.View>
+
+        {/* Basic Info */}
+        <Animated.View style={[styles.section, createSlideStyle(sectionAnims[0])]}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionEmoji}>👤</Text>
+            <Text style={styles.sectionTitle}>Basic Info</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <View style={styles.infoIcon}>
+              <EmailIcon size={18} color="#6b3a8a" />
+            </View>
+            <View style={styles.infoTextWrap}>
+              <Text style={styles.infoSubLabel}>Email</Text>
+              <Text style={styles.infoText}>{contact.email || 'Not set'}</Text>
+            </View>
+          </View>
+          {contact.phone ? (
+            <View style={styles.infoRow}>
+              <View style={styles.infoIcon}>
+                <PhoneIcon size={18} color="#6b3a8a" />
+              </View>
+              <View style={styles.infoTextWrap}>
+                <Text style={styles.infoSubLabel}>Phone</Text>
+                <Text style={styles.infoText}>{contact.phone}</Text>
+              </View>
+            </View>
+          ) : null}
+          <View style={styles.infoRow}>
+            <View style={styles.infoIcon}>
+              <CalendarIcon size={18} color="#6b3a8a" />
+            </View>
+            <View style={styles.infoTextWrap}>
+              <Text style={styles.infoSubLabel}>Birthday</Text>
+              <Text style={styles.infoText}>{formatDate(contact.birthday)}</Text>
+            </View>
+          </View>
+          {/* Special Dates — anniversaries the contact entered in the
+              questionnaire's basic-info step (returned by the API from its
+              own table, independent of the Upcoming Events list). */}
+          {contact.specialDates.map((sd: any, index: number) => (
+            <View key={`special-${index}`} style={styles.infoRow}>
+              <View style={styles.infoIcon}>
+                <CalendarIcon size={18} color="#6b3a8a" />
+              </View>
+              <View style={styles.infoTextWrap}>
+                <Text style={styles.infoSubLabel}>
+                  {sd.title ? `Special Date — ${sd.title}` : 'Special Date'}
+                </Text>
+                <Text style={styles.infoText}>{formatDate(sd.date)}</Text>
+              </View>
+            </View>
+          ))}
+        </Animated.View>
+
+        {/* Upcoming Events */}
+        <Animated.View style={[styles.section, createSlideStyle(sectionAnims[1])]}>
+          <View style={styles.sectionHeader}>
+            <CalendarIcon size={20} color="#ca9ad6" />
+            <Text style={styles.sectionTitle}>Upcoming Events</Text>
+          </View>
+          {contact.upcomingEvents.length > 0 ? (
+            contact.upcomingEvents.map((event: any) => (
+              <View key={event.id} style={styles.eventCard}>
+                <LinearGradient
+                  colors={['#fbe5f5', '#ccf9ff']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.eventIconBg}
+                >
+                  <Text style={styles.eventEmoji}>🎂</Text>
+                </LinearGradient>
+                <View style={styles.eventDetails}>
+                  <Text style={styles.eventName}>{event.name}</Text>
+                  <Text style={styles.eventDate}>{formatDate(event.date)}</Text>
+                </View>
+                <View style={styles.daysUntilBadge}>
+                  <Text style={styles.daysUntilText}>{event.daysUntil}d</Text>
+                </View>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.emptyText}>No upcoming events</Text>
+          )}
+        </Animated.View>
+
+        {/* Gift Preferences */}
+        {contact.hasQuestionnaire && (
+          <Animated.View style={[styles.section, createSlideStyle(sectionAnims[2])]}>
+            <View style={styles.sectionHeader}>
+              <GiftIcon size={20} color="#ca9ad6" />
+              <Text style={styles.sectionTitle}>Gift Preferences</Text>
+            </View>
+
+            {/* Gift Types */}
+            {contact.preferences.giftTypes?.length > 0 && (
+              <View style={styles.preferenceRow}>
+                <Text style={styles.preferenceLabel}>Loves to receive</Text>
+                <View style={styles.tagContainer}>
+                  {contact.preferences.giftTypes.map((type: any, index: number) => (
+                    <View key={index} style={styles.plainTag}>
+                      <Text style={styles.plainTagText}>
+                        {emojiFor(type)} {type}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                {contact.preferences.giftDetails ? (
+                  <>
+                    <Text style={styles.preferenceSubLabel}>
+                      Any specific gift ideas or things you collect?
+                    </Text>
+                    <Text style={styles.preferenceDetailValue}>
+                      {contact.preferences.giftDetails}
+                    </Text>
+                  </>
+                ) : null}
+              </View>
+            )}
+
+            {/* Interests/Activities */}
+            {contact.preferences.activities?.length > 0 && (
+              <View style={styles.preferenceRow}>
+                <Text style={styles.preferenceLabel}>Interests & Hobbies</Text>
+                <View style={styles.tagContainer}>
+                  {contact.preferences.activities.map((activity: any, index: number) => (
+                    <View key={index} style={styles.plainTag}>
+                      <Text style={styles.plainTagText}>
+                        {emojiFor(activity)} {activity}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                {contact.preferences.activityDetails ? (
+                  <>
+                    <Text style={styles.preferenceSubLabel}>Tell us more about what you enjoy</Text>
+                    <Text style={styles.preferenceDetailValue}>
+                      {contact.preferences.activityDetails}
+                    </Text>
+                  </>
+                ) : null}
+              </View>
+            )}
+
+            {/* Personal Style */}
+            {(contact.preferences.style?.length > 0 || contact.preferences.styleOther) && (
+              <View style={styles.preferenceRow}>
+                <Text style={styles.preferenceLabel}>Personal Style</Text>
+                <View style={styles.tagContainer}>
+                  {contact.preferences.style.map((style: any, index: number) => (
+                    <View key={index} style={styles.plainTag}>
+                      <Text style={styles.plainTagText}>
+                        {emojiFor(style)} {style}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                {contact.preferences.styleOther ? (
+                  <>
+                    <Text style={styles.preferenceSubLabel}>Describe your style (if Other)</Text>
+                    <Text style={styles.preferenceDetailValue}>
+                      {contact.preferences.styleOther}
+                    </Text>
+                  </>
+                ) : null}
+              </View>
+            )}
+
+            {/* Favorite Colors */}
+            {(contact.preferences.colors?.length > 0 || contact.preferences.colorsOther) && (
+              <View style={styles.preferenceRow}>
+                <Text style={styles.preferenceLabel}>Favorite Colors</Text>
+                <View style={styles.tagContainer}>
+                  {contact.preferences.colors.map((color: any, index: number) => (
+                    <View key={index} style={styles.plainTag}>
+                      <Text style={styles.plainTagText}>{color}</Text>
+                    </View>
+                  ))}
+                </View>
+                {contact.preferences.colorsOther ? (
+                  <>
+                    <Text style={styles.preferenceSubLabel}>Any other favorite colors?</Text>
+                    <Text style={styles.preferenceDetailValue}>
+                      {contact.preferences.colorsOther}
+                    </Text>
+                  </>
+                ) : null}
+              </View>
+            )}
+
+            {/* Likes Surprises */}
+            {contact.preferences.likesSurprises !== null && (
+              <View style={styles.preferenceRow}>
+                <Text style={styles.preferenceLabel}>Surprise Preference</Text>
+                <View
+                  style={[
+                    styles.surpriseBadge,
+                    { backgroundColor: contact.preferences.likesSurprises ? '#e8f5e9' : '#fff3e0' },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.surpriseText,
+                      { color: contact.preferences.likesSurprises ? '#43a047' : '#f57c00' },
+                    ]}
+                  >
+                    {contact.preferences.likesSurprises
+                      ? '🎉 Loves surprises!'
+                      : '📋 Prefers to know ahead'}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Causes & Values */}
+            {(contact.preferences.causes?.length > 0 || contact.preferences.causesOther) && (
+              <View style={styles.preferenceRow}>
+                <Text style={styles.preferenceLabel}>Causes They Care About</Text>
+                <View style={styles.tagContainer}>
+                  {contact.preferences.causes.map((cause: any, index: number) => (
+                    <View key={index} style={styles.plainTag}>
+                      <Text style={styles.plainTagText}>
+                        {emojiFor(cause)} {cause}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                {contact.preferences.causesOther ? (
+                  <>
+                    <Text style={styles.preferenceSubLabel}>Other causes or values?</Text>
+                    <Text style={styles.preferenceDetailValue}>
+                      {contact.preferences.causesOther}
+                    </Text>
+                  </>
+                ) : null}
+              </View>
+            )}
+          </Animated.View>
+        )}
+
+        {/* Food & Flowers */}
+        {contact.hasQuestionnaire &&
+          (contact.preferences.flower?.length > 0 ||
+            contact.preferences.flowerDetails ||
+            contact.preferences.cuisines?.length > 0 ||
+            contact.preferences.desserts?.length > 0 ||
+            contact.preferences.cuisineOther ||
+            contact.preferences.favoriteMeal ||
+            contact.preferences.dessertDetails) && (
+            <Animated.View style={[styles.section, createSlideStyle(sectionAnims[3])]}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionEmoji}>🌸</Text>
+                <Text style={styles.sectionTitle}>Food & Flowers</Text>
+              </View>
+
+              {/* Favorite Flower — chips with the same per-flower emojis the
+                invite form shows, and 🌿 for the form's section-specific
+                "Other" option (other sections use ✨, but flowers uses 🌿). */}
+              {(contact.preferences.flower?.length > 0 || contact.preferences.flowerDetails) && (
+                <View style={styles.preferenceRow}>
+                  <Text style={styles.preferenceLabel}>Favorite Flower</Text>
+                  <View style={styles.tagContainer}>
+                    {contact.preferences.flower.map((flower: any, index: number) => (
+                      <View key={index} style={styles.plainTag}>
+                        <Text style={styles.plainTagText}>
+                          {emojiFor(flower, '🌿')} {flower}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                  {contact.preferences.flowerDetails ? (
+                    <>
+                      <Text style={styles.preferenceSubLabel}>
+                        Any specific flower arrangements you love?
+                      </Text>
+                      <Text style={styles.preferenceDetailValue}>
+                        {contact.preferences.flowerDetails}
+                      </Text>
+                    </>
+                  ) : null}
+                </View>
+              )}
+
+              {/* Cuisines */}
+              {(contact.preferences.cuisines?.length > 0 ||
+                contact.preferences.cuisineOther ||
+                contact.preferences.restaurant ||
+                contact.preferences.favoriteMeal) && (
+                <View style={styles.preferenceRow}>
+                  <Text style={styles.preferenceLabel}>Favorite Cuisines</Text>
+                  <View style={styles.tagContainer}>
+                    {contact.preferences.cuisines.map((cuisine: any, index: number) => (
+                      <View key={index} style={styles.plainTag}>
+                        <Text style={styles.plainTagText}>
+                          {emojiFor(cuisine, '🍴')} {cuisine}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                  {contact.preferences.cuisineOther ? (
+                    <>
+                      <Text style={styles.preferenceSubLabel}>Any other cuisine preferences?</Text>
+                      <Text style={styles.preferenceDetailValue}>
+                        {contact.preferences.cuisineOther}
+                      </Text>
+                    </>
+                  ) : null}
+                  {contact.preferences.restaurant ? (
+                    <>
+                      <Text style={styles.preferenceSubLabel}>🍽️ Your favorite restaurant</Text>
+                      <Text style={styles.preferenceDetailValue}>
+                        {contact.preferences.restaurant}
+                      </Text>
+                    </>
+                  ) : null}
+                  {contact.preferences.favoriteMeal ? (
+                    <>
+                      <Text style={styles.preferenceSubLabel}>
+                        🍲 Your favorite meal at that restaurant
+                      </Text>
+                      <Text style={styles.preferenceDetailValue}>
+                        {contact.preferences.favoriteMeal}
+                      </Text>
+                    </>
+                  ) : null}
+                </View>
+              )}
+
+              {/* Desserts */}
+              {(contact.preferences.desserts?.length > 0 || contact.preferences.dessertDetails) && (
+                <View style={styles.preferenceRow}>
+                  <Text style={styles.preferenceLabel}>Favorite Desserts</Text>
+                  <View style={styles.tagContainer}>
+                    {contact.preferences.desserts.map((dessert: any, index: number) => (
+                      <View key={index} style={styles.plainTag}>
+                        <Text style={styles.plainTagText}>
+                          {emojiFor(dessert, '🍰')} {dessert}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                  {contact.preferences.dessertDetails ? (
+                    <>
+                      <Text style={styles.preferenceSubLabel}>Dessert preferences</Text>
+                      <Text style={styles.preferenceDetailValue}>
+                        {contact.preferences.dessertDetails}
+                      </Text>
+                    </>
+                  ) : null}
+                </View>
+              )}
+            </Animated.View>
+          )}
+
+        {/* Entertainment */}
+        {contact.hasQuestionnaire &&
+          (contact.preferences.musicGenre?.length > 0 ||
+            contact.preferences.movieGenre?.length > 0) && (
+            <Animated.View style={[styles.section, createSlideStyle(sectionAnims[3])]}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionEmoji}>🎬</Text>
+                <Text style={styles.sectionTitle}>Entertainment</Text>
+              </View>
+
+              {/* Music */}
+              {contact.preferences.musicGenre?.length > 0 && (
+                <View style={styles.preferenceRow}>
+                  <Text style={styles.preferenceLabel}>Music Taste</Text>
+                  <View style={styles.tagContainer}>
+                    {contact.preferences.musicGenre.map((genre: any, index: number) => (
+                      <View key={index} style={styles.plainTag}>
+                        <Text style={styles.plainTagText}>
+                          {emojiFor(genre, '🎵')} {genre}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                  {contact.preferences.favoriteArtists ? (
+                    <>
+                      <Text style={styles.preferenceSubLabel}>
+                        Favorite albums, artists, or singers
+                      </Text>
+                      <Text style={styles.preferenceDetailValue}>
+                        {contact.preferences.favoriteArtists}
+                      </Text>
+                    </>
+                  ) : null}
+                </View>
+              )}
+
+              {/* Movies */}
+              {contact.preferences.movieGenre?.length > 0 && (
+                <View style={styles.preferenceRow}>
+                  <Text style={styles.preferenceLabel}>Movie Preferences</Text>
+                  <View style={styles.tagContainer}>
+                    {contact.preferences.movieGenre.map((genre: any, index: number) => (
+                      <View key={index} style={styles.plainTag}>
+                        <Text style={styles.plainTagText}>
+                          {emojiFor(genre, '🎬')} {genre}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                  {contact.preferences.favoriteMovies ? (
+                    <>
+                      <Text style={styles.preferenceSubLabel}>
+                        Specific movies or shows you like
+                      </Text>
+                      <Text style={styles.preferenceDetailValue}>
+                        {contact.preferences.favoriteMovies}
+                      </Text>
+                    </>
+                  ) : null}
+                </View>
+              )}
+            </Animated.View>
+          )}
+
+        {/* Wishlist */}
+        {contact.hasQuestionnaire &&
+          (contact.preferences.wishlistText ||
+            contact.preferences.wishlistLinks?.length > 0 ||
+            contact.preferences.registryLink) && (
+            <Animated.View style={[styles.section, createSlideStyle(sectionAnims[3])]}>
+              <View style={styles.sectionHeader}>
+                <ClipboardIcon size={20} color="#ca9ad6" />
+                <Text style={styles.sectionTitle}>Wishlist & Notes</Text>
+              </View>
+
+              {contact.preferences.wishlistText ? (
+                <View style={styles.preferenceRow}>
+                  <Text style={styles.preferenceLabel}>Anything on your wishlist right now?</Text>
+                  <Text style={styles.wishlistTextContent}>{contact.preferences.wishlistText}</Text>
+                </View>
+              ) : null}
+
+              {contact.preferences.wishlistLinks?.length > 0 && (
+                <View style={styles.preferenceRow}>
+                  <Text style={styles.preferenceLabel}>Wishlist Links</Text>
+                  {contact.preferences.wishlistLinks.map((url: any, index: number) => (
+                    <Text
+                      key={index}
+                      style={styles.linkText}
+                      onPress={() => Linking.openURL(url).catch(() => {})}
+                    >
+                      🔗 {url}
+                    </Text>
+                  ))}
+                </View>
+              )}
+
+              {contact.preferences.registryLink ? (
+                <View style={styles.preferenceRow}>
+                  <Text style={styles.preferenceLabel}>Registry</Text>
+                  <Text
+                    style={styles.linkText}
+                    onPress={() =>
+                      Linking.openURL(contact.preferences.registryLink).catch(() => {})
+                    }
+                  >
+                    🎁 {contact.preferences.registryLink}
+                  </Text>
+                  {contact.preferences.registryDetails ? (
+                    <>
+                      <Text style={styles.preferenceSubLabel}>Registry Details</Text>
+                      <Text style={styles.preferenceDetailValue}>
+                        {contact.preferences.registryDetails}
+                      </Text>
+                    </>
+                  ) : null}
+                  {contact.preferences.registryExpiry ? (
+                    <>
+                      <Text style={styles.preferenceSubLabel}>Registry Expiry Date</Text>
+                      <Text style={styles.preferenceDetailValue}>
+                        {formatAppDate(
+                          contact.preferences.registryExpiry,
+                          { month: 'long', day: 'numeric', year: 'numeric' },
+                          '',
+                        )}
+                      </Text>
+                    </>
+                  ) : null}
+                </View>
+              ) : null}
+            </Animated.View>
+          )}
+
+        {/* Clothing Sizes — saved as a free-text string; older data may be
+            a key→value object, so handle both shapes. */}
+        {contact.hasQuestionnaire &&
+          (typeof contact.preferences.sizes === 'string'
+            ? contact.preferences.sizes.trim().length > 0
+            : contact.preferences.sizes && Object.keys(contact.preferences.sizes).length > 0) && (
+            <Animated.View style={[styles.section, createSlideStyle(sectionAnims[3])]}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionEmoji}>👕</Text>
+                <Text style={styles.sectionTitle}>Clothing / Shoe / Ring Sizes</Text>
+              </View>
+              {typeof contact.preferences.sizes === 'string' ? (
+                <Text style={styles.wishlistTextContent}>{contact.preferences.sizes}</Text>
+              ) : (
+                <View style={styles.sizesGrid}>
+                  {Object.entries(contact.preferences.sizes as Record<string, any>).map(
+                    ([key, value]) =>
+                      value ? (
+                        <View key={key} style={styles.sizeItem}>
+                          <Text style={styles.sizeLabel}>{key}</Text>
+                          <Text style={styles.sizeValue}>{value}</Text>
+                        </View>
+                      ) : null,
+                  )}
+                </View>
+              )}
+            </Animated.View>
+          )}
+
+        {/* Notes */}
+        {contact.notes && (
+          <Animated.View style={[styles.section, createSlideStyle(sectionAnims[4])]}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Notes</Text>
+            </View>
+            <Text style={styles.notesText}>{contact.notes}</Text>
+          </Animated.View>
+        )}
+
+        {/* Pending Friend Request Banner */}
+        {contact.isPending && (
+          <Animated.View style={[styles.actionContainer, createSlideStyle(sectionAnims[4])]}>
+            <View style={styles.pendingBanner}>
+              <Text style={styles.pendingBannerTitle}>Waiting for response</Text>
+              <Text style={styles.pendingBannerBody}>
+                You'll see {contact.name?.split(' ')[0] || 'their'} gift preferences once they
+                accept your request.
+              </Text>
+              <TouchableOpacity
+                style={styles.cancelRequestButton}
+                onPress={handleCancelRequest}
+                disabled={cancellingRequest}
+                activeOpacity={0.7}
+              >
+                {cancellingRequest ? (
+                  <ActivityIndicator size="small" color="#6b3a8a" />
+                ) : (
+                  <Text style={styles.cancelRequestText}>Cancel Request</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Action Buttons - Only show if not pending AND no questionnaire AND no invitation sent */}
+        {!contact.isPending && !contact.hasQuestionnaire && !contact.invitationSent && (
+          <Animated.View style={[styles.actionContainer, createSlideStyle(sectionAnims[4])]}>
+            <TouchableOpacity activeOpacity={0.7} onPress={handleSendInvitation}>
+              <LinearGradient
+                colors={['#ca9ad6', '#70d0dd']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.actionButton}
+              >
+                <MailIcon size={20} color="#FFFFFF" />
+                <Text style={styles.actionButtonText}>Send Questionnaire</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+            <Text style={styles.actionHint}>
+              Invite {contact.name.split(' ')[0]} to share their gift preferences
+            </Text>
+          </Animated.View>
+        )}
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+
+      {/* Custom Alert */}
+      <CustomAlert {...alertConfig} onClose={hideAlert} />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 50,
+    paddingBottom: 16,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  editButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  headerTitleMask: {
+    fontSize: 22,
+    fontFamily: 'Handlee_400Regular',
+    textAlign: 'center',
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+  },
+  profileHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  avatarContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#ca9ad6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+    marginBottom: 16,
+  },
+  avatarText: {
+    fontSize: 36,
+    fontFamily: 'Handlee_400Regular',
+    color: '#FFFFFF',
+  },
+  contactName: {
+    fontSize: 26,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    textAlign: 'center',
+  },
+  nickname: {
+    fontSize: 15,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+  relationshipBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fbe5f5',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 12,
+    gap: 6,
+  },
+  relationshipEmoji: {
+    fontSize: 16,
+  },
+  relationshipText: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+  },
+  section: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 14,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    flex: 1,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  infoIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#fbe5f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  infoTextWrap: {
+    flex: 1,
+  },
+  infoSubLabel: {
+    fontSize: 12,
+    fontFamily: 'Handlee_400Regular',
+    color: '#9277ab',
+    marginBottom: 2,
+  },
+  infoText: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    flex: 1,
+  },
+  eventCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    gap: 12,
+  },
+  eventIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  eventEmoji: {
+    fontSize: 22,
+  },
+  eventDetails: {
+    flex: 1,
+  },
+  eventName: {
+    fontSize: 15,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+  },
+  eventDate: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    marginTop: 2,
+  },
+  daysUntilBadge: {
+    backgroundColor: '#fbe5f5',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  daysUntilText: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#ca9ad6',
+  },
+  preferenceRow: {
+    marginBottom: 14,
+  },
+  preferenceLabel: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    marginBottom: 8,
+  },
+  tagContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  tag: {
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  tagText: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+  },
+  plainTag: {
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+  },
+  plainTagText: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+  },
+  gradientTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    gap: 4,
+  },
+  gradientTagText: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+  },
+  colorTag: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  preferenceDetail: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  // Caption above a free-text answer, mirroring the questionnaire's own
+  // question wording so every typed-in field is clearly labelled.
+  preferenceSubLabel: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#9277ab',
+    marginTop: 12,
+    marginBottom: 2,
+  },
+  preferenceDetailValue: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    fontStyle: 'italic',
+  },
+  preferenceValue: {
+    fontSize: 15,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    marginTop: 4,
+  },
+  surpriseBadge: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginTop: 6,
+  },
+  surpriseText: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+  },
+  causeTag: {
+    backgroundColor: '#e8f5e9',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  causeTagText: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#2e7d32',
+  },
+  sectionEmoji: {
+    fontSize: 20,
+  },
+  wishlistTextContent: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    lineHeight: 22,
+  },
+  linkText: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#3a8fb0',
+    marginBottom: 6,
+    textDecorationLine: 'underline',
+  },
+  sizesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  sizeItem: {
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    minWidth: 80,
+  },
+  sizeLabel: {
+    fontSize: 11,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    textTransform: 'capitalize',
+    marginBottom: 4,
+  },
+  sizeValue: {
+    fontSize: 16,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+  },
+  notesText: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    lineHeight: 22,
+  },
+  emptyText: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#999',
+    textAlign: 'center',
+    paddingVertical: 16,
+  },
+  actionContainer: {
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  pendingBanner: {
+    width: '100%',
+    backgroundColor: '#f4e8f7',
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(202, 154, 214, 0.3)',
+  },
+  pendingBannerTitle: {
+    fontSize: 15,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    marginBottom: 4,
+  },
+  pendingBannerBody: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    lineHeight: 18,
+  },
+  cancelRequestButton: {
+    marginTop: 14,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(202, 154, 214, 0.5)',
+    backgroundColor: '#FFFFFF',
+  },
+  cancelRequestText: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 18,
+    gap: 10,
+    shadowColor: '#ca9ad6',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  actionButtonText: {
+    fontSize: 16,
+    fontFamily: 'Handlee_400Regular',
+    color: '#FFFFFF',
+  },
+  actionHint: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+});
+
+export default ContactDetailScreen;
