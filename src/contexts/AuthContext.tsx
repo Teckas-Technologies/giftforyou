@@ -43,6 +43,7 @@ export interface AuthContextValue {
   signOut: () => Promise<{ error: null }>;
   resetPassword: (email: string) => Promise<AuthResult>;
   updatePassword: (newPassword: string) => Promise<AuthResult>;
+  updateEmail: (newEmail: string) => Promise<AuthResult>;
   getAccessToken: () => string | undefined;
   isAuthenticated: boolean;
 }
@@ -267,7 +268,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const resetPassword = useCallback(async (email: string): Promise<AuthResult> => {
     try {
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'giftbox4you://reset-password',
+        redirectTo: 'thoughtfully://reset-password',
       });
 
       if (error) throw error;
@@ -283,6 +284,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data, error } = await supabase.auth.updateUser({
         password: newPassword,
+      });
+
+      if (error) throw error;
+
+      return { data, error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
+  }, []);
+
+  // Update email — sends a confirmation link to the NEW address (not the
+  // old one), so this works even if the user's old email is no longer
+  // reachable (e.g. a company deleted it after they left), as long as
+  // they're still signed in and know their password. The backend's
+  // `authenticate` middleware self-heals `users.email` in our own table
+  // once the change is confirmed and reflected in a fresh token — nothing
+  // else needs to happen here.
+  const updateEmail = useCallback(async (newEmail: string): Promise<AuthResult> => {
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        email: newEmail,
       });
 
       if (error) throw error;
@@ -311,6 +333,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       signOut,
       resetPassword,
       updatePassword,
+      updateEmail,
       getAccessToken,
       isAuthenticated: !!user,
     }),
@@ -326,6 +349,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       signOut,
       resetPassword,
       updatePassword,
+      updateEmail,
       getAccessToken,
     ],
   );

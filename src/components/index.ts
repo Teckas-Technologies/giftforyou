@@ -3,3 +3,4 @@ export { default as GradientText } from './GradientText';
 export { default as CustomAlert } from './CustomAlert';
 export { default as Toast } from './Toast';
 export { default as LoveNotePopup } from './LoveNotePopup';
+export { default as FoundingMemberBadge } from './FoundingMemberBadge';

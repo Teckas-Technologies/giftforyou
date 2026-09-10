@@ -70,7 +70,7 @@ export const openManageSubscriptions = async () => {
     await Purchases.showManageSubscriptions();
   } else {
     await Linking.openURL(
-      'https://play.google.com/store/account/subscriptions?package=com.giftbox4you.app',
+      'https://play.google.com/store/account/subscriptions?package=com.thoughtfully.app',
     );
   }
 };

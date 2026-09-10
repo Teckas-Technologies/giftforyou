@@ -1,4 +1,4 @@
-// GiftBox4you Theme - Main Export
+// Thoughtfully Theme - Main Export
 
 export { colors } from './colors';
 export type { ColorToken } from './colors';

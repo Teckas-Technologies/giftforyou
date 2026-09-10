@@ -5,34 +5,36 @@ export const APP_CONFIG = {
   // App Info
   appName: 'Thoughtfully',
   version: '1.0.0',
-  // NOTE: packageName below, plus all URLs/emails/social handles further down
-  // this file, still point at the old giftbox4you domain/package. Left
-  // unchanged pending client confirmation these should move to the new
-  // "Thoughtfully" branding (packageName in particular is the Android/iOS
-  // bundle identifier — changing it creates a brand-new app listing, not a
-  // rename of the existing one, so it needs an explicit decision).
-  packageName: 'com.giftbox4you',
+  // Matches ios.bundleIdentifier / android.package in app.config.js.
+  packageName: 'com.thoughtfully.app',
 
   // Support
-  supportEmail: 'support@giftbox4you.com',
-  websiteUrl: 'https://giftbox4you.com',
-  faqUrl: 'https://giftbox4you.com/faq',
-  privacyPolicyUrl: 'https://giftbox4you.com/privacy',
-  termsUrl: 'https://giftbox4you.com/terms',
+  // NOTE: renamed to match the thoughtfully.com domain per explicit
+  // instruction — but this assumes that domain/inbox/social accounts
+  // actually exist under the new name. Verify before shipping; a broken
+  // support/legal link is worse than a working old-branded one.
+  supportEmail: 'support@thoughtfully.com',
+  websiteUrl: 'https://thoughtfully.com',
+  faqUrl: 'https://thoughtfully.com/faq',
+  privacyPolicyUrl: 'https://thoughtfully.com/privacy',
+  termsUrl: 'https://thoughtfully.com/terms',
 
   // Store Links
-  playStoreUrl: 'https://play.google.com/store/apps/details?id=com.giftbox4you',
-  appStoreUrl: 'https://apps.apple.com/app/giftbox4you/id123456789',
+  playStoreUrl: 'https://play.google.com/store/apps/details?id=com.thoughtfully.app',
+  // appStoreUrl's numeric id was already a placeholder (id123456789) before
+  // this rename — replace with the real App Store id once the app is
+  // actually published there.
+  appStoreUrl: 'https://apps.apple.com/app/thoughtfully/id123456789',
 
   // Share
   shareMessage:
-    'Never miss a birthday! Download GiftBox4you - the perfect app for remembering special moments and finding thoughtful gifts.',
-  downloadUrl: 'https://giftbox4you.com/download',
+    'Never miss a birthday! Download Thoughtfully - the perfect app for remembering special moments and finding thoughtful gifts.',
+  downloadUrl: 'https://thoughtfully.com/download',
 
   // Social Media
-  instagramUrl: 'https://instagram.com/giftbox4you',
-  facebookUrl: 'https://facebook.com/giftbox4you',
-  twitterUrl: 'https://twitter.com/giftbox4you',
+  instagramUrl: 'https://instagram.com/thoughtfully',
+  facebookUrl: 'https://facebook.com/thoughtfully',
+  twitterUrl: 'https://twitter.com/thoughtfully',
 } as const;
 
 export default APP_CONFIG;

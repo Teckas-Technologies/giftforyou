@@ -107,6 +107,8 @@ const getNotificationIcon = (type: string, title = '') => {
       return '🙁';
     case 'love_note_received':
       return '💌';
+    case 'preference_updated':
+      return '✨';
     default:
       return '🔔';
   }

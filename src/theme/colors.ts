@@ -1,4 +1,4 @@
-// GiftBox4you Color Palette
+// Thoughtfully Color Palette
 // Teal & Pink - Modern Celebration Theme (Teal-dominant)
 
 export const colors = {

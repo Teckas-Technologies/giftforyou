@@ -13,11 +13,13 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
-import { cancelFriendRequest } from '../../services/api';
-import { CustomAlert } from '../../components';
+import { cancelFriendRequest, removeFromCircle } from '../../services/api';
+import { CustomAlert, FoundingMemberBadge } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import { formatDate as formatAppDate, daysUntil as appDaysUntil } from '../../utils/date';
-import { useContactRaw } from './hooks';
+import { useContactRaw, CONTACTS_QUERY_KEY } from './hooks';
+import { usePlanStatus } from '../subscription/hooks';
+import { useQueryClient } from '@tanstack/react-query';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
 // Turn a stored preference value into a clean, human-readable list.
@@ -187,6 +189,22 @@ const EditIcon = ({ size = 20, color = '#6b3a8a' }: IconProps) => (
   >
     <Path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
     <Path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </Svg>
+);
+
+const TrashIcon = ({ size = 20, color = '#e53935' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Polyline points="3 6 5 6 21 6" />
+    <Path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
   </Svg>
 );
 
@@ -411,7 +429,15 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
   const contactId = route?.params?.contactId;
 
   // Custom alert hook
-  const { alertConfig, showError, hideAlert } = useAlert();
+  const { alertConfig, showError, showConfirm, hideAlert } = useAlert();
+  const queryClient = useQueryClient();
+  // Free plan can never delete a contact (prevents delete-and-re-add to
+  // re-reveal a contact's preferences past the 1-contact limit) — cached
+  // client-side the same way the invite-limit check is, so the button's
+  // very presence is already correct without a round trip.
+  const { data: planStatus } = usePlanStatus();
+  const canDeleteContact = !!planStatus?.plan && planStatus.plan !== 'free';
+  const [deletingContact, setDeletingContact] = useState(false);
 
   // Animations
   const headerAnim = useRef(new Animated.Value(0)).current;
@@ -457,6 +483,8 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
         rawContact.memberBirthday;
       const memberPhoto =
         rawContact.member?.profile_photo || rawContact.member?.photo || rawContact.memberPhoto;
+      const memberIsFoundingMember = rawContact.member?.is_founding_member || false;
+      const memberFoundingMemberNumber = rawContact.member?.founding_member_number || null;
 
       const transformedContact = {
         id: rawContact._id || rawContact.id || contactId,
@@ -468,6 +496,8 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
         nickname: rawContact.nickname || '',
         notes: rawContact.notes || '',
         avatar: memberPhoto || null,
+        isFoundingMember: memberIsFoundingMember,
+        foundingMemberNumber: memberFoundingMemberNumber,
         isPending: rawContact.status === 'pending' || preferencesData?.contact?.isPending,
         hasQuestionnaire: !!preferencesData?.preferences,
         invitationSent: preferencesData?.invitationSent || false,
@@ -647,6 +677,28 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
     }
   };
 
+  const handleDeleteContact = () => {
+    showConfirm(
+      'Delete Contact',
+      "Are you sure you want to delete? Your friend might keep updating their profile, and you don't want to miss out.",
+      async () => {
+        setDeletingContact(true);
+        try {
+          await removeFromCircle(contact.id);
+          queryClient.invalidateQueries({ queryKey: CONTACTS_QUERY_KEY });
+          navigation.goBack();
+        } catch (error: any) {
+          showError(error.message || 'Failed to delete contact');
+        } finally {
+          setDeletingContact(false);
+        }
+      },
+      undefined,
+      'Delete',
+      'Cancel',
+    );
+  };
+
   // Questionnaire is handled via web form only - commented for potential future use
   // const handleViewQuestionnaire = () => {
   //   navigation.navigate('Questionnaire', { contactId: contact.id, viewOnly: true });
@@ -769,6 +821,11 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
           </LinearGradient>
           <Text style={styles.contactName}>{contact.name}</Text>
           {contact.nickname && <Text style={styles.nickname}>"{contact.nickname}"</Text>}
+          {contact.isFoundingMember && contact.foundingMemberNumber && (
+            <View style={styles.foundingBadgeWrap}>
+              <FoundingMemberBadge number={contact.foundingMemberNumber} />
+            </View>
+          )}
           <View style={styles.relationshipBadge}>
             <Text style={styles.relationshipEmoji}>
               {getRelationshipEmoji(contact.relationship)}
@@ -1348,6 +1405,29 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
           </Animated.View>
         )}
 
+        {/* Delete Contact — paid plans only (see planLimitService.canDeleteContacts
+            on the backend for why free never gets this). Hidden entirely
+            rather than shown-disabled, matching the free-plan design. */}
+        {canDeleteContact && !contact.isPending && (
+          <Animated.View style={[styles.actionContainer, createSlideStyle(sectionAnims[4])]}>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={handleDeleteContact}
+              disabled={deletingContact}
+              activeOpacity={0.7}
+            >
+              {deletingContact ? (
+                <ActivityIndicator size="small" color="#e53935" />
+              ) : (
+                <>
+                  <TrashIcon size={18} color="#e53935" />
+                  <Text style={styles.deleteButtonText}>Delete Contact</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+
         <View style={{ height: 40 }} />
       </ScrollView>
 
@@ -1450,6 +1530,9 @@ const styles = StyleSheet.create({
     color: '#6b3a8a',
     fontStyle: 'italic',
     marginTop: 4,
+  },
+  foundingBadgeWrap: {
+    marginTop: 10,
   },
   relationshipBadge: {
     flexDirection: 'row',
@@ -1759,6 +1842,24 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    alignSelf: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(229, 57, 53, 0.3)',
+    backgroundColor: '#fff5f5',
+  },
+  deleteButtonText: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#e53935',
   },
   actionButton: {
     flexDirection: 'row',

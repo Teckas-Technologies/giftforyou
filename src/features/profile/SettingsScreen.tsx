@@ -11,6 +11,12 @@ import {
   ActivityIndicator,
   Linking,
   Share,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
@@ -18,11 +24,11 @@ import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
 import { updateSettings, clearUserCredentials, getPlanStatus } from '../../services/api';
 import { scheduleLocalNotification } from '../../services/notifications';
-import { CustomAlert, GiftBoxIcon, Toast } from '../../components';
+import { CustomAlert, GiftBoxIcon } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../config/supabase';
 import APP_CONFIG from '../../config/constants';
+import { isValidEmail } from '../../lib/validation';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
 // Icons
@@ -70,6 +76,22 @@ const LockIcon = ({ size = 22, color = '#ca9ad6' }: IconProps) => (
   >
     <Rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
     <Path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </Svg>
+);
+
+const MailIcon = ({ size = 22, color = '#ca9ad6' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+    <Polyline points="22,6 12,13 2,6" />
   </Svg>
 );
 
@@ -220,7 +242,26 @@ const ChevronRightIcon = ({ size = 20, color = '#ca9ad6' }: IconProps) => (
 );
 
 const SettingsScreen = ({ navigation }: ScreenProps) => {
-  const { signOut } = useAuth();
+  const { signOut, updateEmail, updatePassword, user } = useAuth();
+
+  // Google Sign-In never sets a password — if there's no 'email' identity,
+  // the account can only log in via Google today. Both Change Email and
+  // Change Password need to know this: Change Email must also collect a
+  // password in that case (otherwise changing the email doesn't actually
+  // give the user any way to log in without Google), and Change Password
+  // becomes "Set a Password" instead of a reset-link flow.
+  const hasPassword = !!user?.identities?.some((identity: any) => identity.provider === 'email');
+
+  const [changeEmailVisible, setChangeEmailVisible] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [emailChangePassword, setEmailChangePassword] = useState('');
+  const [emailChangePasswordConfirm, setEmailChangePasswordConfirm] = useState('');
+  const [changingEmail, setChangingEmail] = useState(false);
+
+  const [changePasswordVisible, setChangePasswordVisible] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const [notifications, setNotifications] = useState({
     eventReminders: true,
@@ -228,8 +269,6 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
     questionnaires: true,
     marketing: false,
   });
-
-  const [toast, setToast] = useState({ visible: false, message: '' });
 
   const [plan, setPlan] = useState('free');
   const PLAN_LABELS: Record<string, string> = {
@@ -247,20 +286,13 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
     }, []),
   );
 
-  const showToast = (message: string) => {
-    setToast({ visible: true, message });
-  };
-
-  const hideToast = () => {
-    setToast({ visible: false, message: '' });
-  };
-
   // Custom alert hook
   const {
     alertConfig,
     showAlert,
     showSuccess,
     showError,
+    showWarning,
     showConfirm,
     showOptions,
     showInfo,
@@ -341,30 +373,118 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
     showSuccess('Notification preference updated');
   };
 
-  const handleChangePassword = () => {
-    showConfirm(
-      'Change Password',
-      'We will send a password reset link to your email address.',
-      async () => {
-        try {
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
-          if (user?.email) {
-            const { error } = await supabase.auth.resetPasswordForEmail(user.email);
-            if (error) throw error;
-            showToast('Password reset link sent to your email!');
-          } else {
-            showToast('Could not find your email address');
-          }
-        } catch (error) {
-          showToast(error.message || 'Failed to send reset link');
-        }
-      },
-      undefined,
-      'Send Link',
-      'Cancel',
-    );
+  const handleOpenChangeEmail = () => {
+    setNewEmail('');
+    setEmailChangePassword('');
+    setEmailChangePasswordConfirm('');
+    setChangeEmailVisible(true);
+  };
+
+  const handleCloseChangeEmail = () => {
+    if (changingEmail) return;
+    setChangeEmailVisible(false);
+  };
+
+  // Sends the confirmation link to the NEW email, not the old one — works
+  // even if the account's current email is no longer reachable (e.g. a
+  // company deleted a former employee's work email), as long as they're
+  // still signed in and know their password. See AuthContext.updateEmail
+  // and middleware/auth.js for how the change is picked up afterward.
+  //
+  // A Google Sign-In account has no password at all, so changing its email
+  // alone wouldn't give the user any way to log in once Google access is
+  // gone (e.g. a former employer disabling their Google Workspace account)
+  // — so for those accounts this also sets a password, in the same step.
+  const handleSubmitChangeEmail = async () => {
+    const trimmed = newEmail.trim();
+    if (!isValidEmail(trimmed)) {
+      showWarning('Check the email address', 'Please enter a valid email address.', [
+        { text: 'OK' },
+      ]);
+      return;
+    }
+
+    if (!hasPassword) {
+      if (emailChangePassword.length < 6) {
+        showWarning('Choose a longer password', 'Password must be at least 6 characters.', [
+          { text: 'OK' },
+        ]);
+        return;
+      }
+      if (emailChangePassword !== emailChangePasswordConfirm) {
+        showWarning("Passwords don't match", 'Make sure both password fields match.', [
+          { text: 'OK' },
+        ]);
+        return;
+      }
+    }
+
+    setChangingEmail(true);
+    try {
+      if (!hasPassword) {
+        const { error: passwordError } = await updatePassword(emailChangePassword);
+        if (passwordError) throw passwordError;
+      }
+
+      const { error } = await updateEmail(trimmed);
+      if (error) throw error;
+      setChangeEmailVisible(false);
+      showSuccess(
+        hasPassword
+          ? `We sent a confirmation link to ${trimmed}. Your email won't change until you click it.`
+          : `Password set! We also sent a confirmation link to ${trimmed} — once you click it, log in with your new email and password.`,
+      );
+    } catch (error: any) {
+      showError(error.message || 'Failed to update email');
+    } finally {
+      setChangingEmail(false);
+    }
+  };
+
+  const handleOpenChangePassword = () => {
+    setNewPassword('');
+    setNewPasswordConfirm('');
+    setChangePasswordVisible(true);
+  };
+
+  const handleCloseChangePassword = () => {
+    if (changingPassword) return;
+    setChangePasswordVisible(false);
+  };
+
+  // Sets the new password directly (supabase.auth.updateUser) instead of
+  // emailing a reset link — works identically whether the account already
+  // has a password or never had one (Google Sign-In), and doesn't depend
+  // on the separate web app that handles emailed reset links.
+  const handleSubmitChangePassword = async () => {
+    if (newPassword.length < 6) {
+      showWarning('Choose a longer password', 'Password must be at least 6 characters.', [
+        { text: 'OK' },
+      ]);
+      return;
+    }
+    if (newPassword !== newPasswordConfirm) {
+      showWarning("Passwords don't match", 'Make sure both password fields match.', [
+        { text: 'OK' },
+      ]);
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const { error } = await updatePassword(newPassword);
+      if (error) throw error;
+      setChangePasswordVisible(false);
+      showSuccess(
+        hasPassword
+          ? 'Your password has been updated.'
+          : 'Password set! You can now log in with your email and this password, without Google.',
+      );
+    } catch (error: any) {
+      showError(error.message || 'Failed to update password');
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   const handleHelpCenter = () => {
@@ -512,7 +632,12 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
             label="Edit Profile"
             onPress={() => navigation.navigate('ProfileSetup', { editMode: true })}
           />
-          <SettingRow icon={LockIcon} label="Change Password" onPress={handleChangePassword} />
+          <SettingRow icon={MailIcon} label="Change Email" onPress={handleOpenChangeEmail} />
+          <SettingRow
+            icon={LockIcon}
+            label={hasPassword ? 'Change Password' : 'Set a Password'}
+            onPress={handleOpenChangePassword}
+          />
         </Animated.View>
 
         {/* Notifications Section */}
@@ -613,8 +738,189 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
       {/* Custom Alert */}
       <CustomAlert {...alertConfig} onClose={hideAlert} />
 
-      {/* Toast */}
-      <Toast visible={toast.visible} message={toast.message} onHide={hideToast} />
+      {/* Change Email */}
+      <Modal
+        visible={changeEmailVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCloseChangeEmail}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            onPress={handleCloseChangeEmail}
+            activeOpacity={1}
+          />
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.changeEmailCard}>
+              <LinearGradient
+                colors={['#FFFFFF', '#e0f7fa']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.changeEmailContent}
+              >
+                <Text style={styles.changeEmailTitle}>Change Email</Text>
+                <Text style={styles.changeEmailSubtitle}>
+                  We'll send a confirmation link to your new email — your account keeps using the
+                  old one until you click it.
+                </Text>
+                <TextInput
+                  style={styles.changeEmailInput}
+                  value={newEmail}
+                  onChangeText={setNewEmail}
+                  placeholder="your.new@email.com"
+                  placeholderTextColor="#999"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!changingEmail}
+                />
+                {!hasPassword && (
+                  <>
+                    <Text style={styles.changeEmailHint}>
+                      Your account signed in with Google and has no password yet. Set one now so you
+                      can still log in if Google sign-in ever stops working.
+                    </Text>
+                    <TextInput
+                      style={styles.changeEmailInput}
+                      value={emailChangePassword}
+                      onChangeText={setEmailChangePassword}
+                      placeholder="New password (min 6 characters)"
+                      placeholderTextColor="#999"
+                      secureTextEntry
+                      editable={!changingEmail}
+                    />
+                    <TextInput
+                      style={styles.changeEmailInput}
+                      value={emailChangePasswordConfirm}
+                      onChangeText={setEmailChangePasswordConfirm}
+                      placeholder="Confirm password"
+                      placeholderTextColor="#999"
+                      secureTextEntry
+                      editable={!changingEmail}
+                    />
+                  </>
+                )}
+                <View style={styles.changeEmailButtons}>
+                  <TouchableOpacity
+                    style={styles.changeEmailCancelButton}
+                    onPress={handleCloseChangeEmail}
+                    disabled={changingEmail}
+                  >
+                    <Text style={styles.changeEmailCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleSubmitChangeEmail}
+                    disabled={changingEmail}
+                    activeOpacity={0.85}
+                    style={{ flex: 1 }}
+                  >
+                    <LinearGradient
+                      colors={['#ca9ad6', '#70d0dd']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.changeEmailSubmitButton}
+                    >
+                      {changingEmail ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <Text style={styles.changeEmailSubmitText}>Send Link</Text>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              </LinearGradient>
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Change Password */}
+      <Modal
+        visible={changePasswordVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCloseChangePassword}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            onPress={handleCloseChangePassword}
+            activeOpacity={1}
+          />
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.changeEmailCard}>
+              <LinearGradient
+                colors={['#FFFFFF', '#e0f7fa']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.changeEmailContent}
+              >
+                <Text style={styles.changeEmailTitle}>
+                  {hasPassword ? 'Change Password' : 'Set a Password'}
+                </Text>
+                <Text style={styles.changeEmailSubtitle}>
+                  {hasPassword
+                    ? 'Choose a new password. You stay logged in — no email link needed.'
+                    : 'Your account signed in with Google and has no password yet. Set one so you can log in with just your email and this password too.'}
+                </Text>
+                <TextInput
+                  style={styles.changeEmailInput}
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  placeholder="New password (min 6 characters)"
+                  placeholderTextColor="#999"
+                  secureTextEntry
+                  editable={!changingPassword}
+                />
+                <TextInput
+                  style={styles.changeEmailInput}
+                  value={newPasswordConfirm}
+                  onChangeText={setNewPasswordConfirm}
+                  placeholder="Confirm password"
+                  placeholderTextColor="#999"
+                  secureTextEntry
+                  editable={!changingPassword}
+                />
+                <View style={styles.changeEmailButtons}>
+                  <TouchableOpacity
+                    style={styles.changeEmailCancelButton}
+                    onPress={handleCloseChangePassword}
+                    disabled={changingPassword}
+                  >
+                    <Text style={styles.changeEmailCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleSubmitChangePassword}
+                    disabled={changingPassword}
+                    activeOpacity={0.85}
+                    style={{ flex: 1 }}
+                  >
+                    <LinearGradient
+                      colors={['#ca9ad6', '#70d0dd']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.changeEmailSubmitButton}
+                    >
+                      {changingPassword ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <Text style={styles.changeEmailSubmitText}>Save</Text>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              </LinearGradient>
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 };
@@ -747,6 +1053,89 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Handlee_400Regular',
     color: '#999',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  changeEmailCard: {
+    width: '100%',
+    maxWidth: 360,
+    borderRadius: 24,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  changeEmailContent: {
+    padding: 24,
+  },
+  changeEmailTitle: {
+    fontSize: 20,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    marginBottom: 8,
+  },
+  changeEmailSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  changeEmailHint: {
+    fontSize: 13,
+    fontFamily: 'Handlee_400Regular',
+    color: '#a9789a',
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  changeEmailInput: {
+    fontFamily: 'Handlee_400Regular',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#f4cae8',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 20,
+  },
+  changeEmailButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  changeEmailCancelButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderWidth: 1,
+    borderColor: 'rgba(202, 154, 214, 0.3)',
+  },
+  changeEmailCancelText: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+  },
+  changeEmailSubmitButton: {
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  changeEmailSubmitText: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#FFFFFF',
   },
 });
 
