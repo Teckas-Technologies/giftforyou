@@ -19,6 +19,8 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Circle, Line, Rect, Path } from 'react-native-svg';
 import { colors } from '../../theme';
 import { useContacts } from './hooks';
+import { CustomAlert } from '../../components';
+import useAlert from '../../hooks/useAlert';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
 const { width, height } = Dimensions.get('window');
@@ -83,6 +85,23 @@ const UsersIcon = ({ size = 22, color = '#ca9ad6' }: IconProps) => (
     <Circle cx="9" cy="7" r="4" />
     <Path d="M23 21v-2a4 4 0 0 0-3-3.87" />
     <Path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </Svg>
+);
+
+// Lock Icon
+const LockIcon = ({ size = 16, color = '#ca9ad6' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Rect x="3" y="11" width="18" height="11" rx="2" />
+    <Path d="M7 11V7a5 5 0 0 1 10 0v4" />
   </Svg>
 );
 
@@ -159,6 +178,19 @@ const ContactsScreen = ({ navigation }: ScreenProps) => {
   const onRefresh = useCallback(() => {
     refetch();
   }, [refetch]);
+
+  const { alertConfig, showOptions, hideAlert } = useAlert();
+
+  const showUpgradePrompt = () => {
+    showOptions(
+      'Upgrade to view this contact',
+      "Your free plan only shows one contact's details. Upgrade to see everyone you've saved.",
+      [
+        { text: 'Not now', style: 'cancel' },
+        { text: 'Upgrade', onPress: () => navigation.navigate('Subscription') },
+      ],
+    );
+  };
 
   // Animation values
   const headerAnim = useRef(new Animated.Value(0)).current;
@@ -569,6 +601,29 @@ const ContactsScreen = ({ navigation }: ScreenProps) => {
             const avatarStyle = getAvatarStyle(contact.colorType);
             const tagStyle = getTagStyle(contact.relationTag);
 
+            if (contact.locked) {
+              return (
+                <View key={contact.id} style={styles.contactItem}>
+                  <TouchableOpacity
+                    style={styles.contactItemInner}
+                    activeOpacity={0.7}
+                    onPress={showUpgradePrompt}
+                  >
+                    <View style={[styles.avatar, styles.avatarLocked]}>
+                      <LockIcon size={20} color="#a89bb5" />
+                    </View>
+
+                    <View style={styles.contactDetails}>
+                      <View style={styles.lockedLine} />
+                      <View style={[styles.lockedLine, styles.lockedLineShort]} />
+                    </View>
+
+                    <LockIcon size={16} color="#ca9ad6" />
+                  </TouchableOpacity>
+                </View>
+              );
+            }
+
             return (
               <View key={contact.id} style={styles.contactItem}>
                 <TouchableOpacity
@@ -698,6 +753,8 @@ const ContactsScreen = ({ navigation }: ScreenProps) => {
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
+
+      <CustomAlert {...alertConfig} onClose={hideAlert} />
     </KeyboardAvoidingView>
   );
 };
@@ -926,6 +983,23 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 17,
     fontFamily: 'Handlee_400Regular',
+  },
+  avatarLocked: {
+    backgroundColor: '#ece7f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockedLine: {
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#ece7f0',
+    width: '70%',
+    marginBottom: 8,
+  },
+  lockedLineShort: {
+    width: '40%',
+    height: 10,
+    marginBottom: 0,
   },
   contactDetails: {
     flex: 1,

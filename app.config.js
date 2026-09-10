@@ -20,17 +20,21 @@ const withAllowBackupFalse = (config) =>
 const withAdjustResize = (config) =>
   withAndroidManifest(config, (cfg) => {
     const app = cfg.modResults.manifest.application?.[0];
-    const activity = app?.activity?.find(
-      (a) => a.$['android:name'] === '.MainActivity'
-    );
+    const activity = app?.activity?.find((a) => a.$['android:name'] === '.MainActivity');
     if (activity) activity.$['android:windowSoftInputMode'] = 'adjustResize';
     return cfg;
   });
 
 module.exports = {
   expo: {
-    name: 'GiftBox4you',
-    slug: 'GiftBox4you',
+    name: 'Thoughtfully',
+    slug: 'Thoughtfully',
+    // Registers the thoughtfully:// custom URL scheme natively (iOS
+    // CFBundleURLTypes / Android intent-filter) — required for
+    // AuthContext's resetPassword redirectTo link to actually route back
+    // into the app. Was missing entirely before, so that redirect never
+    // worked. Takes effect on the next native build (not an OTA update).
+    scheme: 'thoughtfully',
     // User-visible version (semver MAJOR.MINOR.PATCH). Bump for every
     // release: a patch fix → 0.3.1, a feature release → 0.4.0, etc.
     // Keep aligned with package.json, android.versionCode (integer), and
@@ -48,15 +52,15 @@ module.exports = {
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.giftbox4you.app',
+      bundleIdentifier: 'com.thoughtfully.app',
       // iOS equivalent of versionCode — must increase with every release.
       // Convention is to keep it identical to `version`.
       buildNumber: '0.3.1',
       infoPlist: {
         NSPhotoLibraryUsageDescription:
-          'GiftBox4you needs access to your photos so you can set a profile picture.',
+          'Thoughtfully needs access to your photos so you can set a profile picture.',
         NSCameraUsageDescription:
-          'GiftBox4you needs access to your camera so you can take a profile picture.',
+          'Thoughtfully needs access to your camera so you can take a profile picture.',
       },
     },
     android: {
@@ -65,7 +69,7 @@ module.exports = {
         backgroundColor: '#FDEEF3',
       },
       edgeToEdgeEnabled: true,
-      package: 'com.giftbox4you.app',
+      package: 'com.thoughtfully.app',
       // Integer Android uses to decide whether an APK is an upgrade.
       // MUST increase by at least 1 every release, otherwise installs
       // fail with INSTALL_FAILED_VERSION_DOWNGRADE. Prior client APKs
@@ -107,9 +111,9 @@ module.exports = {
         'expo-image-picker',
         {
           photosPermission:
-            'GiftBox4you needs access to your photos so you can set a profile picture.',
+            'Thoughtfully needs access to your photos so you can set a profile picture.',
           cameraPermission:
-            'GiftBox4you needs access to your camera so you can take a profile picture.',
+            'Thoughtfully needs access to your camera so you can take a profile picture.',
         },
       ],
       '@react-native-community/datetimepicker',

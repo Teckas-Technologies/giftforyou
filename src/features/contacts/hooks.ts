@@ -14,6 +14,10 @@ export interface Contact {
   colorType: 'pink' | 'blue';
   status?: string;
   isPending: boolean;
+  // True once the account has dropped to the free plan and this contact
+  // is beyond its one free slot — the server already stripped their real
+  // name/birthday/photo, so this row can only render a placeholder.
+  locked: boolean;
 }
 
 const getInitials = (name?: string) => {
@@ -48,6 +52,20 @@ async function fetchContacts(): Promise<Contact[]> {
   const contactsList = response.circles || response.contacts || [];
 
   return contactsList.map((contact: any, index: number) => {
+    if (contact.locked) {
+      return {
+        id: contact.id || String(index),
+        name: '',
+        initials: '',
+        birthday: '',
+        relation: contact.relationship || 'Friend',
+        relationTag: getRelationTag(contact.relationship),
+        colorType: index % 2 === 0 ? 'pink' : 'blue',
+        isPending: false,
+        locked: true,
+      };
+    }
+
     // Handle nested member object from API
     const memberName =
       contact.member?.name || contact.memberName || contact.guestName || contact.name || 'Unknown';
@@ -67,6 +85,7 @@ async function fetchContacts(): Promise<Contact[]> {
       colorType: index % 2 === 0 ? 'pink' : 'blue',
       status: contact.status,
       isPending: contact.status === 'pending',
+      locked: false,
     };
   });
 }

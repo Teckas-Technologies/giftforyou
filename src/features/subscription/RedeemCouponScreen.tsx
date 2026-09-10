@@ -122,12 +122,34 @@ const RedeemCouponScreen = ({ navigation, route }: ScreenProps) => {
   const canSendCode = !!code.trim() && isValidEmail(workEmail.trim()) && !submitting;
   const canVerify = verificationCode.trim().length === 6 && !submitting;
 
+  const goToSuccessDestination = () => {
+    if (nextRoute) {
+      // reset, not replace — clears CompanyCodeIntro + this screen from
+      // the stack entirely, so the back button can't loop into this
+      // one-time flow again.
+      navigation.reset({ index: 0, routes: [{ name: nextRoute }] });
+    } else {
+      navigation.goBack();
+    }
+  };
+
   const handleSendCode = async () => {
     if (!canSendCode) return;
 
     setSubmitting(true);
     try {
       const result = await requestCouponCode(code.trim(), workEmail.trim());
+
+      // Google Sign-In users redeeming with their own account email skip
+      // the 6-digit step entirely — the backend grants access right away.
+      if (result.redeemed) {
+        showSuccess(
+          'Verified! Your account now has Organization Plan access. 🎉',
+          goToSuccessDestination,
+        );
+        return;
+      }
+
       setSentToEmail(result.workEmail);
       setStep('verify');
     } catch (error) {
@@ -143,16 +165,10 @@ const RedeemCouponScreen = ({ navigation, route }: ScreenProps) => {
     setSubmitting(true);
     try {
       await verifyCouponCode(verificationCode.trim());
-      showSuccess('Verified! Your account now has Organization Plan access. 🎉', () => {
-        if (nextRoute) {
-          // reset, not replace — clears CompanyCodeIntro + this screen from
-          // the stack entirely, so the back button can't loop into this
-          // one-time flow again.
-          navigation.reset({ index: 0, routes: [{ name: nextRoute }] });
-        } else {
-          navigation.goBack();
-        }
-      });
+      showSuccess(
+        'Verified! Your account now has Organization Plan access. 🎉',
+        goToSuccessDestination,
+      );
     } catch (error) {
       showError(error.message || 'Failed to verify code');
     } finally {

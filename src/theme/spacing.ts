@@ -1,4 +1,4 @@
-// GiftBox4you Spacing & Sizing System
+// Thoughtfully Spacing & Sizing System
 
 export const spacing = {
   // Base spacing unit: 4px

@@ -1,5 +1,5 @@
 /**
- * GiftBox4you API Service
+ * Thoughtfully API Service
  * Base URL is read from EXPO_PUBLIC_API_BASE_URL (.env), with a prod fallback.
  * Uses Supabase Authentication
  */

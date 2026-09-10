@@ -1,4 +1,4 @@
-// GiftBox4you Screens - Main Export
+// Thoughtfully Screens - Main Export
 // Screens live under src/features/<domain>/ (grouped by feature); this
 // barrel is kept at its original path purely so AppNavigator's existing
 // `from '../screens'` import doesn't need to change.
