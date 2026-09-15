@@ -15,6 +15,8 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
 import { useNotificationsData, useNotificationActions } from './hooks';
 import { getRouteForNotification } from '../../services/notificationRouter';
+import { CustomAlert } from '../../components';
+import useAlert from '../../hooks/useAlert';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
 // Icons
@@ -142,12 +144,29 @@ const NotificationsScreen = ({ navigation }: ScreenProps) => {
   const notifications = notifData?.notifications || [];
   const incomingRequests = notifData?.incomingRequests || [];
 
+  const { alertConfig, showOptions, showError, hideAlert } = useAlert();
+
+  const showUpgradePrompt = () => {
+    showOptions(
+      'Upgrade to accept',
+      'Free plan is limited to 1 contact. Upgrade to accept more requests.',
+      [
+        { text: 'Not now', style: 'cancel' },
+        { text: 'Upgrade', onPress: () => navigation.navigate('Subscription') },
+      ],
+    );
+  };
+
   const handleAcceptRequest = async (requestId: string) => {
     setPendingActionIds((prev) => ({ ...prev, [requestId]: 'accepting' }));
     try {
       await acceptRequest(requestId);
-    } catch (error) {
-      console.log('Accept request failed:', error.message);
+    } catch (error: any) {
+      if (error?.code === 'UPGRADE_REQUIRED') {
+        showUpgradePrompt();
+      } else {
+        showError(error.message || 'Failed to accept request');
+      }
     } finally {
       setPendingActionIds((prev) => {
         const next = { ...prev };
@@ -449,6 +468,8 @@ const NotificationsScreen = ({ navigation }: ScreenProps) => {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <CustomAlert {...alertConfig} onClose={hideAlert} />
     </View>
   );
 };
