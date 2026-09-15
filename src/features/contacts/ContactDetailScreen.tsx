@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { cancelFriendRequest, removeFromCircle } from '../../services/api';
-import { CustomAlert, FoundingMemberBadge } from '../../components';
+import { CustomAlert } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import { formatDate as formatAppDate, daysUntil as appDaysUntil } from '../../utils/date';
 import { useContactRaw, CONTACTS_QUERY_KEY } from './hooks';
@@ -483,8 +483,6 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
         rawContact.memberBirthday;
       const memberPhoto =
         rawContact.member?.profile_photo || rawContact.member?.photo || rawContact.memberPhoto;
-      const memberIsFoundingMember = rawContact.member?.is_founding_member || false;
-      const memberFoundingMemberNumber = rawContact.member?.founding_member_number || null;
 
       const transformedContact = {
         id: rawContact._id || rawContact.id || contactId,
@@ -496,8 +494,6 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
         nickname: rawContact.nickname || '',
         notes: rawContact.notes || '',
         avatar: memberPhoto || null,
-        isFoundingMember: memberIsFoundingMember,
-        foundingMemberNumber: memberFoundingMemberNumber,
         isPending: rawContact.status === 'pending' || preferencesData?.contact?.isPending,
         hasQuestionnaire: !!preferencesData?.preferences,
         invitationSent: preferencesData?.invitationSent || false,
@@ -821,11 +817,6 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
           </LinearGradient>
           <Text style={styles.contactName}>{contact.name}</Text>
           {contact.nickname && <Text style={styles.nickname}>"{contact.nickname}"</Text>}
-          {contact.isFoundingMember && contact.foundingMemberNumber && (
-            <View style={styles.foundingBadgeWrap}>
-              <FoundingMemberBadge number={contact.foundingMemberNumber} />
-            </View>
-          )}
           <View style={styles.relationshipBadge}>
             <Text style={styles.relationshipEmoji}>
               {getRelationshipEmoji(contact.relationship)}
@@ -1530,9 +1521,6 @@ const styles = StyleSheet.create({
     color: '#6b3a8a',
     fontStyle: 'italic',
     marginTop: 4,
-  },
-  foundingBadgeWrap: {
-    marginTop: 10,
   },
   relationshipBadge: {
     flexDirection: 'row',
