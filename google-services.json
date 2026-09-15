@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:634184681428:android:cce4a8781ca4415b343841",
+        "mobilesdk_app_id": "1:634184681428:android:38557fb73bca1905343841",
         "android_client_info": {
-          "package_name": "com.giftbox4you.app"
+          "package_name": "com.thoughtfully.app"
         }
       },
       "oauth_client": [],

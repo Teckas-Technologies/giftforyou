@@ -213,26 +213,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Sign in with email and password
   const signIn = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     try {
-      // Pre-check: Supabase only returns a generic "Invalid login
-      // credentials" (it won't distinguish unknown email from wrong
-      // password). A server-side check (service-role, bypasses RLS) tells
-      // us if the account truly doesn't exist so we can guide the user to
-      // sign up. `null` = unknown (network/error) → don't block, fall
-      // through to the normal sign-in flow.
-      const registered = await checkEmailRegistered(email);
-      if (registered === false) {
-        return {
-          data: null,
-          error: { message: 'This email is not registered. Please create an account first.' },
-        };
-      }
-
+      // Try the real sign-in first — it's the only source of truth for
+      // whether these credentials work. Our own `users` table (checked
+      // below only as a fallback) can be briefly out of date, e.g. right
+      // after a Change Email confirmation: Supabase Auth already accepts
+      // the new email immediately, but our table isn't synced until the
+      // very first authenticated request succeeds — checking it *before*
+      // attempting sign-in would wrongly block exactly that first login.
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Only now check whether the email is genuinely unregistered, to
+        // give a clearer message than Supabase's generic "invalid
+        // credentials" — this never blocks a login that would have
+        // otherwise succeeded. `null` = unknown (network/error) → fall
+        // through to the original error instead of guessing.
+        const registered = await checkEmailRegistered(email);
+        if (registered === false) {
+          return {
+            data: null,
+            error: { message: 'This email is not registered. Please create an account first.' },
+          };
+        }
+        throw error;
+      }
 
       return { data, error: null };
     } catch (error) {
