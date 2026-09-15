@@ -28,7 +28,7 @@ const withAdjustResize = (config) =>
 module.exports = {
   expo: {
     name: 'Thoughtfully',
-    slug: 'Thoughtfully',
+    slug: 'thoughtfully',
     // Registers the thoughtfully:// custom URL scheme natively (iOS
     // CFBundleURLTypes / Android intent-filter) — required for
     // AuthContext's resetPassword redirectTo link to actually route back
@@ -137,9 +137,9 @@ module.exports = {
     ],
     extra: {
       eas: {
-        projectId: '432ed620-8985-48e6-9bb7-ca52c267378e',
+        projectId: '0fca89a9-018f-4ab4-b372-9334d979b521',
       },
     },
-    owner: 'sharmila_blessy',
+    owner: 'teckas-technologies',
   },
 };
