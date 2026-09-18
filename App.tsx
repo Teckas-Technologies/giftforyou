@@ -131,6 +131,18 @@ export default function App() {
     return () => clearTimeout(t);
   }, []);
 
+  // DIAGNOSTIC ONLY: hide the native splash immediately on mount, without
+  // waiting on fonts at all. If the app is still visually stuck on the
+  // splash image after this runs, that proves SplashScreen.hideAsync()
+  // itself isn't taking effect (e.g. a broken native module bridge) rather
+  // than the JS-side font/auth checks actually hanging.
+  useEffect(() => {
+    console.log('[debug] App mounted, calling hideAsync immediately');
+    SplashScreen.hideAsync()
+      .then(() => console.log('[debug] hideAsync resolved'))
+      .catch((e) => console.log('[debug] hideAsync rejected:', e));
+  }, []);
+
   useEffect(() => {
     if (fontError) {
       console.error('Font loading error:', fontError);
