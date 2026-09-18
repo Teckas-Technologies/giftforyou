@@ -40,7 +40,7 @@ module.exports = {
     // Keep aligned with package.json, android.versionCode (integer), and
     // ios.buildNumber. Previous client APKs were v0.1, v0.2, v0.3.0, so this
     // ship (logo/emoji rebrand + Azure API URL) is v0.3.1 with versionCode 4.
-    version: '0.3.1',
+    version: '0.3.2',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
@@ -55,7 +55,7 @@ module.exports = {
       bundleIdentifier: 'com.thoughtfully.app',
       // iOS equivalent of versionCode — must increase with every release.
       // Convention is to keep it identical to `version`.
-      buildNumber: '0.3.1',
+      buildNumber: '0.3.2',
       infoPlist: {
         NSPhotoLibraryUsageDescription:
           'Thoughtfully needs access to your photos so you can set a profile picture.',
@@ -74,7 +74,7 @@ module.exports = {
       // MUST increase by at least 1 every release, otherwise installs
       // fail with INSTALL_FAILED_VERSION_DOWNGRADE. Prior client APKs
       // (v0.1, v0.2, v0.3.0) used 3 or lower; this release is 4.
-      versionCode: 4,
+      versionCode: 5,
       googleServicesFile: './google-services.json',
       // Android Auto Backup is disabled via the inline `withAllowBackupFalse`
       // plugin (registered below). The top-level `allowBackup` field is not
