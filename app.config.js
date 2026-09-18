@@ -121,10 +121,20 @@ module.exports = {
         // Allow plaintext HTTP requests in the release APK (Android 9+
         // blocks them by default). Required while the backend is on
         // http://… — drop this entry once it moves to HTTPS.
+        //
+        // iOS useModularHeaders: required for the pod install step to
+        // succeed at all. Google Sign-In pulls in AppCheckCore, which
+        // depends on GoogleUtilities/RecaptchaInterop — Swift pods that
+        // don't define Objective-C modules, so they can't link as static
+        // libraries without this (CocoaPods error: "cannot yet be
+        // integrated as static libraries... set use_modular_headers!").
         'expo-build-properties',
         {
           android: {
             usesCleartextTraffic: true,
+          },
+          ios: {
+            useModularHeaders: true,
           },
         },
       ],
