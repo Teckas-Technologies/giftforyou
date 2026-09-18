@@ -122,19 +122,23 @@ module.exports = {
         // blocks them by default). Required while the backend is on
         // http://… — drop this entry once it moves to HTTPS.
         //
-        // iOS useModularHeaders: required for the pod install step to
-        // succeed at all. Google Sign-In pulls in AppCheckCore, which
-        // depends on GoogleUtilities/RecaptchaInterop — Swift pods that
-        // don't define Objective-C modules, so they can't link as static
-        // libraries without this (CocoaPods error: "cannot yet be
-        // integrated as static libraries... set use_modular_headers!").
+        // iOS useFrameworks: required for the pod install step to succeed
+        // at all. Google Sign-In pulls in AppCheckCore, which depends on
+        // GoogleUtilities/RecaptchaInterop — Swift pods that don't define
+        // Objective-C modules, so they can't link as static *libraries*
+        // (CocoaPods error: "cannot yet be integrated as static
+        // libraries... set use_modular_headers!"). Building as static
+        // *frameworks* instead sidesteps this — `expo-build-properties`
+        // has no direct `useModularHeaders` toggle (verified against its
+        // actual PluginConfigTypeIos — there isn't one), this is the real
+        // supported option for it.
         'expo-build-properties',
         {
           android: {
             usesCleartextTraffic: true,
           },
           ios: {
-            useModularHeaders: true,
+            useFrameworks: 'static',
           },
         },
       ],
