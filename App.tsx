@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useRef } from 'react';
-import { View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Text } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
@@ -107,20 +107,53 @@ export default function App() {
     };
   }, []);
 
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     // Logo font
     StyleScript_400Regular,
     // App content font
     Handlee_400Regular,
   });
 
+  // If something is stuck (fonts never resolve, or any other silent hang)
+  // before this component gets to render its first frame, the native splash
+  // just stays up forever with nothing to look at. This surfaces whatever
+  // the actual blocking state is as plain on-screen text after a few
+  // seconds, so a stuck device can just be screenshotted instead of needing
+  // native device logs.
+  const [showDebug, setShowDebug] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setShowDebug(true);
+      // Hide the native splash so the debug text below is actually visible
+      // instead of staying covered by it.
+      SplashScreen.hideAsync().catch(() => {});
+    }, 5000);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (fontError) {
+      console.error('Font loading error:', fontError);
+    }
+  }, [fontError]);
+
   const onLayoutRootView = useCallback(async () => {
-    if (fontsLoaded) {
+    if (fontsLoaded || fontError) {
       await SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded && !fontError) {
+    if (showDebug) {
+      return (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <Text style={{ textAlign: 'center' }}>
+            Still loading fonts…{'\n'}fontsLoaded: {String(fontsLoaded)}
+            {'\n'}fontError: {fontError ? String(fontError) : 'none'}
+          </Text>
+        </View>
+      );
+    }
     return null;
   }
 

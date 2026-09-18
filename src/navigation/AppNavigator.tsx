@@ -2,7 +2,7 @@ import React, { ComponentProps, useEffect, useState } from 'react';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { StyleSheet, View, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQueryClient } from '@tanstack/react-query';
@@ -182,18 +182,36 @@ const MainStack = ({
 };
 
 // Loading Screen Component
-const LoadingScreen = () => (
-  <View style={styles.loadingContainer}>
-    <LinearGradient
-      colors={['#FFFFFF', '#fbe5f5', '#ccf9ff', '#FFFFFF']}
-      locations={[0, 0.3, 0.7, 1]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={StyleSheet.absoluteFill}
-    />
-    <ActivityIndicator size="large" color={colors.primary} />
-  </View>
-);
+// If `loading` (from AuthContext's getInitialSession, e.g. an unresolved
+// supabase.auth.getSession() call) never flips to false, this screen would
+// otherwise spin forever with no way to tell it apart from a genuine hang.
+// Surfaces plain text after a few seconds so a stuck device can just be
+// screenshotted instead of needing native device logs.
+const LoadingScreen = () => {
+  const [showDebug, setShowDebug] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setShowDebug(true), 5000);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <View style={styles.loadingContainer}>
+      <LinearGradient
+        colors={['#FFFFFF', '#fbe5f5', '#ccf9ff', '#FFFFFF']}
+        locations={[0, 0.3, 0.7, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <ActivityIndicator size="large" color={colors.primary} />
+      {showDebug && (
+        <Text style={{ marginTop: 16, textAlign: 'center', paddingHorizontal: 24 }}>
+          Stuck waiting on auth session check (AuthContext getInitialSession)
+        </Text>
+      )}
+    </View>
+  );
+};
 
 // Main App Navigator
 const AppNavigator = () => {
