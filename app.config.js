@@ -55,7 +55,7 @@ module.exports = {
       bundleIdentifier: 'com.thoughtfully.app',
       // iOS equivalent of versionCode — must increase with every release.
       // Convention is to keep it identical to `version`.
-      buildNumber: '0.3.3',
+      buildNumber: '0.3.4',
       infoPlist: {
         NSPhotoLibraryUsageDescription:
           'Thoughtfully needs access to your photos so you can set a profile picture.',
