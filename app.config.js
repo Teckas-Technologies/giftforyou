@@ -44,19 +44,14 @@ module.exports = {
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
-    // Disabled: with the New Architecture on, RNGoogleSignin's TurboModule
-    // failed to register under iOS static frameworks ("TurboModuleRegistry
-    // .getEnforcing(...): 'RNGoogleSignin' could not be found" — confirmed
-    // live via a local dev build), which is what caused the app to hang on
-    // the splash screen (GoogleSignin.configure() runs at AuthContext's
-    // module top level and crashed before React ever rendered). Switching
-    // iOS to dynamic frameworks fixed that but broke RevenueCat's linker
-    // step instead ("symbol(s) not found for architecture arm64" building
-    // RNPurchases) — those two libraries want opposite framework linkage.
-    // Disabling the New Architecture avoids the TurboModule registration
-    // path entirely, letting both libraries work under the framework
-    // setting ('static') that was already fine for CocoaPods/RevenueCat.
-    newArchEnabled: false,
+    // Tried disabling this to work around RNGoogleSignin's TurboModule
+    // registration failure (see expo-build-properties comment below), but
+    // that pulls in an older C++ dependency chain (fmt/glog/boost, compiled
+    // from source) that fails to build on this Xcode/Clang version
+    // ("consteval function is not a constant expression" in fmt). Reverted
+    // — New Architecture must stay on; fixing RNGoogleSignin needs a
+    // different approach (e.g. upgrading the package).
+    newArchEnabled: true,
     splash: {
       image: './assets/splash-icon.png',
       resizeMode: 'contain',
@@ -134,35 +129,30 @@ module.exports = {
         // blocks them by default). Required while the backend is on
         // http://… — drop this entry once it moves to HTTPS.
         //
-        // iOS useFrameworks: required for the pod install step to succeed
-        // at all. Google Sign-In pulls in AppCheckCore, which depends on
-        // GoogleUtilities/RecaptchaInterop — Swift pods that don't define
-        // Objective-C modules, so they can't link as static *libraries*
-        // (CocoaPods error: "cannot yet be integrated as static
-        // libraries... set use_modular_headers!"). `expo-build-properties`
-        // has no direct `useModularHeaders` toggle (verified against its
-        // actual PluginConfigTypeIos — there isn't one), so `useFrameworks`
-        // is the real supported option for it.
-        //
-        // 'static' fixed the pod install error but broke TurboModule
-        // registration for RNGoogleSignin under the New Architecture
-        // (runtime error: "TurboModuleRegistry.getEnforcing(...):
-        // 'RNGoogleSignin' could not be found" — confirmed live via a
-        // local dev build, this is what caused the app to hang on the
-        // splash screen). Tried 'dynamic' instead — that fixed
-        // RNGoogleSignin but broke RevenueCat's linker step instead
-        // ("symbol(s) not found for architecture arm64" building
-        // RNPurchases). Back to 'static' (known-good for CocoaPods here);
-        // the actual fix for RNGoogleSignin is disabling the New
-        // Architecture above (newArchEnabled: false), which avoids the
-        // TurboModule registration path entirely.
+        // NOTE ON HISTORY (iOS): this plugin previously also set
+        // `ios.useFrameworks: 'static'` to work around a CocoaPods error
+        // ("AppCheckCore... cannot yet be integrated as static libraries")
+        // caused by Google Sign-In's AppCheckCore/GoogleUtilities/
+        // RecaptchaInterop dependencies lacking modular headers. That
+        // workaround affected the whole project's linking and had real
+        // side effects: it broke RNGoogleSignin's TurboModule registration
+        // under the New Architecture ("TurboModuleRegistry.getEnforcing
+        // (...): 'RNGoogleSignin' could not be found" — confirmed live via
+        // a local dev build; this is what caused the app to hang on the
+        // splash screen, since GoogleSignin.configure() runs at
+        // AuthContext's module top level and crashed before React ever
+        // rendered). Switching to 'dynamic' fixed that but broke
+        // RevenueCat's linker step instead. Disabling the New Architecture
+        // avoided the TurboModule path but pulled in an older C++
+        // dependency chain (fmt/glog/boost) that fails to compile here.
+        // The real fix: @react-native-google-signin/google-signin 16.1.4+
+        // declares AppCheckCore's modular-header dependencies directly in
+        // its own podspec, so Expo's autolinking handles it per-pod
+        // without a project-wide `useFrameworks` override at all. Removed.
         'expo-build-properties',
         {
           android: {
             usesCleartextTraffic: true,
-          },
-          ios: {
-            useFrameworks: 'static',
           },
         },
       ],
