@@ -63,6 +63,12 @@ module.exports = {
       // iOS equivalent of versionCode — must increase with every release.
       // Convention is to keep it identical to `version`.
       buildNumber: '0.3.5',
+      // Was missing entirely — Android has the equivalent `googleServicesFile`
+      // field below, but iOS needs its own. Without this, Expo's prebuild
+      // never copies the file into the native project, so GoogleSignin.
+      // configure() fails at runtime with "GoogleService-Info.plist was not
+      // found" even though the file exists in the project root.
+      googleServicesFile: './GoogleService-Info.plist',
       infoPlist: {
         NSPhotoLibraryUsageDescription:
           'Thoughtfully needs access to your photos so you can set a profile picture.',
