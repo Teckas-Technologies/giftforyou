@@ -1219,25 +1219,51 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
       <CustomAlert {...alertConfig} onClose={hideAlert} />
 
       {/* Native calendar date picker — mounts only while a date question is
-          actively being picked. Android shows a calendar dialog; iOS shows
-          the inline/wheel picker. Either way the user gets a real calendar
-          instead of typing MM/DD/YYYY by hand. */}
-      {pickerFor && (
+          actively being picked. Android shows a calendar dialog (its own
+          native modal, no wrapper needed here). iOS's 'inline' picker has
+          no native modal of its own — it's just a plain view, so without
+          this overlay wrapper it rendered in-flow at the bottom of the
+          screen and visually collided with the absolutely-positioned
+          Back/Continue buttons. Wrapping it in a dimmed full-screen
+          backdrop + centered card makes it behave like a proper modal, and
+          the Done button gives an explicit way to close it (previously
+          only tapping outside would dismiss it). */}
+      {pickerFor && Platform.OS === 'ios' && (
+        <View style={styles.datePickerOverlay}>
+          <View style={styles.datePickerCard}>
+            <DateTimePicker
+              value={isoToDate(answers[pickerFor])}
+              mode="date"
+              display="inline"
+              onChange={(event, selectedDate) => {
+                if (selectedDate) {
+                  handleTextChange(pickerFor, dateToISO(selectedDate));
+                }
+              }}
+            />
+            <TouchableOpacity
+              style={styles.datePickerDoneButton}
+              onPress={() => setPickerFor(null)}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.datePickerDoneText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+      {pickerFor && Platform.OS === 'android' && (
         <DateTimePicker
           value={isoToDate(answers[pickerFor])}
           mode="date"
-          display={Platform.OS === 'ios' ? 'inline' : 'calendar'}
+          display="calendar"
           onChange={(event, selectedDate) => {
-            // Android: 'set' = user confirmed; 'dismissed' = user cancelled.
-            // Either way the dialog closes itself, so we always unmount.
-            if (Platform.OS === 'android') setPickerFor(null);
+            // Android's dialog is its own native modal and closes itself
+            // either way — 'set' = confirmed, 'dismissed' = cancelled.
+            setPickerFor(null);
             if (event?.type === 'dismissed') return;
             if (selectedDate) {
               handleTextChange(pickerFor, dateToISO(selectedDate));
             }
-            // iOS inline picker stays open until the user taps elsewhere
-            // (TouchableWithoutFeedback could dismiss it). Leave pickerFor
-            // set on iOS so multiple adjustments work in one open session.
           }}
         />
       )}
@@ -1470,6 +1496,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingRight: 16,
+  },
+  datePickerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(51, 12, 84, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    zIndex: 100,
+  },
+  datePickerCard: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  datePickerDoneButton: {
+    marginTop: 8,
+    alignSelf: 'flex-end',
+    paddingVertical: 10,
+    paddingHorizontal: 22,
+    borderRadius: 12,
+    backgroundColor: '#ca9ad6',
+  },
+  datePickerDoneText: {
+    fontSize: 15,
+    fontFamily: 'Handlee_400Regular',
+    color: '#FFFFFF',
   },
   datePickerText: {
     flex: 1,

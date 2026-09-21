@@ -4,6 +4,7 @@ import {
   Text,
   Image,
   StyleSheet,
+  ScrollView,
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
@@ -189,7 +190,11 @@ const LoginScreen = ({ navigation }: ScreenProps) => {
         style={StyleSheet.absoluteFill}
       />
 
-      <View style={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Logo Section */}
         <Animated.View
           style={[
@@ -349,7 +354,7 @@ const LoginScreen = ({ navigation }: ScreenProps) => {
             </TouchableOpacity>
           </View>
         </Animated.View>
-      </View>
+      </ScrollView>
 
       <CustomAlert {...alertConfig} onClose={hideAlert} />
     </KeyboardAvoidingView>
@@ -362,7 +367,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   scrollContent: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 50,
