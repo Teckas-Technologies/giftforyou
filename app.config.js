@@ -55,7 +55,7 @@ module.exports = {
       bundleIdentifier: 'com.thoughtfully.app',
       // iOS equivalent of versionCode — must increase with every release.
       // Convention is to keep it identical to `version`.
-      buildNumber: '0.3.4',
+      buildNumber: '0.3.5',
       infoPlist: {
         NSPhotoLibraryUsageDescription:
           'Thoughtfully needs access to your photos so you can set a profile picture.',
@@ -127,18 +127,27 @@ module.exports = {
         // GoogleUtilities/RecaptchaInterop — Swift pods that don't define
         // Objective-C modules, so they can't link as static *libraries*
         // (CocoaPods error: "cannot yet be integrated as static
-        // libraries... set use_modular_headers!"). Building as static
-        // *frameworks* instead sidesteps this — `expo-build-properties`
+        // libraries... set use_modular_headers!"). `expo-build-properties`
         // has no direct `useModularHeaders` toggle (verified against its
-        // actual PluginConfigTypeIos — there isn't one), this is the real
-        // supported option for it.
+        // actual PluginConfigTypeIos — there isn't one), so `useFrameworks`
+        // is the real supported option for it.
+        //
+        // 'static' fixed the pod install error but broke TurboModule
+        // registration for RNGoogleSignin under the New Architecture
+        // (runtime error: "TurboModuleRegistry.getEnforcing(...):
+        // 'RNGoogleSignin' could not be found" — confirmed live via a
+        // local dev build, this is what caused the app to hang on the
+        // splash screen, since GoogleSignin.configure() runs at
+        // AuthContext's module top level and crashed before React ever
+        // rendered). 'dynamic' avoids the original static-library
+        // restriction just as well, without breaking module registration.
         'expo-build-properties',
         {
           android: {
             usesCleartextTraffic: true,
           },
           ios: {
-            useFrameworks: 'static',
+            useFrameworks: 'dynamic',
           },
         },
       ],
