@@ -44,7 +44,19 @@ module.exports = {
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
-    newArchEnabled: true,
+    // Disabled: with the New Architecture on, RNGoogleSignin's TurboModule
+    // failed to register under iOS static frameworks ("TurboModuleRegistry
+    // .getEnforcing(...): 'RNGoogleSignin' could not be found" — confirmed
+    // live via a local dev build), which is what caused the app to hang on
+    // the splash screen (GoogleSignin.configure() runs at AuthContext's
+    // module top level and crashed before React ever rendered). Switching
+    // iOS to dynamic frameworks fixed that but broke RevenueCat's linker
+    // step instead ("symbol(s) not found for architecture arm64" building
+    // RNPurchases) — those two libraries want opposite framework linkage.
+    // Disabling the New Architecture avoids the TurboModule registration
+    // path entirely, letting both libraries work under the framework
+    // setting ('static') that was already fine for CocoaPods/RevenueCat.
+    newArchEnabled: false,
     splash: {
       image: './assets/splash-icon.png',
       resizeMode: 'contain',
@@ -137,17 +149,20 @@ module.exports = {
         // (runtime error: "TurboModuleRegistry.getEnforcing(...):
         // 'RNGoogleSignin' could not be found" — confirmed live via a
         // local dev build, this is what caused the app to hang on the
-        // splash screen, since GoogleSignin.configure() runs at
-        // AuthContext's module top level and crashed before React ever
-        // rendered). 'dynamic' avoids the original static-library
-        // restriction just as well, without breaking module registration.
+        // splash screen). Tried 'dynamic' instead — that fixed
+        // RNGoogleSignin but broke RevenueCat's linker step instead
+        // ("symbol(s) not found for architecture arm64" building
+        // RNPurchases). Back to 'static' (known-good for CocoaPods here);
+        // the actual fix for RNGoogleSignin is disabling the New
+        // Architecture above (newArchEnabled: false), which avoids the
+        // TurboModule registration path entirely.
         'expo-build-properties',
         {
           android: {
             usesCleartextTraffic: true,
           },
           ios: {
-            useFrameworks: 'dynamic',
+            useFrameworks: 'static',
           },
         },
       ],
