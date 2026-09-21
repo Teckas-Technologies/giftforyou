@@ -62,7 +62,7 @@ module.exports = {
       bundleIdentifier: 'com.thoughtfully.app',
       // iOS equivalent of versionCode — must increase with every release.
       // Convention is to keep it identical to `version`.
-      buildNumber: '0.3.3',
+      buildNumber: '0.3.4',
       // Was missing entirely — Android has the equivalent `googleServicesFile`
       // field below, but iOS needs its own. Without this, Expo's prebuild
       // never copies the file into the native project, so GoogleSignin.
@@ -87,7 +87,7 @@ module.exports = {
       // MUST increase by at least 1 every release, otherwise installs
       // fail with INSTALL_FAILED_VERSION_DOWNGRADE. Prior client APKs
       // (v0.1, v0.2, v0.3.0) used 3 or lower; this release is 4.
-      versionCode: 6,
+      versionCode: 7,
       googleServicesFile: './google-services.json',
       // Android Auto Backup is disabled via the inline `withAllowBackupFalse`
       // plugin (registered below). The top-level `allowBackup` field is not
