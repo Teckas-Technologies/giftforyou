@@ -239,32 +239,30 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
             <Text style={styles.charCount}>
               {noteText.length}/{MAX_NOTE_LENGTH}
             </Text>
+
+            <View style={styles.footer}>
+              <TouchableOpacity
+                disabled={!canSend}
+                onPress={handleSend}
+                activeOpacity={0.8}
+                style={{ opacity: canSend ? 1 : 0.5 }}
+              >
+                <LinearGradient
+                  colors={['#ca9ad6', '#70d0dd']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.sendButton}
+                >
+                  {sending ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.sendButtonText}>Send Love Note 💌</Text>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
-      )}
-
-      {!loading && (
-        <View style={styles.footer}>
-          <TouchableOpacity
-            disabled={!canSend}
-            onPress={handleSend}
-            activeOpacity={0.8}
-            style={{ opacity: canSend ? 1 : 0.5 }}
-          >
-            <LinearGradient
-              colors={['#ca9ad6', '#70d0dd']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.sendButton}
-            >
-              {sending ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={styles.sendButtonText}>Send Love Note 💌</Text>
-              )}
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
       )}
 
       <CustomAlert {...alertConfig} onClose={hideAlert} />
@@ -314,7 +312,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingBottom: 120,
+    paddingBottom: 40,
   },
   sectionLabel: {
     fontFamily: 'Handlee_400Regular',
@@ -415,15 +413,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 16,
-    paddingBottom: 30,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    marginTop: 24,
   },
   sendButton: {
     borderRadius: 16,
