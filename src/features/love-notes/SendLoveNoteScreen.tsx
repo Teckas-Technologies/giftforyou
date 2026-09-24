@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Polyline } from 'react-native-svg';
 import { getCircles, sendLoveNote } from '../../services/api';
-import { CustomAlert, SkeletonRow } from '../../components';
+import { CustomAlert, SkeletonBlock } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
@@ -168,9 +168,24 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          {[0, 1].map((i) => (
-            <SkeletonRow key={`skeleton-${i}`} avatarSize={0} lines={2} style={{ width: '100%' }} />
-          ))}
+          {/* Matches the real layout: "To" label + a horizontal row of
+              circular friend avatars, then "Your love note" label + the
+              note textarea + send button. The old skeleton was 2 generic
+              list rows with no avatar (avatarSize={0}) vertically centered
+              in the whole screen — didn't resemble this screen's actual
+              content at all, and left huge empty space above/below. */}
+          <SkeletonBlock style={styles.skeletonSectionLabel} />
+          <View style={styles.skeletonFriendsRow}>
+            {[0, 1, 2].map((i) => (
+              <View key={`skeleton-friend-${i}`} style={styles.friendItem}>
+                <SkeletonBlock style={styles.skeletonFriendAvatar} />
+                <SkeletonBlock style={styles.skeletonFriendName} />
+              </View>
+            ))}
+          </View>
+          <SkeletonBlock style={[styles.skeletonSectionLabel, { marginTop: 16 }]} />
+          <SkeletonBlock style={styles.skeletonNoteInput} />
+          <SkeletonBlock style={styles.skeletonSendButton} />
         </View>
       ) : friends.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -375,9 +390,37 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 16,
+  },
+  skeletonSectionLabel: {
+    width: 60,
+    height: 17,
+    borderRadius: 8,
+    marginTop: 16,
+    marginBottom: 10,
+  },
+  skeletonFriendsRow: {
+    flexDirection: 'row',
+  },
+  skeletonFriendAvatar: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    marginBottom: 6,
+  },
+  skeletonFriendName: {
+    width: 50,
+    height: 12,
+    borderRadius: 6,
+  },
+  skeletonNoteInput: {
+    height: 140,
+    borderRadius: 14,
+  },
+  skeletonSendButton: {
+    height: 52,
+    borderRadius: 16,
+    marginTop: 24,
   },
   scrollContent: {
     paddingHorizontal: 16,
