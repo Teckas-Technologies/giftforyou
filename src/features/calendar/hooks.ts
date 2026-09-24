@@ -1,8 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
-import { getEventDates, getUpcomingEvents } from '../../services/api';
+import { getEventDates, getEvents } from '../../services/api';
 import { getDateParts, daysUntil as appDaysUntil } from '../../utils/date';
 
-export const eventsQueryKey = (year: number, month: number) => ['calendar', 'events', year, month];
+// Shared prefix so callers can invalidate every cached month at once
+// (React Query matches queryKeys by prefix) after an action that changes
+// events, e.g. queryClient.invalidateQueries({ queryKey: CALENDAR_EVENTS_QUERY_KEY_PREFIX }).
+export const CALENDAR_EVENTS_QUERY_KEY_PREFIX = ['calendar', 'events'];
+export const eventsQueryKey = (year: number, month: number) => [
+  ...CALENDAR_EVENTS_QUERY_KEY_PREFIX,
+  year,
+  month,
+];
 
 export const getEventEmoji = (eventType?: string) => {
   const emojis: Record<string, string> = {
@@ -37,9 +45,15 @@ export interface CalendarEvents {
 }
 
 async function fetchCalendarEvents(year: number, month: number): Promise<CalendarEvents> {
-  const [datesRes, upcomingRes] = await Promise.all([
+  // Scoped to the month being VIEWED (not a global "next N upcoming from
+  // today" list) — previously this used getUpcomingEvents(5), which never
+  // changed no matter which month the grid was showing, so switching to an
+  // empty future/past month kept showing whichever events were upcoming
+  // from today's real date, and the empty state never triggered for a
+  // genuinely empty month.
+  const [datesRes, monthEventsRes] = await Promise.all([
     getEventDates(year, month + 1).catch(() => ({ dates: [] })),
-    getUpcomingEvents(5).catch(() => ({ events: [] })),
+    getEvents({ month: month + 1, year }).catch(() => ({ events: [] })),
   ]);
 
   const eventDates: Record<number, any> = {};
@@ -50,7 +64,7 @@ async function fetchCalendarEvents(year: number, month: number): Promise<Calenda
     });
   }
 
-  const upcomingEvents = (upcomingRes.events || []).map((event: any) => ({
+  const upcomingEvents = (monthEventsRes.events || []).map((event: any) => ({
     id: event.id || event._id,
     title: event.title,
     eventType: event.eventType,

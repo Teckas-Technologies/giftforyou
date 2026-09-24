@@ -243,11 +243,11 @@ const ProfileScreen = ({ navigation }: ScreenProps) => {
     }, []),
   );
 
-  // Profile info + dashboard stats, via React Query — see hooks.js for why
-  // revisiting this tab no longer re-shows the loading overlay.
-  const { data: dashboard, isLoading: isDashboardLoading } = useProfileDashboard();
+  // Profile info + dashboard stats, via React Query. The card below already
+  // renders sensible placeholder values (emptyProfileDashboard) while this
+  // is in flight, so there's no separate loading state to show here.
+  const { data: dashboard } = useProfileDashboard();
   const uploadPhoto = useUploadProfilePhoto();
-  const loading = isDashboardLoading && !dashboard;
   const profile = dashboard?.profile || emptyProfileDashboard.profile;
   const stats = dashboard?.stats || emptyProfileDashboard.stats;
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -626,12 +626,6 @@ const ProfileScreen = ({ navigation }: ScreenProps) => {
       <Sparkle style={[{ top: 140, left: 25 }, sparkle2Style]} size={7} color="#70d0dd" />
       <Sparkle style={[{ top: 100, right: 70 }, sparkle3Style]} size={8} color="#ca9ad6" />
 
-      {loading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#ca9ad6" />
-        </View>
-      )}
-
       <ScrollView
         ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
@@ -777,8 +771,8 @@ const ProfileScreen = ({ navigation }: ScreenProps) => {
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <GradientStatValue value={String(stats.giftsGivenCount)} glowAnim={glowAnim} />
-                <Text style={styles.statLabel}>Gifts</Text>
+                <GradientStatValue value={String(stats.birthdaysThisMonth)} glowAnim={glowAnim} />
+                <Text style={styles.statLabel}>Birthdays</Text>
               </View>
             </View>
           </LinearGradient>
@@ -1105,17 +1099,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    zIndex: 100,
   },
   avatarImage: {
     width: 72,

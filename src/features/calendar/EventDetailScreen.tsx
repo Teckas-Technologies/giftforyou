@@ -13,10 +13,13 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
+import { useQueryClient } from '@tanstack/react-query';
 import { getEvent, deleteEvent } from '../../services/api';
 import { formatLongDate, daysUntil as appDaysUntil } from '../../utils/date';
-import { CustomAlert } from '../../components';
+import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
+import { CALENDAR_EVENTS_QUERY_KEY_PREFIX } from './hooks';
+import { HOME_DASHBOARD_QUERY_KEY } from '../home/hooks';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
 // Icons
@@ -169,14 +172,26 @@ const EventDetailScreen = ({ navigation, route }: ScreenProps) => {
   const [loading, setLoading] = useState(!passedEvent);
   const [deleting, setDeleting] = useState(false);
   const { alertConfig, showConfirm, showError, hideAlert } = useAlert();
+  const queryClient = useQueryClient();
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
-    if (eventId && !passedEvent) {
-      fetchEvent();
+    if (eventId) {
+      if (passedEvent) {
+        // The card that was tapped (calendar list / upcoming events) only
+        // carries the few fields that list needs for its own compact
+        // display — notably NOT description/notes. Show it instantly (no
+        // loading flash), then quietly fetch the full record in the
+        // background so fields the trimmed card dropped (like notes) still
+        // show up once they arrive.
+        startAnimations();
+        fetchEvent(true);
+      } else {
+        fetchEvent(false);
+      }
     } else if (passedEvent) {
       startAnimations();
     } else {
@@ -187,16 +202,16 @@ const EventDetailScreen = ({ navigation, route }: ScreenProps) => {
     }
   }, [eventId]);
 
-  const fetchEvent = async () => {
+  const fetchEvent = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const response = await getEvent(eventId);
       setEvent(response.event || response);
-      startAnimations();
+      if (!silent) startAnimations();
     } catch (error) {
       console.error('Error fetching event:', error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -225,6 +240,11 @@ const EventDetailScreen = ({ navigation, route }: ScreenProps) => {
         try {
           setDeleting(true);
           await deleteEvent(event.id);
+          // Calendar/Home only refetch on a timer or manual pull-to-refresh —
+          // without this, the deleted event keeps showing on both screens
+          // until one of those happens to fire.
+          queryClient.invalidateQueries({ queryKey: CALENDAR_EVENTS_QUERY_KEY_PREFIX });
+          queryClient.invalidateQueries({ queryKey: HOME_DASHBOARD_QUERY_KEY });
           navigation.goBack();
         } catch (error) {
           showError('Failed to delete event');
@@ -258,7 +278,11 @@ const EventDetailScreen = ({ navigation, route }: ScreenProps) => {
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
-        <ActivityIndicator size="large" color="#70d0dd" />
+        <View style={{ width: '100%', paddingHorizontal: 16 }}>
+          {[0, 1, 2].map((i) => (
+            <SkeletonRow key={`skeleton-${i}`} avatarSize={44} style={{ width: '100%' }} />
+          ))}
+        </View>
       </View>
     );
   }
@@ -424,10 +448,13 @@ const EventDetailScreen = ({ navigation, route }: ScreenProps) => {
             )}
           </View>
 
-          {/* Description */}
+          {/* Notes — field is labeled "Notes" on the Add Event form
+              (AddEventScreen.tsx), so match that label here too even though
+              the underlying field is still called `description` in the
+              data. */}
           {event.description && (
             <View style={styles.descriptionSection}>
-              <Text style={styles.sectionTitle}>Description</Text>
+              <Text style={styles.sectionTitle}>Notes</Text>
               <View style={styles.descriptionCard}>
                 <Text style={styles.descriptionText}>{event.description}</Text>
               </View>

@@ -15,7 +15,7 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
 import { useNotificationsData, useNotificationActions } from './hooks';
 import { getRouteForNotification } from '../../services/notificationRouter';
-import { CustomAlert } from '../../components';
+import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
@@ -324,11 +324,7 @@ const NotificationsScreen = ({ navigation }: ScreenProps) => {
         }
       >
         {/* Loading State */}
-        {loading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#ca9ad6" />
-          </View>
-        )}
+        {loading && [0, 1, 2].map((i) => <SkeletonRow key={`skeleton-${i}`} avatarSize={44} />)}
 
         {!loading && incomingRequests.length > 0 && (
           <Animated.View style={[styles.listContainer, { opacity: listAnim }]}>
@@ -539,6 +535,11 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 10,
+    // Matches listContainer's inter-card gap below, so the boundary
+    // between the Friend Requests block and the regular notifications
+    // block is spaced the same as the gap between cards within either
+    // one — previously that boundary had no gap at all.
+    gap: 12,
   },
   listContainer: {
     gap: 12,
@@ -590,7 +591,11 @@ const styles = StyleSheet.create({
   },
   notificationCard: {
     flexDirection: 'row',
-    alignItems: 'center',
+    // flex-start, not center: with a delete button of fixed height beside
+    // text that can wrap to 2+ lines (long titles, declined-request copy),
+    // centering pinned the trash icon to the middle of the whole card
+    // instead of its top edge, drifting further down the longer the text.
+    alignItems: 'flex-start',
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
     padding: 14,
@@ -628,7 +633,9 @@ const styles = StyleSheet.create({
   },
   notificationHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    // flex-start so the dot sits at the top of the title instead of
+    // drifting to the vertical middle of a wrapped 2-line title.
+    alignItems: 'flex-start',
     gap: 6,
   },
   notificationTitle: {
@@ -645,6 +652,9 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: '#ca9ad6',
+    // Nudge down to sit level with the title's first line instead of its
+    // own top edge.
+    marginTop: 4,
   },
   notificationBody: {
     fontSize: 13,

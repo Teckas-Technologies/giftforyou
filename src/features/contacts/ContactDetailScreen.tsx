@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { cancelFriendRequest, removeFromCircle } from '../../services/api';
-import { CustomAlert } from '../../components';
+import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import { formatDate as formatAppDate, daysUntil as appDaysUntil } from '../../utils/date';
 import { useContactRaw, CONTACTS_QUERY_KEY } from './hooks';
@@ -176,22 +176,6 @@ const BackIcon = ({ size = 24, color = '#6b3a8a' }: IconProps) => (
   </Svg>
 );
 
-const EditIcon = ({ size = 20, color = '#6b3a8a' }: IconProps) => (
-  <Svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke={color}
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <Path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-    <Path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </Svg>
-);
-
 const TrashIcon = ({ size = 20, color = '#e53935' }: IconProps) => (
   <Svg
     width={size}
@@ -205,22 +189,6 @@ const TrashIcon = ({ size = 20, color = '#e53935' }: IconProps) => (
   >
     <Polyline points="3 6 5 6 21 6" />
     <Path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-  </Svg>
-);
-
-const MailIcon = ({ size = 20, color = '#FFFFFF' }: IconProps) => (
-  <Svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke={color}
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <Path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-    <Polyline points="22,6 12,13 2,6" />
   </Svg>
 );
 
@@ -355,6 +323,7 @@ const emptyContact = {
   nickname: '',
   notes: '',
   avatar: null,
+  hasAccount: false,
   hasQuestionnaire: false,
   invitationSent: false,
   preferences: {
@@ -495,6 +464,11 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
         notes: rawContact.notes || '',
         avatar: memberPhoto || null,
         isPending: rawContact.status === 'pending' || preferencesData?.contact?.isPending,
+        // Guest contacts (added via the invite-link/questionnaire flow, never
+        // actually signed up for the app) have no member_id — they can't
+        // receive in-app notifications, so Love Notes can't reach them
+        // (sendLoveNote requires circle.member_id server-side).
+        hasAccount: !!rawContact.member_id,
         hasQuestionnaire: !!preferencesData?.preferences,
         invitationSent: preferencesData?.invitationSent || false,
         preferences: preferencesData?.preferences
@@ -647,16 +621,11 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
     ],
   });
 
-  const handleSendInvitation = () => {
-    // Navigate to Invitations screen with contact info for auto-fill
-    navigation.navigate('Invitations', {
-      contact: {
-        id: contact.id,
-        name: contact.name,
-        email: contact.email,
-        relationship: getRelationshipLabel(contact.relationship),
-      },
-    });
+  const handleSendLoveNote = () => {
+    // SendLoveNoteScreen already supports a preselected recipient via
+    // route.params.circleId (contact.id here is the circle row id) — it just
+    // had no entry point wired up from this screen until now.
+    navigation.navigate('SendLoveNote', { circleId: contact.id });
   };
 
   const [cancellingRequest, setCancellingRequest] = useState(false);
@@ -723,11 +692,12 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
               <Text style={[styles.headerTitleMask, { opacity: 0 }]}>Contact</Text>
             </LinearGradient>
           </MaskedView>
-          <View style={styles.editButton} />
+          <View style={{ width: 44 }} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#ca9ad6" />
-          <Text style={styles.loadingText}>Loading contact...</Text>
+          {[0, 1, 2].map((i) => (
+            <SkeletonRow key={`skeleton-${i}`} avatarSize={44} style={{ width: '100%' }} />
+          ))}
         </View>
       </View>
     );
@@ -772,12 +742,7 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
             <Text style={[styles.headerTitleMask, { opacity: 0 }]}>Contact</Text>
           </LinearGradient>
         </MaskedView>
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={() => navigation.navigate('AddContact', { contact: contact })}
-        >
-          <EditIcon size={20} color="#6b3a8a" />
-        </TouchableOpacity>
+        <View style={{ width: 44 }} />
       </Animated.View>
 
       {!contact.name && !loading && (
@@ -1376,23 +1341,26 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
           </Animated.View>
         )}
 
-        {/* Action Buttons - Only show if not pending AND no questionnaire AND no invitation sent */}
-        {!contact.isPending && !contact.hasQuestionnaire && !contact.invitationSent && (
+        {/* Send Love Note — any accepted contact WITH a real app account, not
+            gated on questionnaire status like the invite button above (a
+            note isn't tied to gift preferences). Guest contacts (invited via
+            link, never signed up) have no account to notify, so the backend
+            rejects sending to them — hide the button rather than let it lead
+            to that dead end. */}
+        {!contact.isPending && contact.hasAccount && (
           <Animated.View style={[styles.actionContainer, createSlideStyle(sectionAnims[4])]}>
-            <TouchableOpacity activeOpacity={0.7} onPress={handleSendInvitation}>
+            <TouchableOpacity activeOpacity={0.7} onPress={handleSendLoveNote}>
               <LinearGradient
                 colors={['#ca9ad6', '#70d0dd']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.actionButton}
               >
-                <MailIcon size={20} color="#FFFFFF" />
-                <Text style={styles.actionButtonText}>Send Questionnaire</Text>
+                <HeartIcon size={20} color="#FFFFFF" />
+                <Text style={styles.actionButtonText}>Send Love Note</Text>
               </LinearGradient>
             </TouchableOpacity>
-            <Text style={styles.actionHint}>
-              Invite {contact.name.split(' ')[0]} to share their gift preferences
-            </Text>
+            <Text style={styles.actionHint}>Send {contact.name.split(' ')[0]} a sweet note</Text>
           </Animated.View>
         )}
 
@@ -1434,15 +1402,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-  },
-  loadingText: {
-    fontSize: 16,
-    fontFamily: 'Handlee_400Regular',
-    color: '#6b3a8a',
+    paddingHorizontal: 16,
+    paddingTop: 24,
   },
   header: {
     flexDirection: 'row',
@@ -1453,19 +1414,6 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  editButton: {
     width: 44,
     height: 44,
     borderRadius: 14,

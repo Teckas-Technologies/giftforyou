@@ -13,7 +13,6 @@ export { default as ProfileScreen } from '../features/profile/ProfileScreen';
 
 // New screens
 export { default as ProfileSetupScreen } from '../features/profile/ProfileSetupScreen';
-export { default as AddContactScreen } from '../features/contacts/AddContactScreen';
 export { default as QuestionnaireScreen } from '../features/questionnaire/QuestionnaireScreen';
 export { default as NotificationsScreen } from '../features/notifications/NotificationsScreen';
 export { default as InvitationsScreen } from '../features/invitations/InvitationsScreen';

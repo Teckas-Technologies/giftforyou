@@ -15,7 +15,7 @@ export interface ProfileInfo {
 export interface ProfileStats {
   contactsCount: number;
   upcomingEventsCount: number;
-  giftsGivenCount: number;
+  birthdaysThisMonth: number;
 }
 
 export interface ProfileDashboard {
@@ -29,7 +29,7 @@ async function fetchProfileDashboard(): Promise<ProfileDashboard> {
     getDashboardStats().catch(() => ({
       contactsCount: 0,
       upcomingEventsCount: 0,
-      giftsGivenCount: 0,
+      birthdaysThisMonth: 0,
     })),
   ]);
 
@@ -60,7 +60,7 @@ async function fetchProfileDashboard(): Promise<ProfileDashboard> {
     stats: {
       contactsCount: statsRes.contactsCount || 0,
       upcomingEventsCount: statsRes.upcomingEventsCount || 0,
-      giftsGivenCount: statsRes.giftsGivenCount || 0,
+      birthdaysThisMonth: statsRes.birthdaysThisMonth || 0,
     },
   };
 }
@@ -74,7 +74,7 @@ export const emptyProfileDashboard: ProfileDashboard = {
     isFoundingMember: false,
     foundingMemberNumber: null,
   },
-  stats: { contactsCount: 0, upcomingEventsCount: 0, giftsGivenCount: 0 },
+  stats: { contactsCount: 0, upcomingEventsCount: 0, birthdaysThisMonth: 0 },
 };
 
 /**

@@ -8,13 +8,13 @@ import {
   Animated,
   Easing,
   Dimensions,
-  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path } from 'react-native-svg';
 import { colors } from '../../theme';
+import { SkeletonRow } from '../../components';
 import { getEventsByDate } from '../../services/api';
 import { getDateParts } from '../../utils/date';
 import { useCalendarEvents, getEventEmoji, getDaysUntil, formatEventDate } from './hooks';
@@ -625,11 +625,8 @@ const CalendarScreen = ({ navigation }: ScreenProps) => {
             )}
           </View>
 
-          {isLoadingEvents && (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#ca9ad6" />
-            </View>
-          )}
+          {isLoadingEvents &&
+            [0, 1].map((i) => <SkeletonRow key={`skeleton-${i}`} avatarSize={40} />)}
 
           {!isLoadingEvents && displayedEvents.length === 0 && (
             <View style={styles.emptyContainer}>

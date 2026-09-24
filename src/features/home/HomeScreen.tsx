@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Animated,
   Easing,
-  ActivityIndicator,
   RefreshControl,
   Dimensions,
 } from 'react-native';
@@ -18,6 +17,7 @@ import { getRandomLoveNote } from '../../services/api';
 import { getDateParts, daysUntil as appDaysUntil } from '../../utils/date';
 import { hasShownLoveNoteToday, markLoveNoteShownToday } from '../../services/loveNoteSession';
 import { LoveNotePopup } from '../../components';
+import { useAuth } from '../../contexts/AuthContext';
 import { useHomeDashboard } from './hooks';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
@@ -145,6 +145,7 @@ const getAvatarStyle = (index: number) => {
 };
 
 const HomeScreen = ({ navigation }: ScreenProps) => {
+  const { user } = useAuth();
   // Dashboard data (profile name, stats, upcoming events) via React Query —
   // see hooks.js for why revisiting this tab no longer re-shows a spinner.
   const { data: dashboard, isLoading: isDashboardLoading } = useHomeDashboard();
@@ -313,13 +314,17 @@ const HomeScreen = ({ navigation }: ScreenProps) => {
   useEffect(() => {
     let cancelled = false;
 
-    hasShownLoveNoteToday().then((alreadyShown) => {
+    // Keyed per account (see loveNoteSession.ts) — otherwise logging out and
+    // signing up as a brand-new account on the same phone the same day
+    // would wrongly skip their first-ever love note, since the previous
+    // account already marked "shown today" for that device.
+    hasShownLoveNoteToday(user?.id).then((alreadyShown) => {
       if (alreadyShown || cancelled) return;
 
       getRandomLoveNote()
         .then(({ note }) => {
           if (note && !cancelled) {
-            markLoveNoteShownToday();
+            markLoveNoteShownToday(user?.id);
             setLoveNote(note);
           }
         })
@@ -329,7 +334,7 @@ const HomeScreen = ({ navigation }: ScreenProps) => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [user?.id]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -514,7 +519,18 @@ const HomeScreen = ({ navigation }: ScreenProps) => {
         {/* Event Cards with premium styling - Horizontal Scroll */}
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color="#ca9ad6" />
+            {/* Sized to match the real event card (birthdayCardInner: full
+                CARD_WIDTH, 88px tall) instead of the generic shorter
+                avatar-row shape, so nothing visibly resizes when it swaps
+                in for the real carousel. */}
+            <View style={[styles.birthdayCard, styles.skeletonCard]}>
+              <View style={styles.skeletonAvatar} />
+              <View style={{ flex: 1, gap: 8 }}>
+                <View style={styles.skeletonLine} />
+                <View style={[styles.skeletonLine, styles.skeletonLineShort]} />
+              </View>
+              <View style={styles.skeletonBadge} />
+            </View>
           </View>
         ) : upcomingEvents.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -1006,8 +1022,38 @@ const styles = StyleSheet.create({
     color: '#4a8a9a',
   },
   loadingContainer: {
-    padding: 40,
+    paddingHorizontal: 16,
+  },
+  skeletonCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 14,
+    height: 88,
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
+  },
+  skeletonAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#ece7f0',
+  },
+  skeletonLine: {
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#ece7f0',
+    width: '80%',
+  },
+  skeletonLineShort: {
+    width: '45%',
+    height: 11,
+  },
+  skeletonBadge: {
+    width: 56,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#ece7f0',
   },
   emptyContainer: {
     padding: 30,

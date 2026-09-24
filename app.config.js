@@ -79,7 +79,11 @@ module.exports = {
     android: {
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
-        backgroundColor: '#FDEEF3',
+        // Matches assets/icon.png's own background (#330c54, sampled
+        // directly from the file) — was #FDEEF3 (the splash's light pink),
+        // which made the Android app icon look like a completely different
+        // color scheme from iOS's dark-purple icon (PL-06).
+        backgroundColor: '#330c54',
       },
       edgeToEdgeEnabled: true,
       package: 'com.thoughtfully.app',

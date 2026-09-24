@@ -6,7 +6,7 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
-import { Platform } from 'react-native';
+import { Platform, Linking } from 'react-native';
 import { registerPushToken } from './api';
 
 // Configure how notifications appear when app is in foreground
@@ -251,6 +251,34 @@ export async function getScheduledNotifications() {
 }
 
 /**
+ * Whether notification permission is currently granted at the OS level,
+ * without triggering the permission prompt (use
+ * registerForPushNotifications for that). Once a user taps "Don't Allow",
+ * neither iOS nor Android will show that prompt again — the only way back
+ * is the native Settings app, which openNotificationSettings() below
+ * deep-links to.
+ */
+export async function getNotificationPermissionGranted() {
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    return status === 'granted';
+  } catch (error) {
+    console.log('Error checking notification permission:', error);
+    // Fail open: an error here shouldn't be the reason toggles look disabled.
+    return true;
+  }
+}
+
+/**
+ * Deep-links into this app's native OS settings screen (iOS: Settings >
+ * Thoughtfully; Android: App info > Notifications) so a user who denied
+ * the permission prompt has a way to grant it after the fact.
+ */
+export function openNotificationSettings() {
+  Linking.openSettings();
+}
+
+/**
  * Set badge count (iOS)
  */
 export async function setBadgeCount(count: number) {
@@ -286,6 +314,8 @@ export default {
   cancelNotification,
   cancelAllNotifications,
   getScheduledNotifications,
+  getNotificationPermissionGranted,
+  openNotificationSettings,
   setBadgeCount,
   addNotificationReceivedListener,
   addNotificationResponseListener,

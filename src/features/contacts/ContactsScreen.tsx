@@ -9,7 +9,6 @@ import {
   TextInput,
   Easing,
   Dimensions,
-  ActivityIndicator,
   RefreshControl,
   KeyboardAvoidingView,
   Platform,
@@ -19,7 +18,7 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Circle, Line, Rect, Path } from 'react-native-svg';
 import { colors } from '../../theme';
 import { useContacts } from './hooks';
-import { CustomAlert } from '../../components';
+import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
@@ -167,6 +166,14 @@ const ContactsScreen = ({ navigation }: ScreenProps) => {
   const [searchText, setSearchText] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+  // Collapses long lists to a first page instead of rendering every contact
+  // at once (this screen has no virtualization) — resets whenever the tab
+  // changes so each tab opens collapsed again.
+  const [showAll, setShowAll] = useState(false);
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setShowAll(false);
+  };
 
   // Contact circle via React Query — see hooks.js for why revisiting this
   // tab no longer re-shows a spinner over an already-loaded list.
@@ -345,6 +352,13 @@ const ContactsScreen = ({ navigation }: ScreenProps) => {
   const filteredContacts = tabScopedContacts.filter(
     (contact) => contact.name && contact.name.toLowerCase().includes(searchText.toLowerCase()),
   );
+
+  // While actively searching, show every match — capping search results to
+  // a page would hide the very thing the user is looking for. Otherwise,
+  // render only the first page until "View All" is tapped.
+  const PAGE_SIZE = 5;
+  const isCapped = !searchText && !showAll && filteredContacts.length > PAGE_SIZE;
+  const displayedContacts = isCapped ? filteredContacts.slice(0, PAGE_SIZE) : filteredContacts;
 
   const activeTabLabel = TABS.find((t) => t.key === activeTab)?.label || 'contacts';
 
@@ -525,7 +539,7 @@ const ContactsScreen = ({ navigation }: ScreenProps) => {
           return (
             <TouchableOpacity
               key={tab.key}
-              onPress={() => setActiveTab(tab.key)}
+              onPress={() => handleTabChange(tab.key)}
               activeOpacity={0.7}
             >
               {isActive ? (
@@ -568,12 +582,10 @@ const ContactsScreen = ({ navigation }: ScreenProps) => {
           />
         }
       >
-        {/* Loading State */}
-        {loading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#ca9ad6" />
-          </View>
-        )}
+        {/* Loading State — shaped like real contact rows so the swap to
+            actual data doesn't visibly shift everything below it (FAB,
+            etc.) once the list is taller than a plain centered spinner. */}
+        {loading && [0, 1, 2].map((i) => <SkeletonRow key={`skeleton-${i}`} avatarSize={52} />)}
 
         {/* Empty State */}
         {!loading && filteredContacts.length === 0 && (
@@ -597,7 +609,7 @@ const ContactsScreen = ({ navigation }: ScreenProps) => {
 
         {/* Contact List */}
         {!loading &&
-          filteredContacts.map((contact, index) => {
+          displayedContacts.map((contact, index) => {
             const avatarStyle = getAvatarStyle(contact.colorType);
             const tagStyle = getTagStyle(contact.relationTag);
 
@@ -698,6 +710,16 @@ const ContactsScreen = ({ navigation }: ScreenProps) => {
               </View>
             );
           })}
+
+        {isCapped && (
+          <TouchableOpacity
+            style={styles.viewAllButton}
+            onPress={() => setShowAll(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.viewAllButtonText}>View All ({filteredContacts.length})</Text>
+          </TouchableOpacity>
+        )}
 
         <View style={{ height: 120 }} />
       </ScrollView>
@@ -954,6 +976,21 @@ const styles = StyleSheet.create({
   contactItem: {
     marginBottom: 12,
   },
+  viewAllButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+    borderWidth: 1.5,
+    borderColor: '#f4cae8',
+  },
+  viewAllButtonText: {
+    fontSize: 14,
+    fontFamily: 'Handlee_400Regular',
+    color: '#ca9ad6',
+  },
   contactItemInner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1067,12 +1104,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 20,
     elevation: 12,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 60,
   },
   emptyContainer: {
     flex: 1,

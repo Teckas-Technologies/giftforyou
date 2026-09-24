@@ -161,8 +161,9 @@ const ForgotPasswordScreen = ({ navigation }: ScreenProps) => {
           </LinearGradient>
           <Text style={styles.successTitle}>Check your email</Text>
           <Text style={styles.successText}>
-            We've sent a password reset link to{'\n'}
-            <Text style={styles.emailHighlight}>{email}</Text>
+            If an account exists for{'\n'}
+            <Text style={styles.emailHighlight}>{email}</Text>, we've sent a password reset link to
+            it.
           </Text>
           <Text style={styles.successSubtext}>
             Click the link in the email to reset your password. If you don't see it, check your spam
