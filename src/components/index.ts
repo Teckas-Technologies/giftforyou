@@ -5,3 +5,4 @@ export { default as Toast } from './Toast';
 export { default as LoveNotePopup } from './LoveNotePopup';
 export { default as FoundingMemberBadge } from './FoundingMemberBadge';
 export { default as SkeletonRow } from './SkeletonRow';
+export { default as SkeletonBlock } from './SkeletonBlock';

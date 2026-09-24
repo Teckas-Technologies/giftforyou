@@ -55,6 +55,12 @@ export const colors = {
   gradientMixStart: '#70d0dd', // Teal to pink gradient (teal first)
   gradientMixEnd: '#ca9ad6',
 
+  // Loading skeletons. Matches the flat gray SkeletonRow already uses on
+  // Notifications/Invitations/Contacts/Calendar — kept as one shared token
+  // so every screen's skeleton is the same color instead of each screen
+  // picking its own.
+  skeleton: '#ece7f0',
+
   // Border & Divider
   border: '#b2ebf2', // Teal border
   divider: '#e0f7fa', // Light teal divider

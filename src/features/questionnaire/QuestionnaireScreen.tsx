@@ -22,7 +22,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getQuestionnaire, saveQuestionnaire } from '../../services/api';
 import { formatDate as formatAppDate } from '../../utils/date';
-import { CustomAlert } from '../../components';
+import { CustomAlert, SkeletonBlock } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
@@ -1103,14 +1103,9 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
           },
         ]}
       >
-        {/* Back button - only show if not first section, or if not first time setup */}
-        {currentSection > 0 || !isFirstTime ? (
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <BackIcon size={24} color="#6b3a8a" />
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.backButtonPlaceholder} />
-        )}
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <BackIcon size={24} color="#6b3a8a" />
+        </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerStep}>
             {currentSection + 1} of {sections.length}
@@ -1152,18 +1147,28 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
 
       {loading && (
         <View style={styles.loadingContainer}>
-          {/* Real question options render as a WRAPPING GRID of
-              variable-width chips (optionsGrid: flexDirection row,
-              flexWrap wrap — see renderQuestion/renderOption), not a
-              single-column stack of identical full-width bars. Varying the
-              skeleton chip widths and wrapping them the same way matches
-              that shape instead of implying a layout that doesn't exist. */}
-          <View style={[styles.skeletonTitleBar, { marginBottom: 20 }]} />
-          <View style={styles.optionsGrid}>
-            {[92, 130, 74, 108, 150, 86, 118, 96].map((w, i) => (
-              <View key={`skeleton-chip-${i}`} style={[styles.skeletonOptionChip, { width: w }]} />
-            ))}
+          {/* The section that's actually first ("Basic Info") isn't a chip
+              grid at all — it's a centered header (emoji circle + title +
+              subtitle, styles.sectionHeader) followed by date/text
+              questions, each just a label + one full-width input box
+              (questionContainer). Reusing sectionHeader/questionContainer
+              directly means this skeleton inherits the exact same gaps
+              (sectionContainer's gap:24, sectionHeader's marginBottom:10,
+              questionContainer's gap:12) as the real layout, instead of
+              approximating them by hand. The chip-grid shape belongs to
+              later multiselect sections, not this first screen. */}
+          <View style={styles.sectionHeader}>
+            <SkeletonBlock style={styles.skeletonEmojiBg} />
+            <SkeletonBlock style={styles.skeletonSectionTitle} />
+            <SkeletonBlock style={styles.skeletonSectionSubtitle} />
           </View>
+
+          {['70%', '55%', '62%'].map((labelWidth, i) => (
+            <View key={`skeleton-q-${i}`} style={styles.questionContainer}>
+              <SkeletonBlock style={[styles.skeletonTitleBar, { width: labelWidth }]} />
+              <SkeletonBlock style={styles.skeletonInputBox} />
+            </View>
+          ))}
         </View>
       )}
 
@@ -1353,10 +1358,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
-  },
-  backButtonPlaceholder: {
-    width: 44,
-    height: 44,
   },
   skipPlaceholder: {
     width: 40,
@@ -1657,19 +1658,38 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 24,
+    // Matches scrollContent exactly (paddingHorizontal: 20, paddingTop: 10)
+    // — this sits outside the real ScrollView, so it needs the same inset
+    // by hand or the skeleton renders shifted from where real content lands.
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    gap: 24, // matches sectionContainer's gap
+  },
+  skeletonEmojiBg: {
+    width: 70,
+    height: 70,
+    borderRadius: 20,
+    marginBottom: 16,
+  },
+  skeletonSectionTitle: {
+    width: 160,
+    height: 26,
+    borderRadius: 13,
+    marginBottom: 8,
+  },
+  skeletonSectionSubtitle: {
+    width: 190,
+    height: 14,
+    borderRadius: 7,
+  },
+  skeletonInputBox: {
+    height: 54,
+    borderRadius: 16,
   },
   skeletonTitleBar: {
     height: 18,
     width: '55%',
     borderRadius: 9,
-    backgroundColor: '#ece7f0',
-  },
-  skeletonOptionChip: {
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: '#ece7f0',
   },
 });
 

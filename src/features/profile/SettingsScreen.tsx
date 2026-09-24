@@ -27,6 +27,7 @@ import { updateSettings, clearUserCredentials, getPlanStatus } from '../../servi
 import {
   getNotificationPermissionGranted,
   openNotificationSettings,
+  registerForPushNotifications,
 } from '../../services/notifications';
 import { CustomAlert, GiftBoxIcon } from '../../components';
 import useAlert from '../../hooks/useAlert';
@@ -365,7 +366,20 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
 
   const checkNotifPermission = useCallback(async () => {
     const granted = await getNotificationPermissionGranted();
-    setNotifPermissionGranted(granted);
+    setNotifPermissionGranted((prevGranted) => {
+      // registerForPushNotifications() only runs once, at login
+      // (AuthContext), and bails out with no token if OS permission wasn't
+      // granted at that moment. If the user denied it initially and later
+      // flips it on from native Settings, nothing ever retries — the
+      // backend never gets a token and pushes silently never arrive. Catch
+      // that transition here (off -> on) and register for real.
+      if (granted && !prevGranted) {
+        registerForPushNotifications().catch((err) => {
+          console.log('Push re-registration error:', err);
+        });
+      }
+      return granted;
+    });
     // Once the user taps "Don't Allow", nothing these toggles control can
     // actually fire — reflect that honestly instead of showing switches
     // stuck "on" that silently do nothing.

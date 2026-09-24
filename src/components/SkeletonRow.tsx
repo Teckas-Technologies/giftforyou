@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { colors } from '../theme/colors';
 
 // Generic list-row placeholder shown while a screen's first data fetch is
 // in flight. Matches the height/shape of a real row (avatar/icon circle +
@@ -42,7 +43,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   avatar: {
-    backgroundColor: '#ece7f0',
+    backgroundColor: colors.skeleton,
   },
   textCol: {
     flex: 1,
@@ -50,7 +51,7 @@ const styles = StyleSheet.create({
   line: {
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#ece7f0',
+    backgroundColor: colors.skeleton,
     marginBottom: 8,
   },
   lineShort: {

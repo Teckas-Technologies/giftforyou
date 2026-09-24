@@ -16,9 +16,9 @@ import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
 import { getRandomLoveNote } from '../../services/api';
 import { getDateParts, daysUntil as appDaysUntil } from '../../utils/date';
 import { hasShownLoveNoteToday, markLoveNoteShownToday } from '../../services/loveNoteSession';
-import { LoveNotePopup } from '../../components';
+import { LoveNotePopup, SkeletonBlock } from '../../components';
 import { useAuth } from '../../contexts/AuthContext';
-import { useHomeDashboard } from './hooks';
+import { useHomeName, useHomeStats, useHomeUpcomingEvents, DEFAULT_STATS } from './hooks';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -147,18 +147,12 @@ const getAvatarStyle = (index: number) => {
 const HomeScreen = ({ navigation }: ScreenProps) => {
   const { user } = useAuth();
   // Dashboard data (profile name, stats, upcoming events) via React Query —
-  // see hooks.js for why revisiting this tab no longer re-shows a spinner.
-  const { data: dashboard, isLoading: isDashboardLoading } = useHomeDashboard();
-  // Only the very first load (no cached data yet) should show the spinner —
-  // a background refetch updates `dashboard` in place without one.
-  const loading = isDashboardLoading && !dashboard;
-  const userName = dashboard?.userName || '';
-  const stats = dashboard?.stats || {
-    contactsCount: 0,
-    upcomingEventsCount: 0,
-    birthdaysThisMonth: 0,
-  };
-  const upcomingEvents = dashboard?.upcomingEvents || [];
+  // 3 independent queries, not one combined fetch, so a slow/timed-out call
+  // for one section doesn't hold the others hostage on skeletons too. See
+  // hooks.ts for why revisiting this tab no longer re-shows a spinner.
+  const { data: userName = '' } = useHomeName();
+  const { data: stats = DEFAULT_STATS, isLoading: statsLoading } = useHomeStats();
+  const { data: upcomingEvents = [], isLoading: eventsLoading } = useHomeUpcomingEvents();
 
   const [activeEventIndex, setActiveEventIndex] = useState(0);
   const [loveNote, setLoveNote] = useState<{ text: string } | null>(null);
@@ -489,14 +483,12 @@ const HomeScreen = ({ navigation }: ScreenProps) => {
                   <Animated.View style={[styles.statIcon, { transform: [{ scale: pulseAnim }] }]}>
                     <stat.icon size={20} color="#ca9ad6" />
                   </Animated.View>
-                  {/* stats falls back to a hardcoded 0 while dashboard is
-                      still loading (see below), which used to render here
-                      looking exactly like a real, final "0" — inconsistent
-                      with the events card below still showing its loading
-                      skeleton at the same moment. Show a skeleton bar
-                      instead of a number until loading actually finishes. */}
-                  {loading ? (
-                    <View style={styles.statValueSkeleton} />
+                  {/* stats falls back to a hardcoded 0 while its own query
+                      is still loading, which would otherwise render here
+                      looking exactly like a real, final "0". Show a
+                      skeleton bar instead of a number until it resolves. */}
+                  {statsLoading ? (
+                    <SkeletonBlock style={styles.statValueSkeleton} />
                   ) : (
                     <Text style={styles.statValue}>{stat.value}</Text>
                   )}
@@ -527,19 +519,19 @@ const HomeScreen = ({ navigation }: ScreenProps) => {
         </Animated.View>
 
         {/* Event Cards with premium styling - Horizontal Scroll */}
-        {loading ? (
+        {eventsLoading ? (
           <View style={styles.loadingContainer}>
             {/* Sized to match the real event card (birthdayCardInner: full
                 CARD_WIDTH, 88px tall) instead of the generic shorter
                 avatar-row shape, so nothing visibly resizes when it swaps
                 in for the real carousel. */}
             <View style={[styles.birthdayCard, styles.skeletonCard]}>
-              <View style={styles.skeletonAvatar} />
+              <SkeletonBlock style={styles.skeletonAvatar} />
               <View style={{ flex: 1, gap: 8 }}>
-                <View style={styles.skeletonLine} />
-                <View style={[styles.skeletonLine, styles.skeletonLineShort]} />
+                <SkeletonBlock style={styles.skeletonLine} />
+                <SkeletonBlock style={[styles.skeletonLine, styles.skeletonLineShort]} />
               </View>
-              <View style={styles.skeletonBadge} />
+              <SkeletonBlock style={styles.skeletonBadge} />
             </View>
           </View>
         ) : upcomingEvents.length === 0 ? (
@@ -651,7 +643,7 @@ const HomeScreen = ({ navigation }: ScreenProps) => {
           </ScrollView>
         )}
 
-        {!loading && upcomingEvents.length > 1 && (
+        {!eventsLoading && upcomingEvents.length > 1 && (
           <View style={styles.pagerDots}>
             {upcomingEvents.slice(0, 5).map((_, i) => (
               <View
@@ -1038,7 +1030,10 @@ const styles = StyleSheet.create({
     color: '#4a8a9a',
   },
   loadingContainer: {
-    paddingHorizontal: 16,
+    // No paddingHorizontal here — the outer ScrollView's scrollContent
+    // already applies 16px on each side. Adding it again double-padded the
+    // skeleton card, shifting it right of where the real card (sized to
+    // fill that single 16px inset exactly) sits once loaded.
   },
   skeletonCard: {
     backgroundColor: '#FFFFFF',
@@ -1053,12 +1048,10 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#ece7f0',
   },
   skeletonLine: {
     height: 14,
     borderRadius: 7,
-    backgroundColor: '#ece7f0',
     width: '80%',
   },
   skeletonLineShort: {
@@ -1069,7 +1062,6 @@ const styles = StyleSheet.create({
     width: 56,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#ece7f0',
   },
   emptyContainer: {
     padding: 30,

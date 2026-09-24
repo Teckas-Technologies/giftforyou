@@ -22,7 +22,7 @@ import {
   searchUsers,
   getCircles,
 } from '../../services/api';
-import { CustomAlert } from '../../components';
+import { CustomAlert, SkeletonBlock } from '../../components';
 import { useMinDurationRefresh } from '../../hooks/useMinDurationRefresh';
 import useAlert from '../../hooks/useAlert';
 import { usePlanStatus, useInvalidatePlanStatus } from '../subscription/hooks';
@@ -584,6 +584,21 @@ const DiscoverScreen = ({ navigation }: ScreenProps) => {
           <View style={styles.placeholder} />
         </View>
         <View style={styles.scrollContent}>
+          {/* Search bar + section header skeletons — without these, the real
+              search bar and "People You May Know" header would pop in above
+              the cards the instant loading finished, shoving everything
+              down instead of the cards just swapping in place. */}
+          <SkeletonBlock style={styles.skeletonSearchBar} />
+          <View style={styles.sectionHeader}>
+            <SkeletonBlock style={styles.skeletonSectionIcon} />
+            <View style={{ flex: 1, gap: 8 }}>
+              <SkeletonBlock style={[styles.skeletonLine, { width: '55%' }]} />
+              <SkeletonBlock
+                style={[styles.skeletonLine, styles.skeletonLineShort, { height: 11 }]}
+              />
+            </View>
+          </View>
+
           {/* Shaped like the real suggestion card (avatar + name/mutual-text
               lines + dismiss circle up top, full-width button bar below)
               instead of the generic single-row skeleton, which didn't
@@ -591,14 +606,14 @@ const DiscoverScreen = ({ navigation }: ScreenProps) => {
           {[0, 1, 2].map((i) => (
             <View key={`skeleton-${i}`} style={styles.card}>
               <View style={styles.cardHeader}>
-                <View style={styles.skeletonAvatar} />
+                <SkeletonBlock style={styles.skeletonAvatar} />
                 <View style={{ flex: 1, marginLeft: 14, gap: 8 }}>
-                  <View style={styles.skeletonLine} />
-                  <View style={[styles.skeletonLine, styles.skeletonLineShort]} />
+                  <SkeletonBlock style={styles.skeletonLine} />
+                  <SkeletonBlock style={[styles.skeletonLine, styles.skeletonLineShort]} />
                 </View>
-                <View style={styles.skeletonDismiss} />
+                <SkeletonBlock style={styles.skeletonDismiss} />
               </View>
-              <View style={styles.skeletonButton} />
+              <SkeletonBlock style={styles.skeletonButton} />
             </View>
           ))}
         </View>
@@ -944,16 +959,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  skeletonSearchBar: {
+    height: 44,
+    borderRadius: 24,
+    marginBottom: 20,
+  },
+  skeletonSectionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+  },
   skeletonAvatar: {
     width: 56,
     height: 56,
     borderRadius: 18,
-    backgroundColor: '#f4cae8',
   },
   skeletonLine: {
     height: 14,
     borderRadius: 7,
-    backgroundColor: '#f4cae8',
   },
   skeletonLineShort: {
     width: '50%',
@@ -962,12 +985,10 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: '#f4cae8',
   },
   skeletonButton: {
     height: 46,
     borderRadius: 14,
-    backgroundColor: '#f4cae8',
   },
   addButton: {
     borderRadius: 14,
