@@ -1,12 +1,16 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import SkeletonBlock from './SkeletonBlock';
 
 // Generic list-row placeholder shown while a screen's first data fetch is
 // in flight. Matches the height/shape of a real row (avatar/icon circle +
 // 1-2 text lines) so swapping it for real content doesn't visibly shift
 // everything below it, the way an empty centered spinner does. Render
 // several of these (e.g. 3) in place of a full-screen ActivityIndicator.
+//
+// Built from SkeletonBlock so every screen using this (Contacts,
+// Notifications, Invitations, Calendar, Discover, Gift Preferences) gets
+// the same shimmer treatment automatically, with one shared implementation.
 const SkeletonRow = ({
   avatarSize = 52,
   lines = 2,
@@ -18,16 +22,13 @@ const SkeletonRow = ({
 }) => (
   <View style={[styles.row, style]}>
     {avatarSize > 0 && (
-      <View
-        style={[
-          styles.avatar,
-          { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 },
-        ]}
+      <SkeletonBlock
+        style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }}
       />
     )}
     <View style={styles.textCol}>
-      <View style={[styles.line, { width: '65%' }]} />
-      {lines === 2 && <View style={[styles.line, styles.lineShort]} />}
+      <SkeletonBlock style={[styles.line, { width: '65%' }]} />
+      {lines === 2 && <SkeletonBlock style={[styles.line, styles.lineShort]} />}
     </View>
   </View>
 );
@@ -42,16 +43,12 @@ const styles = StyleSheet.create({
     gap: 14,
     marginBottom: 12,
   },
-  avatar: {
-    backgroundColor: colors.skeleton,
-  },
   textCol: {
     flex: 1,
   },
   line: {
     height: 12,
     borderRadius: 6,
-    backgroundColor: colors.skeleton,
     marginBottom: 8,
   },
   lineShort: {

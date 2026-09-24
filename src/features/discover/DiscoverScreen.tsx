@@ -584,25 +584,13 @@ const DiscoverScreen = ({ navigation }: ScreenProps) => {
           <View style={styles.placeholder} />
         </View>
         <View style={styles.scrollContent}>
-          {/* Search bar + section header skeletons — without these, the real
-              search bar and "People You May Know" header would pop in above
-              the cards the instant loading finished, shoving everything
-              down instead of the cards just swapping in place. */}
-          <SkeletonBlock style={styles.skeletonSearchBar} />
-          <View style={styles.sectionHeader}>
-            <SkeletonBlock style={styles.skeletonSectionIcon} />
-            <View style={{ flex: 1, gap: 8 }}>
-              <SkeletonBlock style={[styles.skeletonLine, { width: '55%' }]} />
-              <SkeletonBlock
-                style={[styles.skeletonLine, styles.skeletonLineShort, { height: 11 }]}
-              />
-            </View>
-          </View>
-
-          {/* Shaped like the real suggestion card (avatar + name/mutual-text
-              lines + dismiss circle up top, full-width button bar below)
-              instead of the generic single-row skeleton, which didn't
-              include the button bar and used a differently-shaped avatar. */}
+          {/* Shaped like the real suggestion card — styles.card is already a
+              white background, so SkeletonBlock's gray fill reads correctly
+              (same reasoning as Contacts' SkeletonRow: gray needs a white
+              backdrop to not look warm/pink against this screen's teal
+              gradient). avatar + name/mutual-text lines + dismiss circle up
+              top, full-width button bar below — matches renderSuggestionCard
+              instead of a generic unrelated shape. */}
           {[0, 1, 2].map((i) => (
             <View key={`skeleton-${i}`} style={styles.card}>
               <View style={styles.cardHeader}>
@@ -958,16 +946,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  skeletonSearchBar: {
-    height: 44,
-    borderRadius: 24,
-    marginBottom: 20,
-  },
-  skeletonSectionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
   },
   skeletonAvatar: {
     width: 56,

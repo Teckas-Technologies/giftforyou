@@ -689,7 +689,6 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
   );
 
   // Animations
-  const headerAnim = useRef(new Animated.Value(0)).current;
   const contentAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
   // Sections share one persistent ScrollView, so its scroll offset carries
@@ -697,20 +696,12 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
   const scrollRef = useRef<any>(null);
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(headerAnim, {
-        toValue: 1,
-        duration: 400,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(contentAnim, {
-        toValue: 1,
-        duration: 500,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]).start();
+    Animated.timing(contentAnim, {
+      toValue: 1,
+      duration: 500,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   useEffect(() => {
@@ -1081,8 +1072,14 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Header */}
-      <Animated.View
+      {/* Header — no longer wrapped in the headerAnim fade/slide-in. The
+          back button and step counter live inside that animation's
+          opacity, so if the entrance animation ever failed to complete on
+          a device, the entire header (button + text) stayed invisible —
+          matching a real report of both disappearing together while the
+          rest of the screen rendered fine. Not worth risking core
+          navigation UI over a decorative fade-in. */}
+      <View
         style={[
           styles.header,
           // Overrides styles.header's static paddingTop: 50 with the
@@ -1090,17 +1087,6 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
           // the insets comment above for why the static value could hide
           // the header behind taller-than-normal system UI.
           { paddingTop: insets.top + 10 },
-          {
-            opacity: headerAnim,
-            transform: [
-              {
-                translateY: headerAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [-20, 0],
-                }),
-              },
-            ],
-          },
         ]}
       >
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
@@ -1119,7 +1105,7 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
         ) : (
           <View style={styles.skipPlaceholder} />
         )}
-      </Animated.View>
+      </View>
 
       {/* Progress Bar */}
       <View style={styles.progressContainer}>
@@ -1147,16 +1133,16 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
 
       {loading && (
         <View style={styles.loadingContainer}>
-          {/* The section that's actually first ("Basic Info") isn't a chip
-              grid at all — it's a centered header (emoji circle + title +
-              subtitle, styles.sectionHeader) followed by date/text
-              questions, each just a label + one full-width input box
-              (questionContainer). Reusing sectionHeader/questionContainer
-              directly means this skeleton inherits the exact same gaps
-              (sectionContainer's gap:24, sectionHeader's marginBottom:10,
-              questionContainer's gap:12) as the real layout, instead of
-              approximating them by hand. The chip-grid shape belongs to
-              later multiselect sections, not this first screen. */}
+          {/* This page has no avatar/list — it's a form (centered emoji +
+              title + subtitle, then label + input-box questions). The
+              generic SkeletonRow shape (avatar + 2 lines) doesn't represent
+              that at all, so this stays a shape custom to this screen —
+              but built from SkeletonBlock, the same shared primitive
+              SkeletonRow itself uses, so the color and shimmer are
+              identical to every other loading state in the app; only the
+              layout differs, because the real content's layout differs.
+              Reusing sectionHeader/questionContainer directly means this
+              skeleton inherits the exact same gaps as the real layout. */}
           <View style={styles.sectionHeader}>
             <SkeletonBlock style={styles.skeletonEmojiBg} />
             <SkeletonBlock style={styles.skeletonSectionTitle} />
@@ -1166,7 +1152,15 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
           {['70%', '55%', '62%'].map((labelWidth, i) => (
             <View key={`skeleton-q-${i}`} style={styles.questionContainer}>
               <SkeletonBlock style={[styles.skeletonTitleBar, { width: labelWidth }]} />
-              <SkeletonBlock style={styles.skeletonInputBox} />
+              {/* White card backdrop, matching the real textInputWrapper
+                  (white bg + shadow) — without it, the gray fill sits
+                  directly on the teal/pink page gradient and reads as
+                  warm/pink by contrast instead of neutral gray, unlike
+                  Contacts where SkeletonRow's white card backdrop keeps it
+                  reading correctly. */}
+              <View style={styles.skeletonInputBoxCard}>
+                <SkeletonBlock style={styles.skeletonInputBoxLine} />
+              </View>
             </View>
           ))}
         </View>
@@ -1682,9 +1676,22 @@ const styles = StyleSheet.create({
     height: 14,
     borderRadius: 7,
   },
-  skeletonInputBox: {
+  skeletonInputBoxCard: {
     height: 54,
     borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  skeletonInputBoxLine: {
+    height: 14,
+    width: '45%',
+    borderRadius: 7,
   },
   skeletonTitleBar: {
     height: 18,
