@@ -10,6 +10,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { getProfile, getPlanStatus } from '../services/api';
 import { PLAN_STATUS_QUERY_KEY } from '../features/subscription/hooks';
+import { useUnreadCount } from '../features/notifications/hooks';
+import { setBadgeCount } from '../services/notifications';
 import {
   SplashScreen,
   OnboardingScreen,
@@ -238,6 +240,17 @@ const AppNavigator = () => {
       });
     }
   }, [isAuthenticated, queryClient]);
+
+  // Keep the home-screen app icon badge in sync with real unread
+  // notifications — setBadgeCount() existed in services/notifications.ts but
+  // was never actually called anywhere, so the icon never showed a count at
+  // all (unlike e.g. Messages/CaseArc on the same home screen). Polls a
+  // lightweight dedicated endpoint (not the full notifications list) so this
+  // can safely run app-wide, not just while the Notifications screen is open.
+  const { data: unreadCount } = useUnreadCount(isAuthenticated);
+  useEffect(() => {
+    setBadgeCount(isAuthenticated ? unreadCount || 0 : 0);
+  }, [isAuthenticated, unreadCount]);
 
   // Check whether the questionnaire is completed once authenticated.
   //
