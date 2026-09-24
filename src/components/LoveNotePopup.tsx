@@ -1,4 +1,4 @@
-import React, { ComponentType, useEffect, useRef } from 'react';
+import React, { ComponentType, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -100,9 +100,24 @@ const LoveNotePopup = ({ visible, text, onClose }: LoveNotePopupProps) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(1)).current;
+  // Keeps the native <Modal> mounted for the duration of the exit
+  // animation. `visible` going false used to unmount the Modal on the very
+  // same render (see the old `if (!visible) return null` below it) — the
+  // opacity/scale reset was also just an instant setValue snap, not an
+  // actual animation, so the Modal was being torn down mid-transition with
+  // no exit animation at all. Abruptly killing a native Modal like that is
+  // a known cause of the screen going touch-unresponsive on Android
+  // afterward.
+  const [modalVisible, setModalVisible] = useState(visible);
+  // See CustomAlert's identical ref for why this is needed: without it, a
+  // stale close-animation callback from a rapid earlier close/reopen can
+  // fire after a newer `visible=true` and wrongly hide the popup again.
+  const latestVisible = useRef(visible);
+  latestVisible.current = visible;
 
   useEffect(() => {
     if (visible) {
+      setModalVisible(true);
       Animated.parallel([
         Animated.spring(scaleAnim, { toValue: 1, friction: 7, tension: 60, useNativeDriver: true }),
         Animated.timing(opacityAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
@@ -125,15 +140,19 @@ const LoveNotePopup = ({ visible, text, onClose }: LoveNotePopupProps) => {
         ]),
       ).start();
     } else {
-      scaleAnim.setValue(0);
-      opacityAnim.setValue(0);
+      Animated.parallel([
+        Animated.timing(scaleAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
+        Animated.timing(opacityAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
+      ]).start(({ finished }) => {
+        if (finished && !latestVisible.current) setModalVisible(false);
+      });
     }
   }, [visible]);
 
-  if (!visible) return null;
+  if (!modalVisible) return null;
 
   return (
-    <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
+    <Modal transparent visible={modalVisible} animationType="none" onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
         <Animated.View style={[styles.overlay, { opacity: opacityAnim }]}>
           <FloatingHeart

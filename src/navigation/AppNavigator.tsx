@@ -21,7 +21,6 @@ import {
   ContactsScreen,
   ProfileScreen,
   ProfileSetupScreen,
-  AddContactScreen,
   QuestionnaireScreen,
   NotificationsScreen,
   InvitationsScreen,
@@ -159,7 +158,6 @@ const MainStack = ({
     >
       <Stack.Screen name="MainApp" component={MainTabNavigator} />
       <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
-      <Stack.Screen name="AddContact" component={AddContactScreen} />
       <Stack.Screen name="Questionnaire" component={QuestionnaireScreen} />
       <Stack.Screen
         name="CompanyCodeIntro"

@@ -43,7 +43,7 @@ const fetchWithTimeout = async (
  *          should not block login on null).
  */
 export const checkEmailRegistered = async (email: string): Promise<boolean | null> => {
-  try {
+  const attempt = async (): Promise<boolean | null> => {
     const res = await fetchWithTimeout(`${BASE_URL}/api/auth/check-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -51,8 +51,21 @@ export const checkEmailRegistered = async (email: string): Promise<boolean | nul
     });
     const data = await res.json();
     return typeof data.registered === 'boolean' ? data.registered : null;
+  };
+
+  try {
+    return await attempt();
   } catch (e) {
-    return null; // network/unknown — fall back to normal sign-in
+    // One retry before giving up — a single dropped request (weak signal,
+    // a brief server blip) shouldn't be the reason LG-03's specific
+    // "not registered" message silently degrades to Supabase's generic
+    // "invalid credentials" one. Same idea as the backend's
+    // getUserWithRetry for the same class of transient network failure.
+    try {
+      return await attempt();
+    } catch (e2) {
+      return null; // still failed twice — genuinely unknown, don't guess
+    }
   }
 };
 
@@ -96,10 +109,16 @@ export const clearLocalStorage = async (): Promise<void> => {
 };
 
 /**
- * Clear user credentials and local storage on logout
+ * Clear user credentials and local storage on logout. This name/docstring
+ * already promised clearing "user credentials", but the body never actually
+ * reset the in-memory _cachedCredentials below — so a new account logging in
+ * on the same device could still read the PREVIOUS account's cached
+ * userId/email/name (e.g. pre-filled as the Name on a fresh profile setup)
+ * until initUserCredentials() happened to run again on a later cold start.
  */
 export const clearUserCredentials = async (): Promise<void> => {
   try {
+    _cachedCredentials = { userId: null, email: null, name: null };
     // Clear all app-specific data
     await AsyncStorage.multiRemove([STORAGE_KEYS.HAS_SEEN_ONBOARDING]);
   } catch (error) {

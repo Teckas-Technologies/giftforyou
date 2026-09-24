@@ -21,7 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { sendInvitation, resendInvitation } from '../../services/api';
-import { CustomAlert } from '../../components';
+import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import { isValidEmail } from '../../lib/validation';
 import { useInvitations } from './hooks';
@@ -384,7 +384,15 @@ const InvitationsScreen = ({ navigation, route }: ScreenProps) => {
     }).start();
   };
 
-  const closeModal = () => {
+  // onClosed (optional): run AFTER the form's Modal has actually finished
+  // closing (setShowModal(false) really happened), not right after this
+  // call returns. closeModal() only *starts* a 200ms fade-out — showModal
+  // stays true until the animation's completion callback fires. Any caller
+  // that opens another native Modal (a CustomAlert) right after calling
+  // closeModal() was, in practice, still opening it while the form's Modal
+  // was visible=true for that whole 200ms window — the exact two-Modals-
+  // stacked Android bug this was meant to avoid, just not actually avoided.
+  const closeModal = (onClosed?: () => void) => {
     Animated.timing(modalAnim, {
       toValue: 0,
       duration: 200,
@@ -396,6 +404,7 @@ const InvitationsScreen = ({ navigation, route }: ScreenProps) => {
       setNewMessage('');
       setNewRelationship('Friend');
       setPrefillContactId(null);
+      onClosed?.();
     });
   };
 
@@ -443,7 +452,7 @@ const InvitationsScreen = ({ navigation, route }: ScreenProps) => {
     // spinner followed by the same prompt a moment later. (If this cache
     // is stale/unloaded, the server-side check below still catches it.)
     if (planStatus && !planStatus.hasFreeContactSlot) {
-      showUpgradePrompt();
+      closeModal(() => showUpgradePrompt());
       return;
     }
 
@@ -464,30 +473,39 @@ const InvitationsScreen = ({ navigation, route }: ScreenProps) => {
       // Refresh the list
       await refetch();
       invalidatePlanStatus();
-      closeModal();
-
-      showSuccess(
-        `Invitation emailed to ${sentEmail}. You can also share the link directly from the list.`,
+      closeModal(() =>
+        showSuccess(
+          `Invitation emailed to ${sentEmail}. You can also share the link directly from the list.`,
+        ),
       );
     } catch (error) {
-      // Show user-friendly message for the two "already" cases the backend returns.
-      // Backend error strings: 'Already invited' (pending) or 'Already completed' (questionnaire done).
+      // Close the invite-form modal and wait for it to ACTUALLY finish
+      // closing before showing any alert below — all of these open a second
+      // native Modal (CustomAlert), and opening it while the form's own
+      // Modal is still visible=true (even mid fade-out) means two native
+      // Modals are visible at once. On Android that's a known cause of the
+      // second one failing to actually show/respond to touches (matches
+      // "error not displayed").
       const msg = error.message?.toLowerCase() || '';
-      if (error.code === 'UPGRADE_REQUIRED') {
-        showUpgradePrompt();
-      } else if (msg.includes('already invited') || msg.includes('already sent')) {
-        showInfo(
-          'Already invited',
-          `You've already sent an invitation to ${newEmail.trim().toLowerCase()}. Open the Pending tab to resend it.`,
-        );
-      } else if (msg.includes('already completed') || msg.includes('completed')) {
-        showInfo(
-          'Already completed',
-          `${newName.trim()} has already completed their questionnaire.`,
-        );
-      } else {
-        showError(error.message || 'Failed to create invitation');
-      }
+      closeModal(() => {
+        // Show user-friendly message for the two "already" cases the backend returns.
+        // Backend error strings: 'Already invited' (pending) or 'Already completed' (questionnaire done).
+        if (error.code === 'UPGRADE_REQUIRED') {
+          showUpgradePrompt();
+        } else if (msg.includes('already invited') || msg.includes('already sent')) {
+          showInfo(
+            'Already invited',
+            `You've already sent an invitation to ${newEmail.trim().toLowerCase()}. Open the Pending tab to resend it.`,
+          );
+        } else if (msg.includes('already completed') || msg.includes('completed')) {
+          showInfo(
+            'Already completed',
+            `${newName.trim()} has already completed their questionnaire.`,
+          );
+        } else {
+          showError(error.message || 'Failed to create invitation');
+        }
+      });
     } finally {
       setSending(false);
     }
@@ -629,11 +647,7 @@ const InvitationsScreen = ({ navigation, route }: ScreenProps) => {
         </Animated.View>
 
         {/* Loading State */}
-        {loading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#ca9ad6" />
-          </View>
-        )}
+        {loading && [0, 1, 2].map((i) => <SkeletonRow key={`skeleton-${i}`} avatarSize={48} />)}
 
         {/* Invitations List */}
         {!loading && filteredInvitations.length === 0 ? (
@@ -741,7 +755,12 @@ const InvitationsScreen = ({ navigation, route }: ScreenProps) => {
       </Animated.View>
 
       {/* Send Invitation Modal */}
-      <Modal visible={showModal} transparent animationType="none" onRequestClose={closeModal}>
+      <Modal
+        visible={showModal}
+        transparent
+        animationType="none"
+        onRequestClose={() => closeModal()}
+      >
         <View style={styles.modalOverlay}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -788,7 +807,7 @@ const InvitationsScreen = ({ navigation, route }: ScreenProps) => {
                   >
                     <View style={styles.modalHeader}>
                       <Text style={styles.modalTitle}>Invite Friend</Text>
-                      <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
+                      <TouchableOpacity onPress={() => closeModal()} style={styles.closeButton}>
                         <XIcon size={24} color="#6b3a8a" />
                       </TouchableOpacity>
                     </View>

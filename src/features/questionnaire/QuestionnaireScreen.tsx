@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getQuestionnaire, saveQuestionnaire } from '../../services/api';
 import { formatDate as formatAppDate } from '../../utils/date';
 import { CustomAlert } from '../../components';
@@ -560,6 +561,14 @@ const sections: any[] = [
 const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
   // Check if this is first-time setup (mandatory) - passed from navigation or determined by checking if we can go back
   const isFirstTime = route?.params?.isFirstTime ?? true;
+  // The header's top padding used to be a hardcoded 50px, which only
+  // clears a NORMAL status bar. Anything that makes the top system UI
+  // taller than usual — an active call banner, a screen-recording
+  // indicator, some devices' notch/camera-cutout — pushes the real safe
+  // area down further than that, so the header (back button, step count,
+  // and the Skip link) rendered behind/under it: still there in the tree,
+  // just physically hidden off-screen. Using the real inset fixes that.
+  const insets = useSafeAreaInsets();
 
   const [currentSection, setCurrentSection] = useState(0);
   const [answers, setAnswers] = useState<any>({});
@@ -788,12 +797,44 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
     if (!validateCurrentSection()) return;
 
     if (currentSection < sections.length - 1) {
-      setCurrentSection(currentSection + 1);
+      // Persist progress after every section, not just the final one —
+      // previously, nothing was saved until the whole questionnaire was
+      // completed in one sitting, so closing the app partway through lost
+      // everything (matches the reported "resume shows blank" bug).
+      // `answers` already contains any previously-saved values merged with
+      // this session's edits (loaded once on mount), so this can't wipe
+      // fields from later sections the user hasn't revisited yet.
+      // isFinal: false tells the backend this is a partial, in-progress save —
+      // it must NOT flip the user's questionnaireCompleted flag to true, or a
+      // user who only filled section 1 would be treated as fully done and
+      // never get the "finish your preferences" flow again.
+      //
+      // AWAITED, not fire-and-forget: an earlier version of this fired the
+      // save in the background and advanced instantly, but a save that's
+      // still in flight is lost entirely if the app gets force-closed right
+      // after — a killed process can't finish a pending network request. On
+      // a real device that reproduced as: fill in 3 sections, force-close,
+      // reopen -> completionPercent still 0 (nothing had actually reached
+      // the server yet) -> force-routed back through the first-time
+      // onboarding flow (Company Code screen + Questionnaire) from scratch,
+      // as if nothing had been filled in at all. Awaiting here means that by
+      // the time the next section renders, this section's data is already
+      // durably saved — a force-close can lose at most the section
+      // currently being filled, never ones already completed.
+      try {
+        setSaving(true);
+        await saveQuestionnaire({ answers, isFinal: false });
+        setCurrentSection(currentSection + 1);
+      } catch (err) {
+        showError('Could not save this section. Please check your connection and try again.');
+      } finally {
+        setSaving(false);
+      }
     } else {
       // Save and finish
       try {
         setSaving(true);
-        await saveQuestionnaire({ answers });
+        await saveQuestionnaire({ answers, isFinal: true });
 
         if (isFirstTime) {
           // First time: navigate to MainApp and reset navigation stack
@@ -1044,6 +1085,11 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
       <Animated.View
         style={[
           styles.header,
+          // Overrides styles.header's static paddingTop: 50 with the
+          // device's real safe-area inset (+10 for breathing room) — see
+          // the insets comment above for why the static value could hide
+          // the header behind taller-than-normal system UI.
+          { paddingTop: insets.top + 10 },
           {
             opacity: headerAnim,
             transform: [
@@ -1106,7 +1152,14 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
 
       {loading && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#ca9ad6" />
+          {/* Shaped like the real question options (plain rounded chip
+              rows, no avatar) rather than the generic avatar-row skeleton,
+              and filling most of the section area instead of floating a
+              few small rows in a mostly-empty screen. */}
+          <View style={[styles.skeletonTitleBar, { marginBottom: 20 }]} />
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <View key={`skeleton-${i}`} style={styles.skeletonOptionChip} />
+          ))}
         </View>
       )}
 
@@ -1600,9 +1653,20 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 60,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+  },
+  skeletonTitleBar: {
+    height: 18,
+    width: '55%',
+    borderRadius: 9,
+    backgroundColor: '#ece7f0',
+  },
+  skeletonOptionChip: {
+    minHeight: 48,
+    borderRadius: 14,
+    backgroundColor: '#ece7f0',
+    marginBottom: 12,
   },
 });
 

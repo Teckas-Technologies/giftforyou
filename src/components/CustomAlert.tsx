@@ -110,9 +110,28 @@ const CustomAlert = ({
   // a spinner in place of its label instead of the modal just sitting there
   // with no feedback (e.g. "Log Out" while signOut() is still running).
   const [pendingIndex, setPendingIndex] = useState<number | null>(null);
+  // Keeps the native <Modal> mounted for the duration of the exit animation.
+  // `visible` going false used to unmount the Modal on the very same render
+  // (see the old `if (!visible) return null` below it), tearing down the
+  // native Android dialog mid-transition before the 150ms fade-out ever
+  // rendered a single frame — abruptly killing a native Modal like that
+  // (especially with a focused TextInput/keyboard, as in the password
+  // fields) is what left the screen touch-unresponsive after closing any
+  // alert, on any screen, since every screen shares this component.
+  const [modalVisible, setModalVisible] = useState(visible);
+  // Tracks the latest `visible` outside React state, so a close animation's
+  // completion callback (fired ~150ms after it started) can check whether
+  // it's still stale before acting. Without this, rapidly re-opening the
+  // alert before a previous close animation finishes (e.g. tapping Submit
+  // repeatedly while validation keeps failing, each tap firing another
+  // showWarning) lets that old callback fire late and wrongly hide the
+  // modal that was supposed to be showing again.
+  const latestVisible = useRef(visible);
+  latestVisible.current = visible;
 
   useEffect(() => {
     if (visible) {
+      setModalVisible(true);
       setPendingIndex(null);
       Animated.parallel([
         Animated.spring(scaleAnim, {
@@ -139,7 +158,9 @@ const CustomAlert = ({
           duration: 150,
           useNativeDriver: true,
         }),
-      ]).start();
+      ]).start(({ finished }) => {
+        if (finished && !latestVisible.current) setModalVisible(false);
+      });
     }
   }, [visible]);
 
@@ -169,7 +190,7 @@ const CustomAlert = ({
     }
   };
 
-  if (!visible) return null;
+  if (!modalVisible) return null;
 
   // Shared by both the default (map-based) rendering and the special
   // primaryTopLinkBottom layout, so the async-pending/spinner behavior
@@ -260,7 +281,7 @@ const CustomAlert = ({
   };
 
   return (
-    <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
+    <Modal transparent visible={modalVisible} animationType="none" onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
         <Animated.View style={[styles.overlay, { opacity: opacityAnim }]}>
           <TouchableWithoutFeedback>

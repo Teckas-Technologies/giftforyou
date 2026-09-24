@@ -8,11 +8,12 @@ import React, {
   useMemo,
 } from 'react';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../config/supabase';
 import { registerForPushNotifications } from '../services/notifications';
 import { initPurchases } from '../services/billing';
-import { checkEmailRegistered } from '../services/api';
+import { checkEmailRegistered, clearUserCredentials } from '../services/api';
 
 GoogleSignin.configure({
   webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
@@ -57,14 +58,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
   const [justSignedIn, setJustSignedIn] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
       try {
+        // supabase-js auto-refreshes an expired/near-expired token as part of
+        // getSession() before it resolves, and that refresh network call has
+        // no built-in timeout anywhere in the SDK. Under full airplane mode
+        // the fetch fails fast (caught below), but under very poor/flaky
+        // signal it can hang for a long time with no response — which left
+        // `loading` stuck true forever and the app frozen on its loading
+        // screen. Race it against a hard timeout so the app always unblocks;
+        // if the real session does arrive later, the onAuthStateChange
+        // listener below still picks it up and updates state then.
+        const timeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('getSession timed out')), 8000),
+        );
         const {
           data: { session: currentSession },
-        } = await supabase.auth.getSession();
+        } = await Promise.race([supabase.auth.getSession(), timeout]);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
       } catch (error) {
@@ -186,6 +200,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (_) {}
 
       const userInfo = await GoogleSignin.signIn();
+
+      // v13+ of this library no longer throws when the user backs out of the
+      // account picker — it resolves with { type: 'cancelled', data: null }
+      // (or 'noSavedCredentialFound') instead. Must be checked before reading
+      // idToken, or backing out surfaces as a raw "No ID token returned from
+      // Google" error popup instead of silently doing nothing.
+      if ((userInfo as any)?.type !== 'success') {
+        return { data: null, error: null, cancelled: true };
+      }
+
       // `data.idToken` is the current SDK shape; `.idToken` at the top level
       // is a defensive fallback for an older response shape the installed
       // types no longer model.
@@ -259,6 +283,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Always clear local state regardless of Supabase response
       setUser(null);
       setSession(null);
+      // Every screen's cached data (contacts, events, notifications, profile,
+      // plan status, etc.) is keyed by query name only, not by user id — so
+      // without this, whoever logs in next on this device sees the previous
+      // account's data still sitting in memory until each query happens to
+      // refetch on its own, which can take a while (or never, for anything
+      // with a long staleTime).
+      queryClient.clear();
+      // Separate in-memory cache (userId/email/name) used for e.g.
+      // pre-filling the Name field on first-time profile setup — not part
+      // of React Query, so queryClient.clear() above doesn't touch it.
+      await clearUserCredentials();
       if (error) {
         console.log('Supabase signOut error (local state cleared):', error);
       }
@@ -267,10 +302,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Even if there's an error, clear local state
       setUser(null);
       setSession(null);
+      queryClient.clear();
+      await clearUserCredentials();
       console.log('SignOut exception (local state cleared):', error);
       return { error: null };
     }
-  }, []);
+  }, [queryClient]);
 
   // Reset password
   const resetPassword = useCallback(async (email: string): Promise<AuthResult> => {

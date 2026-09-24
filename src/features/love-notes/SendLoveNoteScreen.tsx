@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Polyline } from 'react-native-svg';
 import { getCircles, sendLoveNote } from '../../services/api';
-import { CustomAlert } from '../../components';
+import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
@@ -72,6 +72,10 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
   );
   const [noteText, setNoteText] = useState('');
 
+  const preselectedFriend = preselectedCircleId
+    ? friends.find((f) => f.id === preselectedCircleId) || null
+    : null;
+
   const toggleFriend = (circleId: string) => {
     setSelectedCircleIds((prev) =>
       prev.includes(circleId) ? prev.filter((id) => id !== circleId) : [...prev, circleId],
@@ -86,10 +90,19 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
       const circlesRes = await getCircles({ status: 'accepted' });
 
       const contactsList = circlesRes.contacts || [];
-      const transformedFriends = contactsList.map((contact: any) => {
-        const name = contact.member?.name || contact.name || 'Friend';
-        return { id: contact.id, name, initials: getInitials(name) };
-      });
+      // Guest contacts (added via the invite-link/questionnaire flow but who
+      // never actually signed up for the app — no member_id, just a
+      // guest_name/guest_email on the circle row) have no account to notify.
+      // The backend already rejects sending to them (sendLoveNote requires
+      // circle.member_id), so filter them out here too instead of letting
+      // them appear selectable and only fail after the user picks one,
+      // writes a note, and taps Send.
+      const transformedFriends = contactsList
+        .filter((contact: any) => !!contact.member_id)
+        .map((contact: any) => {
+          const name = contact.member?.name || contact.name || 'Friend';
+          return { id: contact.id, name, initials: getInitials(name) };
+        });
 
       setFriends(transformedFriends);
     } catch (error) {
@@ -155,7 +168,34 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#ca9ad6" />
+          {[0, 1].map((i) => (
+            <SkeletonRow key={`skeleton-${i}`} avatarSize={0} lines={2} style={{ width: '100%' }} />
+          ))}
+        </View>
+      ) : friends.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <LinearGradient
+            colors={['#fbe5f5', '#ccf9ff']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.emptyIconBg}
+          >
+            <Text style={styles.emptyIconEmoji}>💌</Text>
+          </LinearGradient>
+          <Text style={styles.emptyTitle}>No friends yet</Text>
+          <Text style={styles.emptySubtitle}>
+            Add friends first, then come back here to send them a love note.
+          </Text>
+          <TouchableOpacity activeOpacity={0.85} onPress={() => navigation.navigate('Invitations')}>
+            <LinearGradient
+              colors={['#ca9ad6', '#70d0dd']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.emptyButton}
+            >
+              <Text style={styles.emptyButtonText}>Invite a Friend</Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
       ) : (
         <KeyboardAvoidingView
@@ -167,62 +207,91 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
             contentContainerStyle={styles.scrollContent}
           >
             <Text style={styles.sectionLabel}>To</Text>
-            <Text style={styles.sectionHint}>
-              {selectedCircleIds.length > 0
-                ? `${selectedCircleIds.length} selected`
-                : 'Tap to select a friend'}
-            </Text>
-            {friends.length === 0 ? (
-              <Text style={styles.emptyText}>
-                Add some friends first to send them a love note 💌
-              </Text>
-            ) : (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.friendsRow}
-              >
-                {friends.map((friend) => {
-                  const selected = selectedCircleIds.includes(friend.id);
-                  return (
-                    <TouchableOpacity
-                      key={friend.id}
-                      style={styles.friendItem}
-                      onPress={() => toggleFriend(friend.id)}
-                      activeOpacity={0.7}
-                    >
-                      <View
-                        style={[
-                          styles.friendAvatarRing,
-                          selected && styles.friendAvatarRingSelected,
-                        ]}
+            {preselectedCircleId ? (
+              // Opened from a specific contact's page — that contact is the
+              // whole point of coming here, so just show them, not a picker
+              // of every other friend too.
+              <>
+                <Text style={styles.sectionHint}>
+                  Sending to {preselectedFriend?.name || 'this friend'}
+                </Text>
+                {preselectedFriend && (
+                  <View style={styles.friendItem}>
+                    <View style={[styles.friendAvatarRing, styles.friendAvatarRingSelected]}>
+                      <LinearGradient
+                        colors={['#ca9ad6', '#70d0dd']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.friendAvatar}
                       >
-                        <LinearGradient
-                          colors={selected ? ['#ca9ad6', '#70d0dd'] : ['#fbe5f5', '#f4cae8']}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 1 }}
-                          style={styles.friendAvatar}
-                        >
-                          <Text style={[styles.friendInitials, selected && { color: '#FFFFFF' }]}>
-                            {friend.initials}
-                          </Text>
-                        </LinearGradient>
-                        {selected && (
-                          <View style={styles.checkBadge}>
-                            <CheckIcon size={12} color="#FFFFFF" />
-                          </View>
-                        )}
+                        <Text style={[styles.friendInitials, { color: '#FFFFFF' }]}>
+                          {preselectedFriend.initials}
+                        </Text>
+                      </LinearGradient>
+                      <View style={styles.checkBadge}>
+                        <CheckIcon size={12} color="#FFFFFF" />
                       </View>
-                      <Text
-                        style={[styles.friendName, selected && styles.friendNameSelected]}
-                        numberOfLines={1}
+                    </View>
+                    <Text style={[styles.friendName, styles.friendNameSelected]} numberOfLines={1}>
+                      {preselectedFriend.name}
+                    </Text>
+                  </View>
+                )}
+              </>
+            ) : (
+              <>
+                <Text style={styles.sectionHint}>
+                  {selectedCircleIds.length > 0
+                    ? `${selectedCircleIds.length} selected`
+                    : 'Tap to select a friend'}
+                </Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.friendsRow}
+                >
+                  {friends.map((friend) => {
+                    const selected = selectedCircleIds.includes(friend.id);
+                    return (
+                      <TouchableOpacity
+                        key={friend.id}
+                        style={styles.friendItem}
+                        onPress={() => toggleFriend(friend.id)}
+                        activeOpacity={0.7}
                       >
-                        {friend.name}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
+                        <View
+                          style={[
+                            styles.friendAvatarRing,
+                            selected && styles.friendAvatarRingSelected,
+                          ]}
+                        >
+                          <LinearGradient
+                            colors={selected ? ['#ca9ad6', '#70d0dd'] : ['#fbe5f5', '#f4cae8']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.friendAvatar}
+                          >
+                            <Text style={[styles.friendInitials, selected && { color: '#FFFFFF' }]}>
+                              {friend.initials}
+                            </Text>
+                          </LinearGradient>
+                          {selected && (
+                            <View style={styles.checkBadge}>
+                              <CheckIcon size={12} color="#FFFFFF" />
+                            </View>
+                          )}
+                        </View>
+                        <Text
+                          style={[styles.friendName, selected && styles.friendNameSelected]}
+                          numberOfLines={1}
+                        >
+                          {friend.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </>
             )}
 
             <Text style={styles.sectionLabel}>Your love note</Text>
@@ -327,11 +396,48 @@ const styles = StyleSheet.create({
     color: '#999',
     marginBottom: 10,
   },
-  emptyText: {
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+  },
+  emptyIconBg: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  emptyIconEmoji: {
+    fontSize: 36,
+  },
+  emptyTitle: {
+    fontFamily: 'Handlee_400Regular',
+    fontSize: 20,
+    color: '#330c54',
+    marginBottom: 8,
+  },
+  emptySubtitle: {
     fontFamily: 'Handlee_400Regular',
     fontSize: 14,
-    color: '#999',
-    marginBottom: 10,
+    color: '#6b3a8a',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  emptyButton: {
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyButtonText: {
+    fontFamily: 'Handlee_400Regular',
+    fontSize: 16,
+    color: '#FFFFFF',
   },
   friendsRow: {
     marginBottom: 8,

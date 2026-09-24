@@ -19,7 +19,7 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { createEvent, getCircles } from '../../services/api';
 import { scheduleEventReminder } from '../../services/notifications';
-import { CustomAlert } from '../../components';
+import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
@@ -349,11 +349,15 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
       setLoadingContacts(true);
       const response = await getCircles();
       const contactsList = response.circles || response.contacts || [];
-      const transformedContacts = contactsList.map((c: any) => ({
-        id: c.id,
-        name: c.member?.name || c.guest_name || c.guestName || c.memberName || 'Unknown',
-        memberId: c.member_id || c.memberId || c.member?.id,
-      }));
+      // Exclude invites that haven't been accepted yet — an event can't
+      // meaningfully be "for" someone who isn't a confirmed contact yet.
+      const transformedContacts = contactsList
+        .filter((c: any) => c.status !== 'pending')
+        .map((c: any) => ({
+          id: c.id,
+          name: c.member?.name || c.guest_name || c.guestName || c.memberName || 'Unknown',
+          memberId: c.member_id || c.memberId || c.member?.id,
+        }));
       setContacts(transformedContacts);
     } catch (error) {
       console.error('Error fetching contacts:', error);
@@ -932,7 +936,9 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
 
               {loadingContacts ? (
                 <View style={styles.contactLoadingContainer}>
-                  <ActivityIndicator size="large" color="#ca9ad6" />
+                  {[0, 1, 2].map((i) => (
+                    <SkeletonRow key={`skeleton-${i}`} avatarSize={40} style={{ width: '100%' }} />
+                  ))}
                 </View>
               ) : contacts.length === 0 ? (
                 <View style={styles.contactEmptyContainer}>
@@ -1335,8 +1341,8 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   contactLoadingContainer: {
-    paddingVertical: 40,
-    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 4,
   },
   contactEmptyContainer: {
     paddingVertical: 40,

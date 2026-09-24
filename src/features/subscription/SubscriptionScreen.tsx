@@ -17,7 +17,7 @@ import {
   restorePurchases,
   openManageSubscriptions,
 } from '../../services/billing';
-import { CustomAlert } from '../../components';
+import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import { colors } from '../../theme';
 import type { ScreenProps, IconProps } from '../../types/navigation';
@@ -303,7 +303,9 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.secondary} />
+          {[0, 1, 2].map((i) => (
+            <SkeletonRow key={`skeleton-${i}`} avatarSize={44} style={{ width: '100%' }} />
+          ))}
         </View>
       ) : (
         <ScrollView
@@ -505,9 +507,8 @@ const styles = StyleSheet.create({
     color: colors.textDark,
   },
   loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 24,
   },
   scrollContent: {
     paddingHorizontal: 16,

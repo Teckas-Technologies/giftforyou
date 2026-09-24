@@ -17,13 +17,17 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  AppState,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
 import { updateSettings, clearUserCredentials, getPlanStatus } from '../../services/api';
-import { scheduleLocalNotification } from '../../services/notifications';
+import {
+  getNotificationPermissionGranted,
+  openNotificationSettings,
+} from '../../services/notifications';
 import { CustomAlert, GiftBoxIcon } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import { useAuth } from '../../contexts/AuthContext';
@@ -226,6 +230,38 @@ const LogOutIcon = ({ size = 22, color = '#e53935' }: IconProps) => (
   </Svg>
 );
 
+const EyeIcon = ({ size = 20, color = '#6b3a8a' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <Circle cx="12" cy="12" r="3" />
+  </Svg>
+);
+
+const EyeOffIcon = ({ size = 20, color = '#6b3a8a' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
+    <Line x1="1" y1="1" x2="23" y2="23" />
+  </Svg>
+);
+
 const ChevronRightIcon = ({ size = 20, color = '#ca9ad6' }: IconProps) => (
   <Svg
     width={size}
@@ -239,6 +275,54 @@ const ChevronRightIcon = ({ size = 20, color = '#ca9ad6' }: IconProps) => (
   >
     <Polyline points="9 18 15 12 9 6" />
   </Svg>
+);
+
+// Hoisted to module scope — defining this inside SettingsScreen's render
+// gave it a brand-new component identity every render, so React unmounted
+// and remounted every row's native Switch/TouchableOpacity on every single
+// state change (including a totally unrelated toggle), which is what
+// caused a toggle's visual state to occasionally jump on iOS.
+const SettingRow = ({
+  icon: Icon,
+  iconColor,
+  label,
+  value,
+  onPress,
+  hasToggle,
+  isEnabled,
+  onToggle,
+  isDanger,
+}: {
+  icon: React.ComponentType<IconProps>;
+  iconColor?: string;
+  label: string;
+  value?: string;
+  onPress?: () => void;
+  hasToggle?: boolean;
+  isEnabled?: boolean;
+  onToggle?: (value: boolean) => void;
+  isDanger?: boolean;
+}) => (
+  <TouchableOpacity style={styles.settingRow} onPress={onPress} disabled={hasToggle}>
+    <View style={[styles.settingIconContainer, isDanger && styles.settingIconContainerDanger]}>
+      <Icon size={22} color={isDanger ? '#e53935' : iconColor || '#ca9ad6'} />
+    </View>
+    <View style={styles.settingContent}>
+      <Text style={[styles.settingLabel, isDanger && styles.settingLabelDanger]}>{label}</Text>
+      {value && <Text style={styles.settingValue}>{value}</Text>}
+    </View>
+    {hasToggle ? (
+      <Switch
+        value={isEnabled}
+        onValueChange={onToggle}
+        trackColor={{ false: '#e0e0e0', true: '#ccf9ff' }}
+        thumbColor={isEnabled ? '#70d0dd' : '#f4f4f4'}
+        ios_backgroundColor="#e0e0e0"
+      />
+    ) : (
+      <ChevronRightIcon size={20} color={isDanger ? '#e53935' : '#ca9ad6'} />
+    )}
+  </TouchableOpacity>
 );
 
 const SettingsScreen = ({ navigation }: ScreenProps) => {
@@ -256,11 +340,15 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
   const [newEmail, setNewEmail] = useState('');
   const [emailChangePassword, setEmailChangePassword] = useState('');
   const [emailChangePasswordConfirm, setEmailChangePasswordConfirm] = useState('');
+  const [showEmailChangePassword, setShowEmailChangePassword] = useState(false);
+  const [showEmailChangePasswordConfirm, setShowEmailChangePasswordConfirm] = useState(false);
   const [changingEmail, setChangingEmail] = useState(false);
 
   const [changePasswordVisible, setChangePasswordVisible] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showNewPasswordConfirm, setShowNewPasswordConfirm] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
 
   const [notifications, setNotifications] = useState({
@@ -269,6 +357,54 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
     questionnaires: true,
     marketing: false,
   });
+
+  // Whether the OS-level notification permission is currently granted.
+  // Starts true (optimistic) so the toggles don't flash into a disabled
+  // look before the first check resolves.
+  const [notifPermissionGranted, setNotifPermissionGranted] = useState(true);
+
+  const checkNotifPermission = useCallback(async () => {
+    const granted = await getNotificationPermissionGranted();
+    setNotifPermissionGranted(granted);
+    // Once the user taps "Don't Allow", nothing these toggles control can
+    // actually fire — reflect that honestly instead of showing switches
+    // stuck "on" that silently do nothing.
+    if (!granted) {
+      setNotifications((prev) => ({
+        eventReminders: false,
+        invitations: false,
+        questionnaires: false,
+        marketing: false,
+      }));
+    }
+  }, []);
+
+  // Re-check on every focus (covers navigating back from the native
+  // Settings screen) and whenever the app returns to the foreground
+  // (covers backgrounding to grant it without fully navigating away).
+  useFocusEffect(
+    useCallback(() => {
+      checkNotifPermission();
+    }, [checkNotifPermission]),
+  );
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') checkNotifPermission();
+    });
+    return () => sub.remove();
+  }, [checkNotifPermission]);
+
+  // Shared by every notification toggle: turning one ON while the OS
+  // permission is denied can't do anything, so route to the native
+  // Settings screen instead of flipping a switch that has no real effect.
+  const handleNotificationToggle = (key: keyof typeof notifications, value: boolean) => {
+    if (value && !notifPermissionGranted) {
+      openNotificationSettings();
+      return;
+    }
+    setNotifications((prev) => ({ ...prev, [key]: value }));
+  };
 
   const [plan, setPlan] = useState('free');
   const PLAN_LABELS: Record<string, string> = {
@@ -368,15 +504,12 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
     });
   };
 
-  const handleNotificationToggle = async (key: string, value: boolean) => {
-    setNotifications((prev) => ({ ...prev, [key]: value }));
-    showSuccess('Notification preference updated');
-  };
-
   const handleOpenChangeEmail = () => {
     setNewEmail('');
     setEmailChangePassword('');
     setEmailChangePasswordConfirm('');
+    setShowEmailChangePassword(false);
+    setShowEmailChangePasswordConfirm(false);
     setChangeEmailVisible(true);
   };
 
@@ -444,6 +577,8 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
   const handleOpenChangePassword = () => {
     setNewPassword('');
     setNewPasswordConfirm('');
+    setShowNewPassword(false);
+    setShowNewPasswordConfirm(false);
     setChangePasswordVisible(true);
   };
 
@@ -538,49 +673,6 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
     }
   };
 
-  const SettingRow = ({
-    icon: Icon,
-    iconColor,
-    label,
-    value,
-    onPress,
-    hasToggle,
-    isEnabled,
-    onToggle,
-    isDanger,
-  }: {
-    icon: React.ComponentType<IconProps>;
-    iconColor?: string;
-    label: string;
-    value?: string;
-    onPress?: () => void;
-    hasToggle?: boolean;
-    isEnabled?: boolean;
-    onToggle?: (value: boolean) => void;
-    isDanger?: boolean;
-  }) => (
-    <TouchableOpacity style={styles.settingRow} onPress={onPress} disabled={hasToggle}>
-      <View style={[styles.settingIconContainer, isDanger && styles.settingIconContainerDanger]}>
-        <Icon size={22} color={isDanger ? '#e53935' : iconColor || '#ca9ad6'} />
-      </View>
-      <View style={styles.settingContent}>
-        <Text style={[styles.settingLabel, isDanger && styles.settingLabelDanger]}>{label}</Text>
-        {value && <Text style={styles.settingValue}>{value}</Text>}
-      </View>
-      {hasToggle ? (
-        <Switch
-          value={isEnabled}
-          onValueChange={onToggle}
-          trackColor={{ false: '#e0e0e0', true: '#ccf9ff' }}
-          thumbColor={isEnabled ? '#70d0dd' : '#f4f4f4'}
-          ios_backgroundColor="#e0e0e0"
-        />
-      ) : (
-        <ChevronRightIcon size={20} color={isDanger ? '#e53935' : '#ca9ad6'} />
-      )}
-    </TouchableOpacity>
-  );
-
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -643,46 +735,46 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
         {/* Notifications Section */}
         <Animated.View style={[styles.section, createSlideStyle(sectionAnims[1])]}>
           <Text style={styles.sectionTitle}>Notifications</Text>
+          {!notifPermissionGranted && (
+            <TouchableOpacity
+              style={styles.permissionBanner}
+              onPress={openNotificationSettings}
+              activeOpacity={0.8}
+            >
+              <View style={styles.permissionBannerDot} />
+              <Text style={styles.permissionBannerText}>
+                Notifications are turned off for Thoughtfully. Tap to enable in Settings.
+              </Text>
+              <ChevronRightIcon size={16} color="#e53935" />
+            </TouchableOpacity>
+          )}
           <SettingRow
             icon={BellIcon}
             label="Event Reminders"
             hasToggle
             isEnabled={notifications.eventReminders}
-            onToggle={(value) => setNotifications((prev) => ({ ...prev, eventReminders: value }))}
+            onToggle={(value) => handleNotificationToggle('eventReminders', value)}
           />
           <SettingRow
             icon={BellIcon}
             label="Invitation Updates"
             hasToggle
             isEnabled={notifications.invitations}
-            onToggle={(value) => setNotifications((prev) => ({ ...prev, invitations: value }))}
+            onToggle={(value) => handleNotificationToggle('invitations', value)}
           />
           <SettingRow
             icon={BellIcon}
             label="Questionnaire Responses"
             hasToggle
             isEnabled={notifications.questionnaires}
-            onToggle={(value) => setNotifications((prev) => ({ ...prev, questionnaires: value }))}
+            onToggle={(value) => handleNotificationToggle('questionnaires', value)}
           />
           <SettingRow
             icon={BellIcon}
             label="Tips & Updates"
             hasToggle
             isEnabled={notifications.marketing}
-            onToggle={(value) => setNotifications((prev) => ({ ...prev, marketing: value }))}
-          />
-          <SettingRow
-            icon={BellIcon}
-            label="Test Reminder (30 seconds)"
-            onPress={() =>
-              scheduleLocalNotification({
-                title: 'Upcoming: Test Event',
-                body: 'Test Event is today!',
-                data: { type: 'event_reminder' },
-                trigger: { seconds: 30 },
-                channelId: 'reminders',
-              })
-            }
+            onToggle={(value) => handleNotificationToggle('marketing', value)}
           />
         </Animated.View>
 
@@ -784,24 +876,40 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
                       Your account signed in with Google and has no password yet. Set one now so you
                       can still log in if Google sign-in ever stops working.
                     </Text>
-                    <TextInput
-                      style={styles.changeEmailInput}
-                      value={emailChangePassword}
-                      onChangeText={setEmailChangePassword}
-                      placeholder="New password (min 6 characters)"
-                      placeholderTextColor="#999"
-                      secureTextEntry
-                      editable={!changingEmail}
-                    />
-                    <TextInput
-                      style={styles.changeEmailInput}
-                      value={emailChangePasswordConfirm}
-                      onChangeText={setEmailChangePasswordConfirm}
-                      placeholder="Confirm password"
-                      placeholderTextColor="#999"
-                      secureTextEntry
-                      editable={!changingEmail}
-                    />
+                    <View style={styles.changeEmailInputWrapper}>
+                      <TextInput
+                        style={styles.changeEmailInputInner}
+                        value={emailChangePassword}
+                        onChangeText={setEmailChangePassword}
+                        placeholder="New password (min 6 characters)"
+                        placeholderTextColor="#999"
+                        secureTextEntry={!showEmailChangePassword}
+                        editable={!changingEmail}
+                      />
+                      <TouchableOpacity
+                        style={styles.eyeToggle}
+                        onPress={() => setShowEmailChangePassword((v) => !v)}
+                      >
+                        {showEmailChangePassword ? <EyeOffIcon /> : <EyeIcon />}
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.changeEmailInputWrapper}>
+                      <TextInput
+                        style={styles.changeEmailInputInner}
+                        value={emailChangePasswordConfirm}
+                        onChangeText={setEmailChangePasswordConfirm}
+                        placeholder="Confirm password"
+                        placeholderTextColor="#999"
+                        secureTextEntry={!showEmailChangePasswordConfirm}
+                        editable={!changingEmail}
+                      />
+                      <TouchableOpacity
+                        style={styles.eyeToggle}
+                        onPress={() => setShowEmailChangePasswordConfirm((v) => !v)}
+                      >
+                        {showEmailChangePasswordConfirm ? <EyeOffIcon /> : <EyeIcon />}
+                      </TouchableOpacity>
+                    </View>
                   </>
                 )}
                 <View style={styles.changeEmailButtons}>
@@ -870,24 +978,40 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
                     ? 'Choose a new password. You stay logged in — no email link needed.'
                     : 'Your account signed in with Google and has no password yet. Set one so you can log in with just your email and this password too.'}
                 </Text>
-                <TextInput
-                  style={styles.changeEmailInput}
-                  value={newPassword}
-                  onChangeText={setNewPassword}
-                  placeholder="New password (min 6 characters)"
-                  placeholderTextColor="#999"
-                  secureTextEntry
-                  editable={!changingPassword}
-                />
-                <TextInput
-                  style={styles.changeEmailInput}
-                  value={newPasswordConfirm}
-                  onChangeText={setNewPasswordConfirm}
-                  placeholder="Confirm password"
-                  placeholderTextColor="#999"
-                  secureTextEntry
-                  editable={!changingPassword}
-                />
+                <View style={styles.changeEmailInputWrapper}>
+                  <TextInput
+                    style={styles.changeEmailInputInner}
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                    placeholder="New password (min 6 characters)"
+                    placeholderTextColor="#999"
+                    secureTextEntry={!showNewPassword}
+                    editable={!changingPassword}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeToggle}
+                    onPress={() => setShowNewPassword((v) => !v)}
+                  >
+                    {showNewPassword ? <EyeOffIcon /> : <EyeIcon />}
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.changeEmailInputWrapper}>
+                  <TextInput
+                    style={styles.changeEmailInputInner}
+                    value={newPasswordConfirm}
+                    onChangeText={setNewPasswordConfirm}
+                    placeholder="Confirm password"
+                    placeholderTextColor="#999"
+                    secureTextEntry={!showNewPasswordConfirm}
+                    editable={!changingPassword}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeToggle}
+                    onPress={() => setShowNewPasswordConfirm((v) => !v)}
+                  >
+                    {showNewPasswordConfirm ? <EyeOffIcon /> : <EyeIcon />}
+                  </TouchableOpacity>
+                </View>
                 <View style={styles.changeEmailButtons}>
                   <TouchableOpacity
                     style={styles.changeEmailCancelButton}
@@ -982,6 +1106,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingTop: 12,
     paddingBottom: 8,
+  },
+  permissionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#fdecea',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginHorizontal: 4,
+    marginBottom: 8,
+  },
+  permissionBannerDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#e53935',
+  },
+  permissionBannerText: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: 'Handlee_400Regular',
+    color: '#c62828',
+    lineHeight: 16,
   },
   settingRow: {
     flexDirection: 'row',
@@ -1106,6 +1254,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
     marginBottom: 20,
+  },
+  // Same look as changeEmailInput, but as a row so a password field can
+  // carry an eye toggle without the border/background living on the
+  // TextInput itself (secureTextEntry fields only, non-password fields
+  // keep using changeEmailInput directly).
+  changeEmailInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#f4cae8',
+    paddingLeft: 16,
+    marginBottom: 20,
+  },
+  changeEmailInputInner: {
+    flex: 1,
+    fontFamily: 'Handlee_400Regular',
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#333',
+  },
+  eyeToggle: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   changeEmailButtons: {
     flexDirection: 'row',

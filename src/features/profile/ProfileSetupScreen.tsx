@@ -23,7 +23,7 @@ import {
   getProfile,
 } from '../../services/api';
 import { getDateParts } from '../../utils/date';
-import { CustomAlert } from '../../components';
+import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
@@ -516,123 +516,131 @@ const ProfileSetupScreen = ({ navigation, route }: ScreenProps) => {
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Loading Overlay for Edit Mode */}
-      {loading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#ca9ad6" />
-          <Text style={styles.loadingText}>Loading profile...</Text>
+      {/* Loading state for Edit Mode — a sibling of the form, not an overlay
+          drawn on top of it, so it never visually stacks with the form's
+          own always-static header/labels underneath. */}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          {[0, 1, 2].map((i) => (
+            <SkeletonRow key={`skeleton-${i}`} avatarSize={44} style={{ width: '100%' }} />
+          ))}
         </View>
-      )}
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
+          <Animated.View style={[styles.header, createSlideStyle(headerAnim)]}>
+            <Text style={styles.title}>
+              {isEditMode ? 'Edit Profile' : 'Complete Your Profile'}
+            </Text>
+            <Text style={styles.subtitle}>
+              Tell us a bit about yourself so we can personalize your experience
+            </Text>
+          </Animated.View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Header */}
-        <Animated.View style={[styles.header, createSlideStyle(headerAnim)]}>
-          <Text style={styles.title}>{isEditMode ? 'Edit Profile' : 'Complete Your Profile'}</Text>
-          <Text style={styles.subtitle}>
-            Tell us a bit about yourself so we can personalize your experience
-          </Text>
-        </Animated.View>
-
-        {/* Name Input */}
-        <Animated.View style={[styles.section, createSlideStyle(formAnim)]}>
-          <Text style={styles.sectionTitle}>What's your name?</Text>
-          <View style={[styles.inputContainer, nameFocused && styles.inputFocused]}>
-            <View style={styles.inputIcon}>
-              <UserIcon size={20} color="#6b3a8a" />
+          {/* Name Input */}
+          <Animated.View style={[styles.section, createSlideStyle(formAnim)]}>
+            <Text style={styles.sectionTitle}>What's your name?</Text>
+            <View style={[styles.inputContainer, nameFocused && styles.inputFocused]}>
+              <View style={styles.inputIcon}>
+                <UserIcon size={20} color="#6b3a8a" />
+              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your name"
+                placeholderTextColor="#999"
+                value={name}
+                onChangeText={setName}
+                onFocus={() => setNameFocused(true)}
+                onBlur={() => setNameFocused(false)}
+                autoCapitalize="words"
+              />
             </View>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your name"
-              placeholderTextColor="#999"
-              value={name}
-              onChangeText={setName}
-              onFocus={() => setNameFocused(true)}
-              onBlur={() => setNameFocused(false)}
-              autoCapitalize="words"
-            />
-          </View>
-        </Animated.View>
+          </Animated.View>
 
-        {/* Birthday Input */}
-        <Animated.View style={[styles.section, createSlideStyle(formAnim)]}>
-          <Text style={styles.sectionTitle}>When's your birthday?</Text>
-          <TouchableOpacity style={styles.inputContainer} onPress={() => setShowDatePicker(true)}>
-            <View style={styles.inputIcon}>
-              <CalendarIcon size={20} color="#6b3a8a" />
-            </View>
-            <Text style={styles.dateText}>{formatBirthday()}</Text>
-          </TouchableOpacity>
+          {/* Birthday Input */}
+          <Animated.View style={[styles.section, createSlideStyle(formAnim)]}>
+            <Text style={styles.sectionTitle}>When's your birthday?</Text>
+            <TouchableOpacity style={styles.inputContainer} onPress={() => setShowDatePicker(true)}>
+              <View style={styles.inputIcon}>
+                <CalendarIcon size={20} color="#6b3a8a" />
+              </View>
+              <Text style={styles.dateText}>{formatBirthday()}</Text>
+            </TouchableOpacity>
 
-          {/* Show Birth Year Toggle */}
-          <TouchableOpacity
-            style={styles.toggleRow}
-            onPress={() => setShowBirthYear(!showBirthYear)}
-          >
-            <View style={[styles.checkbox, showBirthYear && styles.checkboxChecked]}>
-              {showBirthYear && <CheckIcon size={14} color="#FFFFFF" />}
-            </View>
-            <Text style={styles.toggleLabel}>Show birth year to others</Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Avatar Selection */}
-        <Animated.View style={[styles.section, createSlideStyle(avatarAnim)]}>
-          <Text style={styles.sectionTitle}>Choose your avatar style</Text>
-          <View style={styles.avatarGrid}>
-            {avatarTypes.map((avatar) => (
-              <TouchableOpacity
-                key={avatar.id}
-                style={[styles.avatarOption, selectedAvatar === avatar.id && styles.avatarSelected]}
-                onPress={() => setSelectedAvatar(avatar.id)}
-              >
-                <Text style={styles.avatarEmoji}>{avatar.emoji}</Text>
-                <Text
-                  style={[
-                    styles.avatarLabel,
-                    selectedAvatar === avatar.id && styles.avatarLabelSelected,
-                  ]}
-                >
-                  {avatar.label}
-                </Text>
-                {selectedAvatar === avatar.id && (
-                  <View style={styles.avatarCheck}>
-                    <CheckIcon size={12} color="#FFFFFF" />
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </Animated.View>
-
-        {/* Save Button */}
-        <Animated.View style={[styles.buttonContainer, createSlideStyle(buttonAnim)]}>
-          <TouchableOpacity onPress={handleSave} disabled={saving}>
-            <LinearGradient
-              colors={['#ca9ad6', '#70d0dd']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.saveButton}
+            {/* Show Birth Year Toggle */}
+            <TouchableOpacity
+              style={styles.toggleRow}
+              onPress={() => setShowBirthYear(!showBirthYear)}
             >
-              {saving ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.saveButtonText}>Continue</Text>
-              )}
-            </LinearGradient>
-          </TouchableOpacity>
+              <View style={[styles.checkbox, showBirthYear && styles.checkboxChecked]}>
+                {showBirthYear && <CheckIcon size={14} color="#FFFFFF" />}
+              </View>
+              <Text style={styles.toggleLabel}>Show birth year to others</Text>
+            </TouchableOpacity>
+          </Animated.View>
 
-          <TouchableOpacity
-            style={styles.skipButton}
-            onPress={() => (isEditMode ? navigation.goBack() : navigation.replace('Main'))}
-          >
-            <Text style={styles.skipText}>{isEditMode ? 'Cancel' : 'Skip for now'}</Text>
-          </TouchableOpacity>
-        </Animated.View>
-      </ScrollView>
+          {/* Avatar Selection */}
+          <Animated.View style={[styles.section, createSlideStyle(avatarAnim)]}>
+            <Text style={styles.sectionTitle}>Choose your avatar style</Text>
+            <View style={styles.avatarGrid}>
+              {avatarTypes.map((avatar) => (
+                <TouchableOpacity
+                  key={avatar.id}
+                  style={[
+                    styles.avatarOption,
+                    selectedAvatar === avatar.id && styles.avatarSelected,
+                  ]}
+                  onPress={() => setSelectedAvatar(avatar.id)}
+                >
+                  <Text style={styles.avatarEmoji}>{avatar.emoji}</Text>
+                  <Text
+                    style={[
+                      styles.avatarLabel,
+                      selectedAvatar === avatar.id && styles.avatarLabelSelected,
+                    ]}
+                  >
+                    {avatar.label}
+                  </Text>
+                  {selectedAvatar === avatar.id && (
+                    <View style={styles.avatarCheck}>
+                      <CheckIcon size={12} color="#FFFFFF" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Animated.View>
+
+          {/* Save Button */}
+          <Animated.View style={[styles.buttonContainer, createSlideStyle(buttonAnim)]}>
+            <TouchableOpacity onPress={handleSave} disabled={saving}>
+              <LinearGradient
+                colors={['#ca9ad6', '#70d0dd']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.saveButton}
+              >
+                {saving ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.saveButtonText}>Continue</Text>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.skipButton}
+              onPress={() => (isEditMode ? navigation.goBack() : navigation.replace('Main'))}
+            >
+              <Text style={styles.skipText}>{isEditMode ? 'Cancel' : 'Skip for now'}</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </ScrollView>
+      )}
 
       {/* Date Picker Modal */}
       <Modal
@@ -717,18 +725,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 100,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    fontFamily: 'Handlee_400Regular',
-    color: '#6b3a8a',
+  loadingContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 80,
   },
   scrollContent: {
     paddingHorizontal: 24,

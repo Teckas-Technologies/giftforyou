@@ -22,7 +22,7 @@ import {
   searchUsers,
   getCircles,
 } from '../../services/api';
-import { CustomAlert } from '../../components';
+import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import { usePlanStatus, useInvalidatePlanStatus } from '../subscription/hooks';
 import type { ScreenProps, IconProps } from '../../types/navigation';
@@ -584,9 +584,10 @@ const DiscoverScreen = ({ navigation }: ScreenProps) => {
           </MaskedView>
           <View style={styles.placeholder} />
         </View>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#ca9ad6" />
-          <Text style={styles.loadingText}>Finding people...</Text>
+        <View style={styles.scrollContent}>
+          {[0, 1, 2, 3].map((i) => (
+            <SkeletonRow key={`skeleton-${i}`} avatarSize={48} />
+          ))}
         </View>
       </View>
     );
@@ -757,17 +758,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-  },
-  loadingText: {
-    fontSize: 16,
-    fontFamily: 'Handlee_400Regular',
-    color: '#6b3a8a',
   },
   header: {
     flexDirection: 'row',
