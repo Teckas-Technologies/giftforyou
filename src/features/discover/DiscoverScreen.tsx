@@ -22,7 +22,8 @@ import {
   searchUsers,
   getCircles,
 } from '../../services/api';
-import { CustomAlert, SkeletonRow } from '../../components';
+import { CustomAlert } from '../../components';
+import { useMinDurationRefresh } from '../../hooks/useMinDurationRefresh';
 import useAlert from '../../hooks/useAlert';
 import { usePlanStatus, useInvalidatePlanStatus } from '../subscription/hooks';
 import type { ScreenProps, IconProps } from '../../types/navigation';
@@ -145,7 +146,6 @@ const getMutualText = (count?: number) => {
 const DiscoverScreen = ({ navigation }: ScreenProps) => {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [addingIds, setAddingIds] = useState<Record<string, boolean>>({});
   const [dismissingIds, setDismissingIds] = useState<Record<string, boolean>>({});
 
@@ -334,12 +334,11 @@ const DiscoverScreen = ({ navigation }: ScreenProps) => {
     }, [refreshAll]),
   );
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    // Pull-to-refresh runs the same full refresh as the background poll
-    // so the search list also re-runs and accepted users get removed.
-    refreshAll().finally(() => setRefreshing(false));
-  };
+  // Enforces a minimum visible spinner duration — see the hook's comment
+  // for why (a too-fast refetch can leave iOS's native pull-to-refresh
+  // spinner visually stuck). Runs the same full refresh as the background
+  // poll so the search list also re-runs and accepted users get removed.
+  const { refreshing, onRefresh: handleRefresh } = useMinDurationRefresh(refreshAll);
 
   // Debounced user search (300ms). Re-runs whenever searchQuery changes.
   useEffect(() => {
@@ -585,8 +584,22 @@ const DiscoverScreen = ({ navigation }: ScreenProps) => {
           <View style={styles.placeholder} />
         </View>
         <View style={styles.scrollContent}>
-          {[0, 1, 2, 3].map((i) => (
-            <SkeletonRow key={`skeleton-${i}`} avatarSize={48} />
+          {/* Shaped like the real suggestion card (avatar + name/mutual-text
+              lines + dismiss circle up top, full-width button bar below)
+              instead of the generic single-row skeleton, which didn't
+              include the button bar and used a differently-shaped avatar. */}
+          {[0, 1, 2].map((i) => (
+            <View key={`skeleton-${i}`} style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.skeletonAvatar} />
+                <View style={{ flex: 1, marginLeft: 14, gap: 8 }}>
+                  <View style={styles.skeletonLine} />
+                  <View style={[styles.skeletonLine, styles.skeletonLineShort]} />
+                </View>
+                <View style={styles.skeletonDismiss} />
+              </View>
+              <View style={styles.skeletonButton} />
+            </View>
           ))}
         </View>
       </View>
@@ -930,6 +943,31 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  skeletonAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: '#f4cae8',
+  },
+  skeletonLine: {
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#f4cae8',
+  },
+  skeletonLineShort: {
+    width: '50%',
+  },
+  skeletonDismiss: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: '#f4cae8',
+  },
+  skeletonButton: {
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: '#f4cae8',
   },
   addButton: {
     borderRadius: 14,

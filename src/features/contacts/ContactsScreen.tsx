@@ -20,6 +20,7 @@ import { colors } from '../../theme';
 import { useContacts } from './hooks';
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
+import { useMinDurationRefresh } from '../../hooks/useMinDurationRefresh';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
 const { width, height } = Dimensions.get('window');
@@ -143,6 +144,8 @@ const getTagStyle = (tag: string) => {
       return { bg: '#ccf9ff', color: '#70d0dd' };
     case 'work':
       return { bg: '#E8F5E9', color: '#43A047' };
+    case 'partner':
+      return { bg: '#FFF3E0', color: '#F57C00' };
     default:
       return { bg: '#fbe5f5', color: '#ca9ad6' };
   }
@@ -159,6 +162,7 @@ const TABS = [
   { key: 'all', label: 'All' },
   { key: 'friend', label: 'Friends' },
   { key: 'family', label: 'Family' },
+  { key: 'partner', label: 'Partner' },
   { key: 'work', label: 'Colleagues' },
 ];
 
@@ -177,14 +181,14 @@ const ContactsScreen = ({ navigation }: ScreenProps) => {
 
   // Contact circle via React Query — see hooks.js for why revisiting this
   // tab no longer re-shows a spinner over an already-loaded list.
-  const { data: contactsData, isLoading: isContactsLoading, isRefetching, refetch } = useContacts();
+  const { data: contactsData, isLoading: isContactsLoading, refetch } = useContacts();
   const loading = isContactsLoading && !contactsData;
-  const refreshing = isRefetching && !!contactsData;
   const contacts = contactsData || [];
 
-  const onRefresh = useCallback(() => {
-    refetch();
-  }, [refetch]);
+  // Enforces a minimum visible spinner duration — see the hook's comment
+  // for why (a too-fast refetch can leave iOS's native pull-to-refresh
+  // spinner visually stuck).
+  const { refreshing, onRefresh } = useMinDurationRefresh(refetch);
 
   const { alertConfig, showOptions, hideAlert } = useAlert();
 
@@ -343,6 +347,7 @@ const ContactsScreen = ({ navigation }: ScreenProps) => {
     all: contacts.length,
     friend: contacts.filter((c) => c.relationTag === 'friend').length,
     family: contacts.filter((c) => c.relationTag === 'family').length,
+    partner: contacts.filter((c) => c.relationTag === 'partner').length,
     work: contacts.filter((c) => c.relationTag === 'work').length,
   };
 
@@ -695,7 +700,9 @@ const ContactsScreen = ({ navigation }: ScreenProps) => {
                           ? ['#fbe5f5', '#f4cae8']
                           : contact.relationTag === 'friend'
                             ? ['#ccf9ff', '#a8e6f0']
-                            : ['#E8F5E9', '#C8E6C9']
+                            : contact.relationTag === 'partner'
+                              ? ['#FFF3E0', '#FFE0B2']
+                              : ['#E8F5E9', '#C8E6C9']
                       }
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}

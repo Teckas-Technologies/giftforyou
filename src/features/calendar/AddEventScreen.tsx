@@ -519,7 +519,10 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
   });
 
   const selectedTypeData = eventTypes.find((t) => t.id === selectedType);
-  const isValid = eventName.trim().length > 0;
+  // Contact is required, not optional — this app is specifically for
+  // tracking gift-worthy events tied to a person, so an event with nobody
+  // attached doesn't fit its purpose.
+  const isValid = eventName.trim().length > 0 && !!selectedContact;
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 10 }, (_, i) => currentYear + i);
@@ -664,11 +667,13 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
           <Animated.View style={[styles.inputSection, createSlideStyle(inputAnims[3])]}>
             <View style={styles.labelContainer}>
               <UserIcon size={18} color="#ca9ad6" />
-              <Text style={styles.label}>For Whom? (Contact)</Text>
+              <Text style={styles.label}>
+                For Whom? (Contact)<Text style={styles.requiredAsterisk}> *</Text>
+              </Text>
             </View>
             <TouchableOpacity style={styles.selector} onPress={() => setShowContactPicker(true)}>
               <Text style={[styles.selectorText, !selectedContact && { color: '#999' }]}>
-                {selectedContact ? selectedContact.name : 'Select a contact (optional)'}
+                {selectedContact ? selectedContact.name : 'Select a contact'}
               </Text>
               <ChevronDownIcon size={20} color="#6b3a8a" />
             </TouchableOpacity>
@@ -1044,6 +1049,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
+  },
+  requiredAsterisk: {
+    color: '#e53935',
   },
   input: {
     backgroundColor: '#f8f9fa',

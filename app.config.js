@@ -61,10 +61,10 @@ module.exports = {
       supportsTablet: true,
       bundleIdentifier: 'com.thoughtfully.app',
       // iOS equivalent of versionCode — must increase with every release.
-      // Convention is to keep it identical to `version`. 0.3.4 was already
-      // uploaded to App Store Connect for app version 0.3.3, so it must be
-      // unique going forward — bumped to 0.3.5 for this round's build.
-      buildNumber: '0.3.5',
+      // Convention is to keep it identical to `version`. Bumped to 0.3.6 for
+      // this build (0.3.5 already used) — includes the RevenueCat iOS API
+      // key fix so subscription products can actually load.
+      buildNumber: '0.3.6',
       // Was missing entirely — Android has the equivalent `googleServicesFile`
       // field below, but iOS needs its own. Without this, Expo's prebuild
       // never copies the file into the native project, so GoogleSignin.

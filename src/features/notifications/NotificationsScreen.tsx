@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
 import { useNotificationsData, useNotificationActions } from './hooks';
+import { useMinDurationRefresh } from '../../hooks/useMinDurationRefresh';
 import { getRouteForNotification } from '../../services/notificationRouter';
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
@@ -131,16 +132,10 @@ const NotificationsScreen = ({ navigation }: ScreenProps) => {
 
   // Notifications + pending friend requests, via React Query — see hooks.js
   // for why revisiting this screen no longer re-shows a spinner.
-  const {
-    data: notifData,
-    isLoading: isNotifLoading,
-    isRefetching,
-    refetch,
-  } = useNotificationsData();
+  const { data: notifData, isLoading: isNotifLoading, refetch } = useNotificationsData();
   const { acceptRequest, rejectRequest, markAllRead, markRead, deleteOne } =
     useNotificationActions();
   const loading = isNotifLoading && !notifData;
-  const refreshing = isRefetching && !!notifData;
   const notifications = notifData?.notifications || [];
   const incomingRequests = notifData?.incomingRequests || [];
 
@@ -254,9 +249,10 @@ const NotificationsScreen = ({ navigation }: ScreenProps) => {
     }
   };
 
-  const onRefresh = () => {
-    refetch();
-  };
+  // Enforces a minimum visible spinner duration — see the hook's comment
+  // for why (a too-fast refetch can leave iOS's native pull-to-refresh
+  // spinner visually stuck).
+  const { refreshing, onRefresh } = useMinDurationRefresh(refetch);
 
   return (
     <View style={styles.container}>

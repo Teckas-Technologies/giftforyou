@@ -26,6 +26,7 @@ import useAlert from '../../hooks/useAlert';
 import { isValidEmail } from '../../lib/validation';
 import { useInvitations } from './hooks';
 import { usePlanStatus, useInvalidatePlanStatus } from '../subscription/hooks';
+import { useMinDurationRefresh } from '../../hooks/useMinDurationRefresh';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
 // Icons
@@ -281,14 +282,8 @@ const formatDate = (date: Date) => {
 const InvitationsScreen = ({ navigation, route }: ScreenProps) => {
   // Sent invitations, via React Query — see hooks.js for why revisiting
   // this screen no longer re-shows a spinner over an already-loaded list.
-  const {
-    data: invitationsData,
-    isLoading: isInvitationsLoading,
-    isRefetching,
-    refetch,
-  } = useInvitations();
+  const { data: invitationsData, isLoading: isInvitationsLoading, refetch } = useInvitations();
   const loading = isInvitationsLoading && !invitationsData;
-  const refreshing = isRefetching && !!invitationsData;
   const invitations = invitationsData || [];
   // Cached client-side, so a free-plan user already at their contact limit
   // sees the upgrade prompt the instant they tap Send — no spinner, no
@@ -522,9 +517,10 @@ const InvitationsScreen = ({ navigation, route }: ScreenProps) => {
     }
   };
 
-  const onRefresh = () => {
-    refetch();
-  };
+  // Enforces a minimum visible spinner duration — see the hook's comment
+  // for why (a too-fast refetch can leave iOS's native pull-to-refresh
+  // spinner visually stuck).
+  const { refreshing, onRefresh } = useMinDurationRefresh(refetch);
 
   const filteredInvitations = invitations.filter((inv) => {
     if (filter === 'all') return true;

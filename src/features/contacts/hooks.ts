@@ -10,7 +10,7 @@ export interface Contact {
   initials: string;
   birthday: string;
   relation: string;
-  relationTag: 'family' | 'work' | 'friend';
+  relationTag: 'family' | 'work' | 'partner' | 'friend';
   colorType: 'pink' | 'blue';
   status?: string;
   isPending: boolean;
@@ -35,14 +35,23 @@ const formatBirthday = (dateStr?: string) => {
 };
 
 const getRelationTag = (relationship?: string): Contact['relationTag'] => {
+  // "Spouse" stays under family (a spouse IS family), but "Partner" — one
+  // of the 5 official relationship types set on invitations (Family/Friend/
+  // Colleague/Partner/Other) — was missing from every list here and fell
+  // through to the 'friend' default, with no way to filter for it
+  // specifically on the Contacts page.
   const familyTypes = ['Parent', 'Sibling', 'Child', 'Spouse', 'Grandparent', 'Relative', 'Family'];
   const workTypes = ['Colleague', 'Boss', 'Client', 'Business'];
+  const partnerTypes = ['Partner'];
 
   if (familyTypes.some((t) => relationship?.toLowerCase().includes(t.toLowerCase()))) {
     return 'family';
   }
   if (workTypes.some((t) => relationship?.toLowerCase().includes(t.toLowerCase()))) {
     return 'work';
+  }
+  if (partnerTypes.some((t) => relationship?.toLowerCase().includes(t.toLowerCase()))) {
+    return 'partner';
   }
   return 'friend';
 };

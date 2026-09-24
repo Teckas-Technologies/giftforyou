@@ -18,6 +18,7 @@ import { SkeletonRow } from '../../components';
 import { getEventsByDate } from '../../services/api';
 import { getDateParts } from '../../utils/date';
 import { useCalendarEvents, getEventEmoji, getDaysUntil, formatEventDate } from './hooks';
+import { useMinDurationRefresh } from '../../hooks/useMinDurationRefresh';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
 // Plus Icon for FAB
@@ -83,17 +84,16 @@ const CalendarScreen = ({ navigation }: ScreenProps) => {
   const {
     data: calendarData,
     isLoading: isCalendarLoading,
-    isRefetching,
     refetch,
   } = useCalendarEvents(currentYear, currentMonth);
   const loading = isCalendarLoading && !calendarData;
-  const refreshing = isRefetching && !!calendarData;
   const eventDates = calendarData?.eventDates || {};
   const upcomingEvents = calendarData?.upcomingEvents || [];
 
-  const onRefresh = useCallback(() => {
-    refetch();
-  }, [refetch]);
+  // Enforces a minimum visible spinner duration — see the hook's comment
+  // for why (a too-fast refetch can leave iOS's native pull-to-refresh
+  // spinner visually stuck).
+  const { refreshing, onRefresh } = useMinDurationRefresh(refetch);
 
   // Animations
   const headerAnim = useRef(new Animated.Value(0)).current;

@@ -489,7 +489,17 @@ const HomeScreen = ({ navigation }: ScreenProps) => {
                   <Animated.View style={[styles.statIcon, { transform: [{ scale: pulseAnim }] }]}>
                     <stat.icon size={20} color="#ca9ad6" />
                   </Animated.View>
-                  <Text style={styles.statValue}>{stat.value}</Text>
+                  {/* stats falls back to a hardcoded 0 while dashboard is
+                      still loading (see below), which used to render here
+                      looking exactly like a real, final "0" — inconsistent
+                      with the events card below still showing its loading
+                      skeleton at the same moment. Show a skeleton bar
+                      instead of a number until loading actually finishes. */}
+                  {loading ? (
+                    <View style={styles.statValueSkeleton} />
+                  ) : (
+                    <Text style={styles.statValue}>{stat.value}</Text>
+                  )}
                   <Text style={styles.statLabel}>{stat.label}</Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -804,6 +814,12 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
+  },
+  statValueSkeleton: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.5)',
   },
   statLabel: {
     fontSize: 11,

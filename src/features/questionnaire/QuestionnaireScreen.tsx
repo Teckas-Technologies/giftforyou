@@ -1152,14 +1152,18 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
 
       {loading && (
         <View style={styles.loadingContainer}>
-          {/* Shaped like the real question options (plain rounded chip
-              rows, no avatar) rather than the generic avatar-row skeleton,
-              and filling most of the section area instead of floating a
-              few small rows in a mostly-empty screen. */}
+          {/* Real question options render as a WRAPPING GRID of
+              variable-width chips (optionsGrid: flexDirection row,
+              flexWrap wrap — see renderQuestion/renderOption), not a
+              single-column stack of identical full-width bars. Varying the
+              skeleton chip widths and wrapping them the same way matches
+              that shape instead of implying a layout that doesn't exist. */}
           <View style={[styles.skeletonTitleBar, { marginBottom: 20 }]} />
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <View key={`skeleton-${i}`} style={styles.skeletonOptionChip} />
-          ))}
+          <View style={styles.optionsGrid}>
+            {[92, 130, 74, 108, 150, 86, 118, 96].map((w, i) => (
+              <View key={`skeleton-chip-${i}`} style={[styles.skeletonOptionChip, { width: w }]} />
+            ))}
+          </View>
         </View>
       )}
 
@@ -1663,10 +1667,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#ece7f0',
   },
   skeletonOptionChip: {
-    minHeight: 48,
+    height: 48,
     borderRadius: 14,
     backgroundColor: '#ece7f0',
-    marginBottom: 12,
   },
 });
 

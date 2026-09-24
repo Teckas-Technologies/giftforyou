@@ -19,6 +19,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { CustomAlert } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import { isValidEmail } from '../../lib/validation';
+import { checkEmailRegistered } from '../../services/api';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
 // Icons
@@ -114,6 +115,20 @@ const ForgotPasswordScreen = ({ navigation }: ScreenProps) => {
     if (!isFormValid) return;
 
     setLoading(true);
+    // Explicit check per product decision — this deliberately trades away
+    // account-enumeration protection (see FP-02: Supabase's own
+    // resetPasswordForEmail silently no-ops for an unregistered email with
+    // no way to tell from its response) so the user gets a direct answer.
+    // `registered === false` is only trusted when the check itself
+    // succeeded outright — a failed/uncertain check (null) falls through to
+    // the normal reset-email flow instead of wrongly blocking a real user.
+    const registered = await checkEmailRegistered(email.trim().toLowerCase());
+    if (registered === false) {
+      setLoading(false);
+      showError('This email is not registered.');
+      return;
+    }
+
     const { error } = await resetPassword(email.trim().toLowerCase());
     setLoading(false);
 
@@ -161,9 +176,12 @@ const ForgotPasswordScreen = ({ navigation }: ScreenProps) => {
           </LinearGradient>
           <Text style={styles.successTitle}>Check your email</Text>
           <Text style={styles.successText}>
-            If an account exists for{'\n'}
-            <Text style={styles.emailHighlight}>{email}</Text>, we've sent a password reset link to
-            it.
+            {/* Direct wording now, not hedged — an unregistered email is
+                already caught explicitly before this screen is ever shown
+                (see handleResetPassword), so reaching here already means
+                the account exists. */}
+            We've sent a password reset link to{'\n'}
+            <Text style={styles.emailHighlight}>{email}</Text>.
           </Text>
           <Text style={styles.successSubtext}>
             Click the link in the email to reset your password. If you don't see it, check your spam
