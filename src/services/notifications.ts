@@ -279,7 +279,10 @@ export function openNotificationSettings() {
 }
 
 /**
- * Set badge count (iOS)
+ * Set the home-screen app icon badge count. Works on iOS always; on Android
+ * it depends on the launcher supporting icon badges (many do — Samsung,
+ * Pixel, etc. — some stock/AOSP launchers don't, in which case this just
+ * silently has no visible effect, not an error).
  */
 export async function setBadgeCount(count: number) {
   try {

@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getNotifications,
   getPendingRequests,
+  getUnreadCount,
   markNotificationRead,
   markAllNotificationsRead,
   deleteNotification,
@@ -68,6 +69,22 @@ export function useNotificationsData() {
     queryKey: NOTIFICATIONS_QUERY_KEY,
     queryFn: fetchNotificationsData,
     refetchInterval: 12_000,
+  });
+}
+
+export const UNREAD_COUNT_QUERY_KEY = ['notifications', 'unread-count'];
+
+// Lightweight, app-wide poll (used to drive the home-screen app icon badge —
+// see AppNavigator) — deliberately a separate, cheaper query from
+// useNotificationsData above rather than reusing its full fetch+12s poll,
+// since this one needs to run everywhere in the app, not just while the
+// Notifications screen is open.
+export function useUnreadCount(enabled: boolean) {
+  return useQuery({
+    queryKey: UNREAD_COUNT_QUERY_KEY,
+    queryFn: () => getUnreadCount().then((res: any) => res.count || 0),
+    refetchInterval: 30_000,
+    enabled,
   });
 }
 
