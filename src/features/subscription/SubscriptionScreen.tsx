@@ -362,6 +362,16 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
               <Text style={styles.sectionLabel}>
                 {plan === 'organization' ? 'Also want to pay directly?' : 'Choose a plan'}
               </Text>
+              {/* Visible-in-app tell for whether real RevenueCat data loaded
+                  or the temporary mock fallback is showing — otherwise a
+                  real fetch failure would be silently masked by the mock
+                  and look identical to success. Remove alongside the mock
+                  fallback once it's no longer needed. */}
+              {offeringsError && (
+                <Text style={styles.mockDataNotice}>
+                  ⚠️ Showing test pricing — real product data not loaded (offeringsError)
+                </Text>
+              )}
               {
                 <>
                   {/* TEMPORARY: falls back to MOCK_OFFERINGS_FOR_SCREENSHOT
@@ -588,6 +598,12 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: colors.textLight,
     marginBottom: 12,
+  },
+  mockDataNotice: {
+    fontFamily: 'Handlee_400Regular',
+    fontSize: 13,
+    color: '#e53935',
+    marginBottom: 8,
   },
   emptyText: {
     fontFamily: 'Handlee_400Regular',
