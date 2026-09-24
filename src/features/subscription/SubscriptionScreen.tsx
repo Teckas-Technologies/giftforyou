@@ -202,6 +202,25 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
   const selectedPackage =
     sortedOfferings.find((p) => p.identifier === selectedId) || sortedOfferings[0];
 
+  // TEMPORARY — for capturing the App Store Connect subscription review
+  // screenshot only. Real product data can't be fetched until Apple
+  // approves the first subscription submission (the exact thing this
+  // screenshot is for), so there's no way to screenshot real prices yet.
+  // REMOVE this and the `displayOfferings` fallback below once a real
+  // screenshot has been captured and this subscription is approved.
+  const MOCK_OFFERINGS_FOR_SCREENSHOT = [
+    {
+      identifier: 'mock_monthly',
+      packageType: 'MONTHLY',
+      product: { priceString: '$2.99', price: 2.99, title: 'Monthly' },
+    },
+    {
+      identifier: 'mock_yearly',
+      packageType: 'ANNUAL',
+      product: { priceString: '$29.99', price: 29.99, title: 'Yearly' },
+    },
+  ];
+
   // Organization users already have free access — warn before they pay for
   // something they may not realize they already get, instead of purchasing
   // silently the moment they tap a plan.
@@ -343,69 +362,73 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
               <Text style={styles.sectionLabel}>
                 {plan === 'organization' ? 'Also want to pay directly?' : 'Choose a plan'}
               </Text>
-              {offeringsError ? (
-                <Text style={styles.emptyText}>
-                  Subscriptions aren't available yet — check back soon.
-                </Text>
-              ) : (
+              {
                 <>
+                  {/* TEMPORARY: falls back to MOCK_OFFERINGS_FOR_SCREENSHOT
+                      when real products can't be fetched yet, purely so
+                      there's something to screenshot for App Store
+                      Connect's subscription review requirement. Revert to
+                      the plain "not available" text once that screenshot
+                      is captured and this is no longer needed. */}
                   <View style={styles.planOptionsRow}>
-                    {sortedOfferings.map((pkg) => {
-                      const isSelected = selectedId === pkg.identifier;
-                      const isYearly = pkg.packageType === 'ANNUAL';
-                      const periodLabel = isYearly
-                        ? 'Yearly'
-                        : pkg.packageType === 'MONTHLY'
-                          ? 'Monthly'
-                          : pkg.product.title;
-                      const periodSuffix = isYearly
-                        ? '/ year'
-                        : pkg.packageType === 'MONTHLY'
-                          ? '/ month'
-                          : '';
-                      return (
-                        <TouchableOpacity
-                          key={pkg.identifier}
-                          style={[styles.planOption, isSelected && styles.planOptionSelected]}
-                          onPress={() => setSelectedId(pkg.identifier)}
-                          activeOpacity={0.85}
-                        >
-                          {isYearly && !!yearlySavingsPercent && yearlySavingsPercent > 0 && (
-                            <View style={styles.savingsBadge}>
-                              <Text style={styles.savingsBadgeText}>
-                                SAVE {yearlySavingsPercent}%
-                              </Text>
-                            </View>
-                          )}
-                          <Text
-                            style={[
-                              styles.planOptionLabel,
-                              isSelected && styles.planOptionLabelSelected,
-                            ]}
+                    {(offeringsError ? MOCK_OFFERINGS_FOR_SCREENSHOT : sortedOfferings).map(
+                      (pkg) => {
+                        const isSelected = selectedId === pkg.identifier;
+                        const isYearly = pkg.packageType === 'ANNUAL';
+                        const periodLabel = isYearly
+                          ? 'Yearly'
+                          : pkg.packageType === 'MONTHLY'
+                            ? 'Monthly'
+                            : pkg.product.title;
+                        const periodSuffix = isYearly
+                          ? '/ year'
+                          : pkg.packageType === 'MONTHLY'
+                            ? '/ month'
+                            : '';
+                        return (
+                          <TouchableOpacity
+                            key={pkg.identifier}
+                            style={[styles.planOption, isSelected && styles.planOptionSelected]}
+                            onPress={() => setSelectedId(pkg.identifier)}
+                            activeOpacity={0.85}
                           >
-                            {periodLabel}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.planOptionPrice,
-                              isSelected && styles.planOptionPriceSelected,
-                            ]}
-                          >
-                            {pkg.product.priceString}
-                          </Text>
-                          {!!periodSuffix && (
+                            {isYearly && !!yearlySavingsPercent && yearlySavingsPercent > 0 && (
+                              <View style={styles.savingsBadge}>
+                                <Text style={styles.savingsBadgeText}>
+                                  SAVE {yearlySavingsPercent}%
+                                </Text>
+                              </View>
+                            )}
                             <Text
                               style={[
-                                styles.planOptionSuffix,
-                                isSelected && styles.planOptionSuffixSelected,
+                                styles.planOptionLabel,
+                                isSelected && styles.planOptionLabelSelected,
                               ]}
                             >
-                              {periodSuffix}
+                              {periodLabel}
                             </Text>
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
+                            <Text
+                              style={[
+                                styles.planOptionPrice,
+                                isSelected && styles.planOptionPriceSelected,
+                              ]}
+                            >
+                              {pkg.product.priceString}
+                            </Text>
+                            {!!periodSuffix && (
+                              <Text
+                                style={[
+                                  styles.planOptionSuffix,
+                                  isSelected && styles.planOptionSuffixSelected,
+                                ]}
+                              >
+                                {periodSuffix}
+                              </Text>
+                            )}
+                          </TouchableOpacity>
+                        );
+                      },
+                    )}
                   </View>
 
                   <TouchableOpacity
@@ -431,7 +454,7 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
                     </LinearGradient>
                   </TouchableOpacity>
                 </>
-              )}
+              }
             </>
           )}
 
