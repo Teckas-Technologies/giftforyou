@@ -695,6 +695,22 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
   // over between pages. Reset it to the top on every section change.
   const scrollRef = useRef<any>(null);
 
+  // KeyboardAvoidingView's `padding` behavior only resizes the available
+  // space when the keyboard opens — it has no idea which input is focused,
+  // so it can't scroll that specific field into view. For a question near
+  // the bottom of a section, the field was already at the edge of the
+  // visible area, and the keyboard covering that same space with no
+  // compensating scroll left it hidden behind the keyboard while typing.
+  // This explicitly scrolls the focused input above the keyboard.
+  const handleInputFocus = (event: any) => {
+    const nodeHandle = event.target;
+    setTimeout(() => {
+      scrollRef.current
+        ?.getScrollResponder?.()
+        ?.scrollResponderScrollNativeHandleToKeyboard(nodeHandle, 80, true);
+    }, 50);
+  };
+
   useEffect(() => {
     Animated.timing(contentAnim, {
       toValue: 1,
@@ -939,6 +955,7 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
               placeholderTextColor="#999"
               value={answers[question.id] || ''}
               onChangeText={(text) => handleTextChange(question.id, text)}
+              onFocus={handleInputFocus}
               multiline={false}
             />
           </View>
@@ -957,6 +974,7 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
               placeholderTextColor="#999"
               value={answers[question.id] || ''}
               onChangeText={(text) => handleTextChange(question.id, text)}
+              onFocus={handleInputFocus}
               multiline={false}
               keyboardType="url"
               autoCapitalize="none"
@@ -1016,6 +1034,7 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
               placeholderTextColor="#999"
               value={answers[question.id] || ''}
               onChangeText={(text) => handleTextChange(question.id, text)}
+              onFocus={handleInputFocus}
               multiline
               numberOfLines={6}
               textAlignVertical="top"
