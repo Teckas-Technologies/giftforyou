@@ -280,15 +280,26 @@ const AppNavigator = () => {
           const hasAnyAnswers =
             user?.questionnaireCompleted || (user?.questionnaireCompletionPercent || 0) > 0;
 
-          if (user && !hasAnyAnswers) {
-            // Same "genuinely new user" signal also gates the one-time
-            // "Have a company code?" prompt — shown once, right before the
-            // questionnaire, never again on later logins. Free-plan users
-            // only; anyone already upgraded has no reason to see it.
-            const destination =
-              (user.plan || 'free') === 'free'
-                ? { name: 'CompanyCodeIntro', params: { nextRoute: 'Questionnaire' } }
-                : { name: 'Questionnaire', params: undefined };
+          // The "Have a company code?" prompt used to piggyback on
+          // hasAnyAnswers too, on the assumption that "has answers" always
+          // meant "not a genuinely new signup." That broke for the invite
+          // flow specifically: a user who signs up with an email whose
+          // invite questionnaire was already filled arrives with
+          // hasAnyAnswers already true (migrated in), even though they've
+          // never actually seen this app before — so they silently never
+          // got offered a company code. Gate it on its own dedicated
+          // `onboardingSeen` flag instead (already existed in the schema,
+          // never wired up) so it shows for every genuinely first-time
+          // user regardless of whether their questionnaire was pre-filled.
+          const showCompanyCodeIntro = !user?.onboardingSeen && (user?.plan || 'free') === 'free';
+
+          if (user && (showCompanyCodeIntro || !hasAnyAnswers)) {
+            const destination = showCompanyCodeIntro
+              ? {
+                  name: 'CompanyCodeIntro',
+                  params: { nextRoute: hasAnyAnswers ? 'MainApp' : 'Questionnaire' },
+                }
+              : { name: 'Questionnaire', params: undefined };
 
             if (justSignedIn) {
               setResolvedInitialRoute(destination.name);

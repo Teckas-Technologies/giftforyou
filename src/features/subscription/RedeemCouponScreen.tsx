@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Polyline, Path } from 'react-native-svg';
-import { requestCouponCode, verifyCouponCode } from '../../services/api';
+import { requestCouponCode, verifyCouponCode, markOnboardingSeen } from '../../services/api';
 import { CustomAlert } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import { useAuth } from '../../contexts/AuthContext';
@@ -124,6 +124,11 @@ const RedeemCouponScreen = ({ navigation, route }: ScreenProps) => {
 
   const goToSuccessDestination = () => {
     if (nextRoute) {
+      // A `nextRoute` param means this was reached via CompanyCodeIntro's
+      // onboarding chain (not opened standalone from Settings later) — mark
+      // that one-time flow as seen here too, same as its "Skip" path, so a
+      // successful redemption doesn't leave the flag unset.
+      markOnboardingSeen().catch((err) => console.log('markOnboardingSeen failed:', err));
       // reset, not replace — clears CompanyCodeIntro + this screen from
       // the stack entirely, so the back button can't loop into this
       // one-time flow again.

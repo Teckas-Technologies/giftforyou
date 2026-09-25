@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing } from 'reac
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Rect, Path } from 'react-native-svg';
 import { colors } from '../../theme';
+import { markOnboardingSeen } from '../../services/api';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
 const BuildingIcon = ({ size = 34, color = '#FFFFFF' }: IconProps) => (
@@ -21,9 +22,10 @@ const BuildingIcon = ({ size = 34, color = '#FFFFFF' }: IconProps) => (
   </Svg>
 );
 
-// Shown once, right after signup, only for brand-new users (piggybacks on
-// AppNavigator's existing "hasAnyAnswers" check — see checkQuestionnaireStatus).
-// Never shown again on later logins.
+// Shown once, right after signup, gated on the user's own onboardingSeen
+// flag (see checkQuestionnaireStatus in AppNavigator) — independent of
+// whether their questionnaire happens to already be filled in (e.g. via
+// invite migration), so it isn't silently skipped for that case.
 const CompanyCodeIntroScreen = ({ navigation, route }: ScreenProps) => {
   const nextRoute = route?.params?.nextRoute || 'MainApp';
 
@@ -59,7 +61,13 @@ const CompanyCodeIntroScreen = ({ navigation, route }: ScreenProps) => {
   // reset (not replace/navigate) so this one-time screen — and RedeemCoupon,
   // if they went through it — are cleared from the stack entirely. Otherwise
   // the back button from nextRoute could loop back into this flow.
-  const goNext = () => navigation.reset({ index: 0, routes: [{ name: nextRoute }] });
+  const goNext = () => {
+    // Fire-and-forget — this screen is about to unmount, and a failed
+    // network call here shouldn't block navigation. Worst case, the user
+    // sees this prompt one extra time on their next login.
+    markOnboardingSeen().catch((err) => console.log('markOnboardingSeen failed:', err));
+    navigation.reset({ index: 0, routes: [{ name: nextRoute }] });
+  };
 
   return (
     <View style={styles.container}>
