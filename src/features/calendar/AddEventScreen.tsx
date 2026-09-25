@@ -18,7 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { createEvent, getCircles } from '../../services/api';
-import { scheduleEventReminder } from '../../services/notifications';
+import { scheduleEventReminder, saveEventNotificationIds } from '../../services/notifications';
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import type { ScreenProps, IconProps } from '../../types/navigation';
@@ -478,15 +478,24 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
       };
 
       const response = await createEvent(eventData);
+      const eventId = response?.event?.id || Date.now().toString();
 
-      // Schedule local notification reminders
+      // Schedule local notification reminders. Each scheduled id is saved
+      // against this event so they can be found and cancelled again if the
+      // event is later deleted — without this, a deleted event's reminders
+      // would still fire on schedule, for something that no longer exists.
+      const notificationIds: string[] = [];
       for (const days of reminderDays) {
-        await scheduleEventReminder({
-          eventId: response?.event?.id || Date.now().toString(),
+        const notificationId = await scheduleEventReminder({
+          eventId,
           eventTitle: eventName,
           eventDate: eventDate,
           daysBefore: days,
         });
+        if (notificationId) notificationIds.push(notificationId);
+      }
+      if (notificationIds.length > 0) {
+        await saveEventNotificationIds(eventId, notificationIds);
       }
 
       showSuccess('Event created with reminders!', () => navigation.goBack());

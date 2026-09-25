@@ -6,6 +6,7 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform, Linking } from 'react-native';
 import { registerPushToken } from './api';
 
@@ -238,6 +239,39 @@ export async function cancelAllNotifications() {
   }
 }
 
+// scheduleEventReminder() returns a fresh, unique local-notification id per
+// call, but that id was never saved anywhere — a created event's reminders
+// were fire-and-forget, with no way to find and cancel them again later.
+// Deleting the event only removed it from the server; the already-scheduled
+// notification(s) stayed on the device and fired anyway for an event that
+// no longer existed. This maps eventId -> the notification ids scheduled
+// for it, so they can be found and cancelled on delete.
+const EVENT_NOTIFICATION_IDS_KEY_PREFIX = '@giftbox_event_notification_ids';
+
+export async function saveEventNotificationIds(eventId: string, notificationIds: string[]) {
+  try {
+    await AsyncStorage.setItem(
+      `${EVENT_NOTIFICATION_IDS_KEY_PREFIX}:${eventId}`,
+      JSON.stringify(notificationIds),
+    );
+  } catch (error) {
+    console.log('Error saving event notification ids:', error);
+  }
+}
+
+export async function cancelEventNotifications(eventId: string) {
+  const key = `${EVENT_NOTIFICATION_IDS_KEY_PREFIX}:${eventId}`;
+  try {
+    const raw = await AsyncStorage.getItem(key);
+    if (!raw) return;
+    const notificationIds: string[] = JSON.parse(raw);
+    await Promise.all(notificationIds.map((id) => cancelNotification(id)));
+    await AsyncStorage.removeItem(key);
+  } catch (error) {
+    console.log('Error cancelling event notifications:', error);
+  }
+}
+
 /**
  * Get all scheduled notifications
  */
@@ -316,6 +350,8 @@ export default {
   scheduleEventReminder,
   cancelNotification,
   cancelAllNotifications,
+  saveEventNotificationIds,
+  cancelEventNotifications,
   getScheduledNotifications,
   getNotificationPermissionGranted,
   openNotificationSettings,

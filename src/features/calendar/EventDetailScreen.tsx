@@ -15,6 +15,7 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { useQueryClient } from '@tanstack/react-query';
 import { getEvent, deleteEvent } from '../../services/api';
+import { cancelEventNotifications } from '../../services/notifications';
 import { formatLongDate, daysUntil as appDaysUntil } from '../../utils/date';
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
@@ -240,6 +241,11 @@ const EventDetailScreen = ({ navigation, route }: ScreenProps) => {
         try {
           setDeleting(true);
           await deleteEvent(event.id);
+          // Cancel any locally-scheduled reminder notifications for this
+          // event — otherwise they'd still fire later for an event that no
+          // longer exists (the server-side delete has no way to reach a
+          // notification already scheduled on the device).
+          await cancelEventNotifications(event.id);
           // Calendar/Home only refetch on a timer or manual pull-to-refresh —
           // without this, the deleted event keeps showing on both screens
           // until one of those happens to fire.
