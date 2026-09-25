@@ -61,10 +61,11 @@ module.exports = {
       supportsTablet: true,
       bundleIdentifier: 'com.thoughtfully.app',
       // iOS equivalent of versionCode — must increase with every release.
-      // Convention is to keep it identical to `version`. Bumped to 0.3.9 for
-      // this build (0.3.8 already used) — includes the Send Love Note
-      // loading skeleton fix.
-      buildNumber: '0.3.9',
+      // Convention is to keep it identical to `version`. Bumped to 0.3.10
+      // for this build (0.3.9 already used) — includes the discover screen
+      // dismiss/plan-status fixes and the event-deletion notification-
+      // cancellation fix.
+      buildNumber: '0.3.10',
       // Was missing entirely — Android has the equivalent `googleServicesFile`
       // field below, but iOS needs its own. Without this, Expo's prebuild
       // never copies the file into the native project, so GoogleSignin.
