@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
   Linking,
   Share,
-  Modal,
   TextInput,
   KeyboardAvoidingView,
   Platform,
@@ -351,6 +350,26 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showNewPasswordConfirm, setShowNewPasswordConfirm] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+
+  // Toggling secureTextEntry while a password field is focused makes iOS
+  // 17+ add/remove its password-suggestion bar above the keyboard, which
+  // visibly flickers — and since this sits inside a full-screen Modal, that
+  // reads as the whole app flickering. Blurring right before the toggle and
+  // refocusing right after turns that into an intentional, controlled
+  // keyboard transition instead of one happening while still focused.
+  const emailChangePasswordRef = useRef<any>(null);
+  const emailChangePasswordConfirmRef = useRef<any>(null);
+  const newPasswordRef = useRef<any>(null);
+  const newPasswordConfirmRef = useRef<any>(null);
+
+  const toggleSecureEntry = (
+    inputRef: React.RefObject<any>,
+    setVisible: React.Dispatch<React.SetStateAction<boolean>>,
+  ) => {
+    inputRef.current?.blur();
+    setVisible((v) => !v);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
 
   const [notifications, setNotifications] = useState({
     eventReminders: true,
@@ -844,13 +863,17 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
       {/* Custom Alert */}
       <CustomAlert {...alertConfig} onClose={hideAlert} />
 
-      {/* Change Email */}
-      <Modal
-        visible={changeEmailVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={handleCloseChangeEmail}
-      >
+      {/* Change Email — plain absolute-positioned overlay, not React
+          Native's native <Modal>. RN's Modal presents/dismisses via a real
+          native view controller on iOS, and repeatedly opening/closing one
+          is a documented RN bug (facebook/react-native#32504, #39034):
+          the native controller sometimes doesn't fully tear down, leaving
+          an invisible transparent modal on screen that swallows every
+          touch — exactly the "app stuck, can't scroll or tap back"
+          symptom reported after opening/closing this modal a few times.
+          A conditionally-rendered plain View has no native presentation
+          lifecycle to get stuck in. */}
+      {changeEmailVisible && (
         <KeyboardAvoidingView
           style={styles.modalOverlay}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -892,6 +915,7 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
                     </Text>
                     <View style={styles.changeEmailInputWrapper}>
                       <TextInput
+                        ref={emailChangePasswordRef}
                         style={styles.changeEmailInputInner}
                         value={emailChangePassword}
                         onChangeText={setEmailChangePassword}
@@ -902,13 +926,16 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
                       />
                       <TouchableOpacity
                         style={styles.eyeToggle}
-                        onPress={() => setShowEmailChangePassword((v) => !v)}
+                        onPress={() =>
+                          toggleSecureEntry(emailChangePasswordRef, setShowEmailChangePassword)
+                        }
                       >
                         {showEmailChangePassword ? <EyeOffIcon /> : <EyeIcon />}
                       </TouchableOpacity>
                     </View>
                     <View style={styles.changeEmailInputWrapper}>
                       <TextInput
+                        ref={emailChangePasswordConfirmRef}
                         style={styles.changeEmailInputInner}
                         value={emailChangePasswordConfirm}
                         onChangeText={setEmailChangePasswordConfirm}
@@ -919,7 +946,12 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
                       />
                       <TouchableOpacity
                         style={styles.eyeToggle}
-                        onPress={() => setShowEmailChangePasswordConfirm((v) => !v)}
+                        onPress={() =>
+                          toggleSecureEntry(
+                            emailChangePasswordConfirmRef,
+                            setShowEmailChangePasswordConfirm,
+                          )
+                        }
                       >
                         {showEmailChangePasswordConfirm ? <EyeOffIcon /> : <EyeIcon />}
                       </TouchableOpacity>
@@ -958,15 +990,13 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
             </View>
           </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
-      </Modal>
+      )}
 
-      {/* Change Password */}
-      <Modal
-        visible={changePasswordVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={handleCloseChangePassword}
-      >
+      {/* Change Password — same plain-overlay approach as Change Email
+          above, for the same reason (avoids RN Modal's native
+          presentation/dismissal lifecycle getting stuck on repeated
+          open/close). */}
+      {changePasswordVisible && (
         <KeyboardAvoidingView
           style={styles.modalOverlay}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -994,6 +1024,7 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
                 </Text>
                 <View style={styles.changeEmailInputWrapper}>
                   <TextInput
+                    ref={newPasswordRef}
                     style={styles.changeEmailInputInner}
                     value={newPassword}
                     onChangeText={setNewPassword}
@@ -1004,13 +1035,14 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
                   />
                   <TouchableOpacity
                     style={styles.eyeToggle}
-                    onPress={() => setShowNewPassword((v) => !v)}
+                    onPress={() => toggleSecureEntry(newPasswordRef, setShowNewPassword)}
                   >
                     {showNewPassword ? <EyeOffIcon /> : <EyeIcon />}
                   </TouchableOpacity>
                 </View>
                 <View style={styles.changeEmailInputWrapper}>
                   <TextInput
+                    ref={newPasswordConfirmRef}
                     style={styles.changeEmailInputInner}
                     value={newPasswordConfirm}
                     onChangeText={setNewPasswordConfirm}
@@ -1021,7 +1053,9 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
                   />
                   <TouchableOpacity
                     style={styles.eyeToggle}
-                    onPress={() => setShowNewPasswordConfirm((v) => !v)}
+                    onPress={() =>
+                      toggleSecureEntry(newPasswordConfirmRef, setShowNewPasswordConfirm)
+                    }
                   >
                     {showNewPasswordConfirm ? <EyeOffIcon /> : <EyeIcon />}
                   </TouchableOpacity>
@@ -1058,7 +1092,7 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
             </View>
           </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
-      </Modal>
+      )}
     </View>
   );
 };
@@ -1217,7 +1251,13 @@ const styles = StyleSheet.create({
     color: '#999',
   },
   modalOverlay: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
+    elevation: 999,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
