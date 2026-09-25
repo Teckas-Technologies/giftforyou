@@ -169,6 +169,19 @@ const DiscoverScreen = ({ navigation }: ScreenProps) => {
   const DECLINED_HOLD_MS = 2000; // how long the red "Declined" stays before
   // flipping to "Add to Circle Again"
 
+  // Ids dismissed this session. handleDismiss already removes a card from
+  // local state immediately, but refreshAll polls every 12s (and on every
+  // focus), and the debounced search effect re-runs on every keystroke —
+  // both overwrite suggestions/searchResults with a fresh fetch that has no
+  // idea anything was dismissed (search results in particular come from a
+  // plain user-search endpoint, not the suggestions system, so dismissal
+  // never affects what it returns server-side). Without this, a dismissed
+  // card would silently reappear on the next poll or next keystroke. A
+  // plain ref, not state — nothing needs to re-render off this directly,
+  // the actual visible lists already update via setSuggestions/
+  // setSearchResults; this only needs to be read inside those closures.
+  const dismissedIdsRef = useRef<Set<string>>(new Set());
+
   // Latest searchQuery, mirrored into a ref so the polling interval below
   // can read the current value without stale-closure issues.
   const searchQueryRef = useRef('');
@@ -283,6 +296,14 @@ const DiscoverScreen = ({ navigation }: ScreenProps) => {
             // suggestion).
             next[id] = { ...prev[id], status: 'declined' };
             changed = true;
+            // A decline frees up the free-plan contact slot server-side,
+            // but the cached planStatus was only ever refreshed after a
+            // successful add (see handleAddToCircle) — never after this.
+            // Without this, "Add to Circle Again" would incorrectly show
+            // the upgrade prompt using the stale pre-decline value, even
+            // with zero real contacts, until something else happened to
+            // refetch it (e.g. leaving and returning to this screen).
+            invalidatePlanStatus();
             setTimeout(() => {
               setPipeline((curr) => {
                 if (!curr[id] || curr[id].status !== 'declined') return curr;
@@ -295,15 +316,21 @@ const DiscoverScreen = ({ navigation }: ScreenProps) => {
       });
 
       // Backend suggestions, minus already-accepted users (they live in
-      // your contacts list, not Discover). No sticky merging — the
-      // pipeline cards are added in the render layer.
+      // your contacts list, not Discover) and anything dismissed this
+      // session (this fresh fetch has no idea about dismissals, so without
+      // this a dismissed card would silently reappear on the next poll).
+      // No sticky merging — the pipeline cards are added in the render layer.
       setSuggestions(
         buildSuggestions(suggResp?.suggestions || suggResp || []).filter(
-          (u) => !acceptedIds.has(u.id),
+          (u) => !acceptedIds.has(u.id) && !dismissedIdsRef.current.has(u.id),
         ),
       );
 
       if (searchResp) {
+        // Search intentionally ignores dismissedIdsRef — dismiss only
+        // means "stop suggesting this person passively," same as
+        // LinkedIn/Instagram. A deliberate search for someone by name
+        // should always find them, dismissed or not.
         const users = (searchResp.users || []).map((u: any) => ({
           id: u.id,
           name: u.name,
@@ -358,6 +385,7 @@ const DiscoverScreen = ({ navigation }: ScreenProps) => {
     searchDebounce.current = setTimeout(async () => {
       try {
         const data = await searchUsers(q);
+        // Same as the poll above — search deliberately ignores dismissals.
         const users = (data.users || []).map((u: any) => ({
           id: u.id,
           name: u.name,
@@ -461,11 +489,16 @@ const DiscoverScreen = ({ navigation }: ScreenProps) => {
 
       await dismissSuggestion(userId);
 
+      // Remember this dismissal so the next poll/refetch doesn't silently
+      // bring the card back — see dismissedIdsRef's declaration for why.
+      dismissedIdsRef.current.add(userId);
+
       // Remove from both lists
       setSuggestions((prev) => prev.filter((s) => (s._id || s.id) !== userId));
       setSearchResults((prev) => prev.filter((s) => (s._id || s.id) !== userId));
     } catch (error) {
       console.error('Error dismissing suggestion:', error);
+      showError('Could not remove this suggestion. Please try again.');
     } finally {
       setDismissingIds((prev) => ({ ...prev, [userId]: false }));
     }
