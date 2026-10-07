@@ -13,7 +13,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path } from 'react-native-svg';
-import { colors } from '../../theme';
+import { colors, fontSize as typeScale } from '../../theme';
 import { SkeletonRow } from '../../components';
 import { getEventsByDate } from '../../services/api';
 import { getDateParts } from '../../utils/date';
@@ -736,13 +736,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   monthTextMask: {
-    fontSize: 28,
+    fontSize: typeScale['6xl'],
     fontFamily: 'Handlee_400Regular',
     letterSpacing: 0.5,
     textAlign: 'center',
   },
   yearText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginBottom: 12,
@@ -765,7 +765,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   navBtnText: {
-    fontSize: 22,
+    fontSize: typeScale['3xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -792,7 +792,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   weekDayText: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#ca9ad6',
   },
@@ -821,7 +821,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
   },
   dayText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -849,8 +849,7 @@ const styles = StyleSheet.create({
   selectedText: {
     color: '#6b3a8a',
     fontFamily: 'Handlee_400Regular',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: typeScale.base,
   },
   eventDotSelected: {
     position: 'absolute',
@@ -875,7 +874,7 @@ const styles = StyleSheet.create({
   todayText: {
     color: '#FFFFFF',
     fontFamily: 'Handlee_400Regular',
-    fontSize: 14,
+    fontSize: typeScale.base,
   },
   eventDot: {
     position: 'absolute',
@@ -902,7 +901,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   eventsTitleMask: {
-    fontSize: 18,
+    fontSize: typeScale.xl,
     fontFamily: 'Handlee_400Regular',
   },
   clearDateBtn: {
@@ -912,7 +911,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   clearDateText: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#ca9ad6',
   },
@@ -933,7 +932,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   eventTime: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     width: 50,
@@ -947,18 +946,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   eventTitle: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
   eventDesc: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 2,
   },
   eventContact: {
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontFamily: 'Handlee_400Regular',
     color: '#ca9ad6',
     marginTop: 4,
@@ -993,13 +992,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     marginBottom: 4,
   },
   emptySubtext: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },

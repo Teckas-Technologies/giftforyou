@@ -34,6 +34,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import APP_CONFIG from '../../config/constants';
 import { isValidEmail } from '../../lib/validation';
 import type { ScreenProps, IconProps } from '../../types/navigation';
+import { fontSize as typeScale } from '../../theme';
 
 // Icons
 const BackIcon = ({ size = 24, color = '#6b3a8a' }: IconProps) => (
@@ -1124,7 +1125,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   headerTitleMask: {
-    fontSize: 22,
+    fontSize: typeScale['3xl'],
     fontFamily: 'Handlee_400Regular',
     textAlign: 'center',
   },
@@ -1147,7 +1148,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff5f5',
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     textTransform: 'uppercase',
@@ -1174,7 +1175,7 @@ const styles = StyleSheet.create({
   },
   permissionBannerText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#c62828',
     lineHeight: 16,
@@ -1202,7 +1203,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   settingLabel: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -1210,7 +1211,7 @@ const styles = StyleSheet.create({
     color: '#e53935',
   },
   settingValue: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#999',
     marginTop: 2,
@@ -1234,19 +1235,19 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   appName: {
-    fontSize: 24,
+    fontSize: typeScale['4xl'],
     fontFamily: 'StyleScript_400Regular',
     color: '#330c54',
     marginBottom: 4,
   },
   appVersion: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginBottom: 8,
   },
   copyright: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#999',
   },
@@ -1278,20 +1279,20 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   changeEmailTitle: {
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     marginBottom: 8,
   },
   changeEmailSubtitle: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     lineHeight: 20,
     marginBottom: 16,
   },
   changeEmailHint: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#a9789a',
     lineHeight: 18,
@@ -1305,7 +1306,7 @@ const styles = StyleSheet.create({
     borderColor: '#f4cae8',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    fontSize: 16,
+    fontSize: typeScale.lg,
     color: '#333',
     marginBottom: 20,
   },
@@ -1327,7 +1328,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'Handlee_400Regular',
     paddingVertical: 12,
-    fontSize: 16,
+    fontSize: typeScale.lg,
     color: '#333',
   },
   eyeToggle: {
@@ -1349,7 +1350,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(202, 154, 214, 0.3)',
   },
   changeEmailCancelText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -1360,7 +1361,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   changeEmailSubmitText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },

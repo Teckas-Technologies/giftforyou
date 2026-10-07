@@ -19,6 +19,7 @@ import { getRouteForNotification } from '../../services/notificationRouter';
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import type { ScreenProps, IconProps } from '../../types/navigation';
+import { fontSize as typeScale } from '../../theme';
 
 // Icons
 const BackIcon = ({ size = 24, color = '#6b3a8a' }: IconProps) => (
@@ -498,7 +499,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerTitleMask: {
-    fontSize: 22,
+    fontSize: typeScale['3xl'],
     fontFamily: 'Handlee_400Regular',
     textAlign: 'center',
   },
@@ -511,7 +512,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   badgeText: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -541,7 +542,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 4,
@@ -549,7 +550,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   requestActions: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#9b8aa3',
     marginTop: 2,
@@ -571,7 +572,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   declineButtonText: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -581,7 +582,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   acceptButtonText: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -622,7 +623,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   notificationEmoji: {
-    fontSize: 24,
+    fontSize: typeScale['4xl'],
   },
   notificationText: {
     flex: 1,
@@ -635,7 +636,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   notificationTitle: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     flex: 1,
@@ -653,13 +654,13 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   notificationBody: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 4,
   },
   notificationTime: {
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontFamily: 'Handlee_400Regular',
     color: '#999',
     marginTop: 6,
@@ -691,13 +692,13 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     marginBottom: 8,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     textAlign: 'center',

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useCallback } from 'react';
 import { View, Image, StyleSheet, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SplashScreen from 'expo-splash-screen';
-import { colors } from '../../theme';
+import { colors, fontSize as typeScale } from '../../theme';
 import { GiftBoxIcon } from '../../components';
 import { initUserCredentials, hasSeenOnboardingLocal } from '../../services/api';
 import type { ScreenProps } from '../../types/navigation';
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     height: 80,
   },
   tagline: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     color: colors.primary,
     fontFamily: 'Handlee_400Regular',
     letterSpacing: 1,

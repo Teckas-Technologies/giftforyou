@@ -26,6 +26,7 @@ import { getDateParts } from '../../utils/date';
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import type { ScreenProps, IconProps } from '../../types/navigation';
+import { fontSize as typeScale } from '../../theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -740,14 +741,14 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
-    fontSize: 28,
+    fontSize: typeScale['6xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     textAlign: 'center',
     marginBottom: 12,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     textAlign: 'center',
@@ -758,7 +759,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     marginBottom: 12,
@@ -792,13 +793,13 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
   dateText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -822,7 +823,7 @@ const styles = StyleSheet.create({
     borderColor: '#ca9ad6',
   },
   toggleLabel: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -852,11 +853,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fbe5f5',
   },
   avatarEmoji: {
-    fontSize: 32,
+    fontSize: typeScale['7xl'],
     marginBottom: 6,
   },
   avatarLabel: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -893,7 +894,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   saveButtonText: {
-    fontSize: 18,
+    fontSize: typeScale.xl,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -902,7 +903,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   skipText: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -927,7 +928,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     textAlign: 'center',
@@ -943,7 +944,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pickerLabel: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginBottom: 12,
@@ -961,7 +962,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pickerValueText: {
-    fontSize: 18,
+    fontSize: typeScale.xl,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -983,7 +984,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modalCancelText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -1001,7 +1002,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modalConfirmText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -1037,12 +1038,12 @@ const styles = StyleSheet.create({
     // Selected state handled by highlight background
   },
   wheelPickerItemText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#999',
   },
   wheelPickerItemTextSelected: {
-    fontSize: 18,
+    fontSize: typeScale.xl,
     color: '#330c54',
     fontWeight: '500',
   },

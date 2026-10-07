@@ -11,7 +11,7 @@ import {
   TextStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, borderRadius, spacing } from '../theme';
+import { colors, borderRadius, spacing, fontSize as typeScale } from '../theme';
 
 interface InputProps {
   label?: string;
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.base,
   },
   label: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontWeight: '500',
     color: colors.textPrimary,
     marginBottom: spacing.sm,
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     paddingVertical: spacing.md,
-    fontSize: 16,
+    fontSize: typeScale.lg,
     color: colors.textPrimary,
   },
   inputWithIcon: {
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
   },
   errorText: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     color: colors.error,
     marginTop: spacing.xs,
   },

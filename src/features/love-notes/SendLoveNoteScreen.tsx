@@ -17,6 +17,7 @@ import { getCircles, sendLoveNote } from '../../services/api';
 import { CustomAlert, SkeletonBlock } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import type { ScreenProps, IconProps } from '../../types/navigation';
+import { fontSize as typeScale } from '../../theme';
 
 const MAX_NOTE_LENGTH = 500;
 
@@ -216,6 +217,17 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          // iOS only: this KeyboardAvoidingView only measures its own frame,
+          // which starts BELOW the back-button header above it — without an
+          // offset it doesn't know that header exists, so the note textarea
+          // near the bottom of the form ends up hidden behind the keyboard.
+          // Header height here is static (paddingTop: 50 + the 44pt back
+          // button + paddingBottom: 16 = 110), not insets-based, so the
+          // offset is a fixed number rather than insets.top + remainder.
+          // Android is unaffected: windowSoftInputMode="adjustResize"
+          // already resizes the window natively, so adding an offset there
+          // too would double-compensate.
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 0}
         >
           <ScrollView
             showsVerticalScrollIndicator={false}
@@ -385,7 +397,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitleMask: {
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
     fontFamily: 'Handlee_400Regular',
     textAlign: 'center',
   },
@@ -428,14 +440,14 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 17,
+    fontSize: typeScale.xl,
     color: '#6b3a8a',
     marginTop: 16,
     marginBottom: 2,
   },
   sectionHint: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 13,
+    fontSize: typeScale.base,
     color: '#999',
     marginBottom: 10,
   },
@@ -454,17 +466,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   emptyIconEmoji: {
-    fontSize: 36,
+    fontSize: typeScale['8xl'],
   },
   emptyTitle: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
     color: '#330c54',
     marginBottom: 8,
   },
   emptySubtitle: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 14,
+    fontSize: typeScale.base,
     color: '#6b3a8a',
     textAlign: 'center',
     lineHeight: 20,
@@ -479,7 +491,7 @@ const styles = StyleSheet.create({
   },
   emptyButtonText: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 16,
+    fontSize: typeScale.lg,
     color: '#FFFFFF',
   },
   friendsRow: {
@@ -512,7 +524,7 @@ const styles = StyleSheet.create({
   },
   friendInitials: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
     color: '#ca9ad6',
   },
   checkBadge: {
@@ -530,7 +542,7 @@ const styles = StyleSheet.create({
   },
   friendName: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 13,
+    fontSize: typeScale.base,
     color: '#333',
     textAlign: 'center',
   },
@@ -543,7 +555,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 16,
     minHeight: 140,
-    fontSize: 16,
+    fontSize: typeScale.lg,
     color: '#333',
     lineHeight: 22,
     borderWidth: 2,
@@ -556,7 +568,7 @@ const styles = StyleSheet.create({
   },
   charCount: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 12,
+    fontSize: typeScale.sm,
     color: '#999',
     textAlign: 'right',
     marginTop: 6,
@@ -572,7 +584,7 @@ const styles = StyleSheet.create({
   },
   sendButtonText: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 18,
+    fontSize: typeScale.xl,
     color: '#FFFFFF',
   },
 });

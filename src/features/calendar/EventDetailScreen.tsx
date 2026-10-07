@@ -22,6 +22,7 @@ import useAlert from '../../hooks/useAlert';
 import { CALENDAR_EVENTS_QUERY_KEY_PREFIX } from './hooks';
 import { HOME_DASHBOARD_QUERY_KEY } from '../home/hooks';
 import type { ScreenProps, IconProps } from '../../types/navigation';
+import { fontSize as typeScale } from '../../theme';
 
 // Icons
 const BackIcon = ({ size = 24, color = '#6b3a8a' }: IconProps) => (
@@ -505,7 +506,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginBottom: 16,
@@ -514,7 +515,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   backLinkText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#70d0dd',
   },
@@ -544,7 +545,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitleMask: {
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
     fontFamily: 'Handlee_400Regular',
     textAlign: 'center',
   },
@@ -587,17 +588,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emoji: {
-    fontSize: 40,
+    fontSize: typeScale['9xl'],
   },
   eventTitle: {
-    fontSize: 24,
+    fontSize: typeScale['4xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     textAlign: 'center',
     marginBottom: 4,
   },
   eventType: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginBottom: 16,
@@ -618,7 +619,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   daysUntilText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#00897b',
   },
@@ -659,13 +660,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   detailLabel: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#999',
     marginBottom: 2,
   },
   detailValue: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -673,7 +674,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginBottom: 12,
@@ -690,7 +691,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   descriptionText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     lineHeight: 22,
@@ -712,7 +713,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   viewContactText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },

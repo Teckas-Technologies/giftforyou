@@ -10,7 +10,7 @@ import {
   ImageSourcePropType,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, borderRadius, spacing, shadows } from '../theme';
+import { colors, borderRadius, spacing, shadows, fontSize as typeScale } from '../theme';
 import Avatar from './Avatar';
 import Badge, { getBadgeVariant, formatCountdown } from './Badge';
 
@@ -129,13 +129,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   name: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontWeight: '600',
     color: colors.textPrimary,
     marginBottom: 2,
   },
   relationship: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     color: colors.textSecondary,
     marginBottom: 4,
   },
@@ -144,12 +144,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   date: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     color: colors.textSecondary,
     marginLeft: 4,
   },
   eventType: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     color: colors.textLight,
     marginLeft: 4,
   },

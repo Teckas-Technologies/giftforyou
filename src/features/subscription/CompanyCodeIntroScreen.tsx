@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Rect, Path } from 'react-native-svg';
-import { colors } from '../../theme';
+import { colors, fontSize as typeScale } from '../../theme';
 import { markOnboardingSeen } from '../../services/api';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
@@ -156,13 +156,13 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 13,
+    fontSize: typeScale.base,
     letterSpacing: 2,
     color: colors.secondary,
     marginBottom: 10,
   },
   title: {
-    fontSize: 26,
+    fontSize: typeScale['5xl'],
     fontFamily: 'Handlee_400Regular',
     color: colors.textDark,
     textAlign: 'center',
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 15,
+    fontSize: typeScale.md,
     color: colors.textLight,
     textAlign: 'center',
     lineHeight: 22,
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   },
   enterButtonText: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 18,
+    fontSize: typeScale.xl,
     color: '#FFFFFF',
   },
   skipButton: {
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
   },
   skipButtonText: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 15,
+    fontSize: typeScale.md,
     color: colors.textLight,
   },
 });

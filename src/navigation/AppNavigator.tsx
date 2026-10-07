@@ -37,7 +37,7 @@ import {
   RedeemCouponScreen,
   CompanyCodeIntroScreen,
 } from '../screens';
-import { colors } from '../theme';
+import { colors, fontSize as typeScale } from '../theme';
 
 export const navigationRef = createNavigationContainerRef();
 
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
   },
   tabBarLabel: {
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontFamily: 'Handlee_400Regular',
     marginTop: 4,
     marginBottom: 4,

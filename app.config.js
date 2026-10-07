@@ -36,11 +36,13 @@ module.exports = {
     // worked. Takes effect on the next native build (not an OTA update).
     scheme: 'thoughtfully',
     // User-visible version (semver MAJOR.MINOR.PATCH). Bump for every
-    // release: a patch fix → 0.3.1, a feature release → 0.4.0, etc.
+    // release: a patch fix → 1.0.1, a feature release → 1.1.0, etc.
     // Keep aligned with package.json, android.versionCode (integer), and
-    // ios.buildNumber. Previous client APKs were v0.1, v0.2, v0.3.0, so this
-    // ship (logo/emoji rebrand + Azure API URL) is v0.3.1 with versionCode 4.
-    version: '0.3.3',
+    // ios.buildNumber. Reset to 1.0.0 for the client's own App Store
+    // Connect/Play Console apps (new bundle ID com.thoughtfullyapp.mobile)
+    // — this is genuinely their first public submission, with zero
+    // relation to the old app's 0.3.x history under the agency's account.
+    version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
@@ -59,13 +61,16 @@ module.exports = {
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.thoughtfully.app',
+      // Changed from com.thoughtfully.app — that Bundle ID is permanently
+      // locked to the agency's Apple Developer account once a TestFlight
+      // build was uploaded under it (Apple does not release a Bundle ID
+      // even after the app is deleted). This new app is being set up
+      // directly under the client's own Apple Developer account instead.
+      bundleIdentifier: 'com.thoughtfullyapp.mobile',
       // iOS equivalent of versionCode — must increase with every release.
-      // Convention is to keep it identical to `version`. Bumped to 0.3.10
-      // for this build (0.3.9 already used) — includes the discover screen
-      // dismiss/plan-status fixes and the event-deletion notification-
-      // cancellation fix.
-      buildNumber: '0.3.10',
+      // Convention is to keep it identical to `version`. Reset to 1 for
+      // this fresh App Store Connect app (see version comment above).
+      buildNumber: '1',
       // Was missing entirely — Android has the equivalent `googleServicesFile`
       // field below, but iOS needs its own. Without this, Expo's prebuild
       // never copies the file into the native project, so GoogleSignin.
@@ -89,12 +94,15 @@ module.exports = {
         backgroundColor: '#330c54',
       },
       edgeToEdgeEnabled: true,
-      package: 'com.thoughtfully.app',
+      // Kept identical to ios.bundleIdentifier above, same convention as
+      // before — see that comment for why this changed from
+      // com.thoughtfully.app.
+      package: 'com.thoughtfullyapp.mobile',
       // Integer Android uses to decide whether an APK is an upgrade.
       // MUST increase by at least 1 every release, otherwise installs
-      // fail with INSTALL_FAILED_VERSION_DOWNGRADE. Prior client APKs
-      // (v0.1, v0.2, v0.3.0) used 3 or lower; this release is 4.
-      versionCode: 7,
+      // fail with INSTALL_FAILED_VERSION_DOWNGRADE. Reset to 1 for this
+      // fresh Play Console app (see version comment above).
+      versionCode: 1,
       googleServicesFile: './google-services.json',
       // Android Auto Backup is disabled via the inline `withAllowBackupFalse`
       // plugin (registered below). The top-level `allowBackup` field is not

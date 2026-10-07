@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { fontSize as typeScale } from '../theme';
 
 interface ToastProps {
   visible: boolean;
@@ -94,7 +95,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   message: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
     textAlign: 'center',

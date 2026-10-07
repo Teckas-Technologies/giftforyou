@@ -28,6 +28,7 @@ import { useInvitations } from './hooks';
 import { usePlanStatus, useInvalidatePlanStatus } from '../subscription/hooks';
 import { useMinDurationRefresh } from '../../hooks/useMinDurationRefresh';
 import type { ScreenProps, IconProps } from '../../types/navigation';
+import { fontSize as typeScale } from '../../theme';
 
 // Icons
 const BackIcon = ({ size = 24, color = '#6b3a8a' }: IconProps) => (
@@ -974,7 +975,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitleMask: {
-    fontSize: 22,
+    fontSize: typeScale['3xl'],
     fontFamily: 'Handlee_400Regular',
     textAlign: 'center',
   },
@@ -1004,12 +1005,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statValue: {
-    fontSize: 28,
+    fontSize: typeScale['6xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 4,
@@ -1036,7 +1037,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   filterText: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     textAlign: 'center',
@@ -1046,7 +1047,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   filterTextActive: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -1079,7 +1080,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: {
-    fontSize: 22,
+    fontSize: typeScale['3xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -1087,12 +1088,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   invitationName: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
   invitationEmail: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 2,
@@ -1112,11 +1113,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statusText: {
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontFamily: 'Handlee_400Regular',
   },
   sentTime: {
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontFamily: 'Handlee_400Regular',
     color: '#999',
   },
@@ -1177,13 +1178,13 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     marginBottom: 8,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     textAlign: 'center',
@@ -1226,7 +1227,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   modalTitle: {
-    fontSize: 22,
+    fontSize: typeScale['3xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -1239,7 +1240,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modalSubtitle: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginBottom: 24,
@@ -1248,13 +1249,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   inputLabel: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginBottom: 8,
   },
   inputHelper: {
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontFamily: 'Handlee_400Regular',
     color: '#9b8aa3',
     marginTop: 6,
@@ -1265,7 +1266,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     borderWidth: 1,
@@ -1287,7 +1288,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sendButtonText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -1313,7 +1314,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   relationshipText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     paddingHorizontal: 16,
@@ -1323,7 +1324,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   relationshipTextActive: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },

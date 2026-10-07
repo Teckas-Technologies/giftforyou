@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { fontSize as typeScale } from '../../theme';
 import {
   View,
   Text,
@@ -90,6 +91,16 @@ const SubmitLoveNoteScreen = ({ navigation }: ScreenProps) => {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        // iOS only: this KeyboardAvoidingView only wraps the ScrollView
+        // below the back-button header rendered above it, so it has no
+        // idea that header takes up space — without this offset it
+        // under-reserves room for the keyboard and the note input near the
+        // bottom stays hidden behind it. Matches the header's own actual
+        // height: paddingTop (50) + the 44px back button + paddingBottom
+        // (16) = 110. Android doesn't need this — windowSoftInputMode=
+        // "adjustResize" (app.config.js) already resizes the whole window
+        // for it, so adding an offset there too would double-compensate.
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 0}
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -173,7 +184,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitleMask: {
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
     fontFamily: 'Handlee_400Regular',
     textAlign: 'center',
   },
@@ -183,14 +194,14 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 17,
+    fontSize: typeScale.xl,
     color: '#6b3a8a',
     marginTop: 16,
     marginBottom: 2,
   },
   sectionHint: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 13,
+    fontSize: typeScale.base,
     color: '#999',
     marginBottom: 14,
   },
@@ -200,7 +211,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 16,
     minHeight: 160,
-    fontSize: 16,
+    fontSize: typeScale.lg,
     color: '#333',
     lineHeight: 22,
     borderWidth: 2,
@@ -213,7 +224,7 @@ const styles = StyleSheet.create({
   },
   charCount: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 12,
+    fontSize: typeScale.sm,
     color: '#999',
     textAlign: 'right',
     marginTop: 6,
@@ -229,7 +240,7 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 18,
+    fontSize: typeScale.xl,
     color: '#FFFFFF',
   },
 });

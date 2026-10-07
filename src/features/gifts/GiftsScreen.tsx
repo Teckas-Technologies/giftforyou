@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { fontSize as typeScale } from '../../theme';
 import {
   View,
   Text,
@@ -567,11 +568,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitleMask: {
-    fontSize: 26,
+    fontSize: typeScale['5xl'],
     fontFamily: 'Handlee_400Regular',
   },
   headerSubtitle: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 4,
@@ -611,7 +612,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   activeTabText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -627,7 +628,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -664,19 +665,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   giftEmoji: {
-    fontSize: 36,
+    fontSize: typeScale['8xl'],
   },
   giftInfo: {
     flex: 1,
   },
   giftName: {
-    fontSize: 17,
+    fontSize: typeScale.xl,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     marginBottom: 3,
   },
   giftFor: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginBottom: 10,
@@ -693,7 +694,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   priceText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },

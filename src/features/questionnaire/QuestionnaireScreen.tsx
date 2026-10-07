@@ -25,6 +25,7 @@ import { formatDate as formatAppDate } from '../../utils/date';
 import { CustomAlert, SkeletonBlock } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import type { ScreenProps, IconProps } from '../../types/navigation';
+import { fontSize as typeScale } from '../../theme';
 
 const { width } = Dimensions.get('window');
 
@@ -1193,6 +1194,16 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
         // appends bottom padding equal to keyboard height and is smooth.
         style={styles.keyboardAvoider}
         behavior="padding"
+        // iOS only: KeyboardAvoidingView measures its own frame, which
+        // starts BELOW the header + progress bar above it — without this
+        // offset it doesn't know that space exists, so its padding came
+        // up short and a focused field near the bottom of a section (e.g.
+        // "What is this date?") stayed hidden behind the keyboard with
+        // only its label visible. Android doesn't need this: OS-level
+        // windowSoftInputMode="adjustResize" (see app.config.js) already
+        // resizes the whole window correctly on its own, so giving it an
+        // offset too would just double-compensate.
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 82 : 0}
       >
         <ScrollView
           ref={scrollRef}
@@ -1379,12 +1390,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerStep: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
   skipText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -1431,15 +1442,15 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   sectionEmoji: {
-    fontSize: 32,
+    fontSize: typeScale['7xl'],
   },
   sectionTitleMask: {
-    fontSize: 28,
+    fontSize: typeScale['6xl'],
     fontFamily: 'Handlee_400Regular',
     textAlign: 'center',
   },
   sectionSubtitle: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 4,
@@ -1458,12 +1469,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   selectAllText: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#ca9ad6',
   },
   questionText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     flex: 1,
     color: '#330c54',
@@ -1510,7 +1521,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   optionEmoji: {
-    fontSize: 18,
+    fontSize: typeScale.xl,
   },
   optionImage: {
     width: 20,
@@ -1525,12 +1536,12 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
   },
   optionLabel: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
   optionLabelActive: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -1557,7 +1568,7 @@ const styles = StyleSheet.create({
     minHeight: 150,
   },
   textInput: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     padding: 16,
@@ -1600,7 +1611,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ca9ad6',
   },
   datePickerDoneText: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -1611,14 +1622,14 @@ const styles = StyleSheet.create({
     color: '#999',
   },
   datePickerIcon: {
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
   },
   textarea: {
     minHeight: 140,
     textAlignVertical: 'top',
   },
   helperText: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#999',
     marginTop: 6,
@@ -1643,7 +1654,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backButtonText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -1665,7 +1676,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   nextButtonText: {
-    fontSize: 17,
+    fontSize: typeScale.xl,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },

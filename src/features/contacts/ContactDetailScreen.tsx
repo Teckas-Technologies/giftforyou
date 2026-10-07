@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { fontSize as typeScale } from '../../theme';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   Animated,
   Easing,
   ActivityIndicator,
@@ -13,11 +15,11 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
-import { cancelFriendRequest, removeFromCircle } from '../../services/api';
+import { cancelFriendRequest, removeFromCircle, updateCircle } from '../../services/api';
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import { formatDate as formatAppDate, daysUntil as appDaysUntil } from '../../utils/date';
-import { useContactRaw, CONTACTS_QUERY_KEY } from './hooks';
+import { useContactRaw, contactDetailQueryKey, CONTACTS_QUERY_KEY } from './hooks';
 import { usePlanStatus } from '../subscription/hooks';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ScreenProps, IconProps } from '../../types/navigation';
@@ -294,6 +296,22 @@ const ClipboardIcon = ({ size = 20, color = '#ca9ad6' }: IconProps) => (
   >
     <Path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
     <Rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+  </Svg>
+);
+
+const EditIcon = ({ size = 18, color = '#ca9ad6' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Path d="M12 20h9" />
+    <Path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
   </Svg>
 );
 
@@ -662,6 +680,33 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
       'Delete',
       'Cancel',
     );
+  };
+
+  // Private note — only this owner's gift_circles row ever has it, and
+  // every owner has their own separate row for the same member, so it's
+  // never visible to the contact themselves even if they've added this
+  // user back.
+  const [editingNote, setEditingNote] = useState(false);
+  const [noteDraft, setNoteDraft] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
+
+  const handleStartEditNote = () => {
+    setNoteDraft(contact.notes || '');
+    setEditingNote(true);
+  };
+
+  const handleSaveNote = async () => {
+    if (savingNote) return;
+    setSavingNote(true);
+    try {
+      await updateCircle(contact.id, { notes: noteDraft.trim() });
+      queryClient.invalidateQueries({ queryKey: contactDetailQueryKey(contact.id) });
+      setEditingNote(false);
+    } catch (error: any) {
+      showError(error.message || 'Failed to save note');
+    } finally {
+      setSavingNote(false);
+    }
   };
 
   // Questionnaire is handled via web form only - commented for potential future use
@@ -1306,15 +1351,61 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
             </Animated.View>
           )}
 
-        {/* Notes */}
-        {contact.notes && (
-          <Animated.View style={[styles.section, createSlideStyle(sectionAnims[4])]}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Notes</Text>
+        {/* Private note — visible only to this contact's owner, never to
+            the contact themselves. */}
+        <Animated.View style={[styles.section, createSlideStyle(sectionAnims[4])]}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Private Note</Text>
+            {!editingNote && (
+              <TouchableOpacity onPress={handleStartEditNote} hitSlop={8}>
+                <EditIcon size={18} color="#ca9ad6" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {editingNote ? (
+            <View>
+              <TextInput
+                style={styles.noteInput}
+                value={noteDraft}
+                onChangeText={setNoteDraft}
+                placeholder="e.g. wants Chanel No. 5"
+                placeholderTextColor="#b8a5c4"
+                multiline
+                autoFocus
+                maxLength={500}
+              />
+              <View style={styles.noteActions}>
+                <TouchableOpacity
+                  style={styles.noteCancelButton}
+                  onPress={() => setEditingNote(false)}
+                  disabled={savingNote}
+                >
+                  <Text style={styles.noteCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.noteSaveButton}
+                  onPress={handleSaveNote}
+                  disabled={savingNote}
+                >
+                  {savingNote ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.noteSaveText}>Save</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
+          ) : contact.notes ? (
             <Text style={styles.notesText}>{contact.notes}</Text>
-          </Animated.View>
-        )}
+          ) : (
+            <TouchableOpacity onPress={handleStartEditNote}>
+              <Text style={styles.emptyText}>
+                Add a private note — only you can see this, even if they use the app too.
+              </Text>
+            </TouchableOpacity>
+          )}
+        </Animated.View>
 
         {/* Pending Friend Request Banner */}
         {contact.isPending && (
@@ -1427,7 +1518,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   headerTitleMask: {
-    fontSize: 22,
+    fontSize: typeScale['3xl'],
     fontFamily: 'Handlee_400Regular',
     textAlign: 'center',
   },
@@ -1453,18 +1544,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   avatarText: {
-    fontSize: 36,
+    fontSize: typeScale['8xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
   contactName: {
-    fontSize: 26,
+    fontSize: typeScale['5xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     textAlign: 'center',
   },
   nickname: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     fontStyle: 'italic',
@@ -1481,10 +1572,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   relationshipEmoji: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
   },
   relationshipText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -1506,7 +1597,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     flex: 1,
@@ -1531,13 +1622,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   infoSubLabel: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#9277ab',
     marginBottom: 2,
   },
   infoText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     flex: 1,
@@ -1556,18 +1647,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   eventEmoji: {
-    fontSize: 22,
+    fontSize: typeScale['3xl'],
   },
   eventDetails: {
     flex: 1,
   },
   eventName: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
   eventDate: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 2,
@@ -1579,7 +1670,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   daysUntilText: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#ca9ad6',
   },
@@ -1587,7 +1678,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   preferenceLabel: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginBottom: 8,
@@ -1604,7 +1695,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   tagText: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -1613,7 +1704,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   plainTagText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -1626,7 +1717,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   gradientTagText: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -1636,7 +1727,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   preferenceDetail: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 8,
@@ -1645,20 +1736,20 @@ const styles = StyleSheet.create({
   // Caption above a free-text answer, mirroring the questionnaire's own
   // question wording so every typed-in field is clearly labelled.
   preferenceSubLabel: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#9277ab',
     marginTop: 12,
     marginBottom: 2,
   },
   preferenceDetailValue: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     fontStyle: 'italic',
   },
   preferenceValue: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     marginTop: 4,
@@ -1671,7 +1762,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   surpriseText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
   },
   causeTag: {
@@ -1681,21 +1772,21 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   causeTagText: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#2e7d32',
   },
   sectionEmoji: {
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
   },
   wishlistTextContent: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     lineHeight: 22,
   },
   linkText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#3a8fb0',
     marginBottom: 6,
@@ -1715,29 +1806,70 @@ const styles = StyleSheet.create({
     minWidth: 80,
   },
   sizeLabel: {
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     textTransform: 'capitalize',
     marginBottom: 4,
   },
   sizeValue: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
   notesText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     lineHeight: 22,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#999',
     textAlign: 'center',
     paddingVertical: 16,
+  },
+  noteInput: {
+    fontSize: typeScale.base,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    backgroundColor: '#f8f3fb',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e8d9f0',
+    padding: 12,
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  noteActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+    marginTop: 12,
+  },
+  noteCancelButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  noteCancelText: {
+    fontSize: typeScale.base,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+  },
+  noteSaveButton: {
+    backgroundColor: '#ca9ad6',
+    borderRadius: 999,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    minWidth: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noteSaveText: {
+    fontSize: typeScale.base,
+    fontFamily: 'Handlee_400Regular',
+    color: '#FFFFFF',
   },
   actionContainer: {
     alignItems: 'center',
@@ -1753,13 +1885,13 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(202, 154, 214, 0.3)',
   },
   pendingBannerTitle: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     marginBottom: 4,
   },
   pendingBannerBody: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     lineHeight: 18,
@@ -1775,7 +1907,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   cancelRequestText: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -1793,7 +1925,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff5f5',
   },
   deleteButtonText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#e53935',
   },
@@ -1812,12 +1944,12 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   actionButtonText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
   actionHint: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 12,

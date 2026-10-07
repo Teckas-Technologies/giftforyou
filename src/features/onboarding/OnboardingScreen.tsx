@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
-import { colors } from '../../theme';
+import { colors, fontSize as typeScale } from '../../theme';
 import { markOnboardingSeenLocal } from '../../services/api';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
@@ -718,7 +718,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   headline: {
-    fontSize: 26,
+    fontSize: typeScale['5xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     textAlign: 'center',
@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
   },
   description: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#4a1a6b',
     textAlign: 'center',
@@ -793,18 +793,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   notifTitle: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
   notifText: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 2,
   },
   notifTime: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -820,7 +820,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   miniCalHeader: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     textAlign: 'center',
     marginBottom: 10,
@@ -837,7 +837,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     textAlignVertical: 'center',
     lineHeight: 40,
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -850,7 +850,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   calDayHighlightText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -935,7 +935,7 @@ const styles = StyleSheet.create({
     borderColor: '#70d0dd',
   },
   contactName: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -973,12 +973,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   giftName: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
   giftPrice: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     marginTop: 2,
   },
@@ -1006,7 +1006,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   pillText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -1048,7 +1048,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
     letterSpacing: 0.5,
@@ -1057,7 +1057,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 18,
     marginBottom: 10,
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -1065,7 +1065,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 18,
     marginBottom: 10,
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#4a1a6b',
   },

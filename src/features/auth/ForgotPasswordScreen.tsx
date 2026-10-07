@@ -21,6 +21,7 @@ import useAlert from '../../hooks/useAlert';
 import { isValidEmail } from '../../lib/validation';
 import { checkEmailRegistered } from '../../services/api';
 import type { ScreenProps, IconProps } from '../../types/navigation';
+import { fontSize as typeScale } from '../../theme';
 
 // Icons
 const BackIcon = ({ size = 24, color = '#6b3a8a' }: IconProps) => (
@@ -376,7 +377,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   headerTitleMask: {
-    fontSize: 22,
+    fontSize: typeScale['3xl'],
     fontFamily: 'Handlee_400Regular',
     textAlign: 'center',
   },
@@ -403,17 +404,17 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   iconEmoji: {
-    fontSize: 48,
+    fontSize: typeScale['10xl'],
   },
   title: {
-    fontSize: 26,
+    fontSize: typeScale['5xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     marginBottom: 12,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     textAlign: 'center',
@@ -447,7 +448,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 16,
     paddingRight: 16,
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -467,7 +468,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   submitButtonText: {
-    fontSize: 17,
+    fontSize: typeScale.xl,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -475,7 +476,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   backLinkText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#ca9ad6',
   },
@@ -500,14 +501,14 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   successTitle: {
-    fontSize: 26,
+    fontSize: typeScale['5xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     marginBottom: 16,
     textAlign: 'center',
   },
   successText: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     textAlign: 'center',
@@ -519,7 +520,7 @@ const styles = StyleSheet.create({
     color: '#ca9ad6',
   },
   successSubtext: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#999',
     textAlign: 'center',
@@ -542,7 +543,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backToLoginText: {
-    fontSize: 17,
+    fontSize: typeScale.xl,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -550,7 +551,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   resendText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },

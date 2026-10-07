@@ -9,7 +9,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { colors, borderRadius, spacing } from '../theme';
+import { colors, borderRadius, spacing, fontSize as typeScale } from '../theme';
 
 interface ButtonProps {
   title: string;
@@ -166,21 +166,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
   },
   smallText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
   },
   mediumContainer: {
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
   },
   mediumText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
   },
   largeContainer: {
     paddingVertical: spacing.base,
     paddingHorizontal: spacing['2xl'],
   },
   largeText: {
-    fontSize: 18,
+    fontSize: typeScale.xl,
   },
 
   // States

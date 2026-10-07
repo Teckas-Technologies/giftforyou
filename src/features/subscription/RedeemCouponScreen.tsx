@@ -18,7 +18,7 @@ import { requestCouponCode, verifyCouponCode, markOnboardingSeen } from '../../s
 import { CustomAlert } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import { useAuth } from '../../contexts/AuthContext';
-import { colors } from '../../theme';
+import { colors, fontSize as typeScale } from '../../theme';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
 const BackIcon = ({ size = 22, color = colors.textLight }: IconProps) => (
@@ -211,6 +211,17 @@ const RedeemCouponScreen = ({ navigation, route }: ScreenProps) => {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        // iOS only: this KeyboardAvoidingView only measures its own frame,
+        // which starts BELOW the back-button header above it — without an
+        // offset it doesn't know that header exists, so the code/email
+        // input (and the 6-digit verification field) can end up hidden
+        // behind the keyboard. Header height here is static (paddingTop:
+        // 50 + the 44pt back button + paddingBottom: 16 = 110), not
+        // insets-based, so the offset is a fixed number rather than
+        // insets.top + remainder. Android is unaffected: windowSoftInputMode
+        // "adjustResize" already resizes the window natively, so adding an
+        // offset there too would double-compensate.
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 0}
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -389,7 +400,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 18,
+    fontSize: typeScale.xl,
     color: colors.textDark,
   },
   scrollContent: {
@@ -412,14 +423,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.secondary,
   },
   title: {
-    fontSize: 24,
+    fontSize: typeScale['4xl'],
     fontFamily: 'Handlee_400Regular',
     color: colors.textDark,
     marginBottom: 8,
   },
   sectionHint: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 14,
+    fontSize: typeScale.base,
     lineHeight: 20,
     color: colors.textLight,
     marginBottom: 24,
@@ -430,7 +441,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 15,
+    fontSize: typeScale.md,
     color: colors.textDark,
     marginBottom: 8,
   },
@@ -453,7 +464,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    fontSize: 16,
+    fontSize: typeScale.lg,
     color: '#333',
   },
   confirmedEmailRow: {
@@ -468,7 +479,7 @@ const styles = StyleSheet.create({
   },
   confirmedEmail: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 14,
+    fontSize: typeScale.base,
     color: colors.textLight,
     flexShrink: 1,
   },
@@ -501,7 +512,7 @@ const styles = StyleSheet.create({
   },
   otpDigit: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 22,
+    fontSize: typeScale['3xl'],
     color: colors.textDark,
   },
   hiddenInput: {
@@ -516,7 +527,7 @@ const styles = StyleSheet.create({
   },
   resendLinkText: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 14,
+    fontSize: typeScale.base,
     color: colors.textLight,
   },
   footer: {
@@ -532,7 +543,7 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 18,
+    fontSize: typeScale.xl,
     color: '#FFFFFF',
   },
 });

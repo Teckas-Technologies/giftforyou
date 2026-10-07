@@ -18,7 +18,7 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Polyline, Rect, Line } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import { colors } from '../../theme';
+import { colors, fontSize as typeScale } from '../../theme';
 import { clearUserCredentials } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { CustomAlert, FoundingMemberBadge } from '../../components';
@@ -626,12 +626,8 @@ const ProfileScreen = ({ navigation }: ScreenProps) => {
       <Sparkle style={[{ top: 140, left: 25 }, sparkle2Style]} size={7} color="#70d0dd" />
       <Sparkle style={[{ top: 100, right: 70 }, sparkle3Style]} size={8} color="#ca9ad6" />
 
-      <ScrollView
-        ref={scrollViewRef}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Profile Card */}
+      {/* Profile Card — fixed, stays in place while the menu below scrolls */}
+      <View style={styles.fixedProfileSection}>
         <Animated.View
           style={[
             styles.profileCardContainer,
@@ -777,7 +773,14 @@ const ProfileScreen = ({ navigation }: ScreenProps) => {
             </View>
           </LinearGradient>
         </Animated.View>
+      </View>
 
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {/* Menu Items */}
         <View style={styles.menuSection}>
           {menuItems.map((item, index) => {
@@ -955,10 +958,17 @@ const styles = StyleSheet.create({
   sparkleInner: {
     borderRadius: 50,
   },
+  scrollView: {
+    flex: 1,
+  },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 50,
+    paddingTop: 8,
     paddingBottom: 120,
+  },
+  fixedProfileSection: {
+    paddingHorizontal: 16,
+    paddingTop: 50,
   },
   profileCardContainer: {
     marginBottom: 24,
@@ -1000,12 +1010,12 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   profileName: {
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
   profileEmail: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginBottom: 20,
@@ -1034,11 +1044,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(202,154,214,0.3)',
   },
   statValueMask: {
-    fontSize: 24,
+    fontSize: typeScale['4xl'],
     fontFamily: 'Handlee_400Regular',
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 4,
@@ -1048,7 +1058,7 @@ const styles = StyleSheet.create({
   },
   menuSectionHeader: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 15,
+    fontSize: typeScale.md,
     color: '#6b3a8a',
     marginBottom: 8,
     marginTop: 6,
@@ -1078,7 +1088,7 @@ const styles = StyleSheet.create({
   },
   menuText: {
     flex: 1,
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -1096,7 +1106,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   logoutText: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -1129,12 +1139,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarInitials: {
-    fontSize: 24,
+    fontSize: typeScale['4xl'],
     fontFamily: 'Handlee_400Regular',
     color: 'white',
   },
   avatarEmoji: {
-    fontSize: 36,
+    fontSize: typeScale['8xl'],
   },
 
   // Themed photo-source bottom sheet
@@ -1165,13 +1175,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   photoSheetTitle: {
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     textAlign: 'center',
   },
   photoSheetSubtitle: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     textAlign: 'center',
@@ -1191,7 +1201,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   photoSheetButtonText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -1201,7 +1211,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   photoSheetCancelText: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },

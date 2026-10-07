@@ -20,6 +20,7 @@ import { LoveNotePopup, SkeletonBlock } from '../../components';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHomeName, useHomeStats, useHomeUpcomingEvents, DEFAULT_STATS } from './hooks';
 import type { ScreenProps, IconProps } from '../../types/navigation';
+import { fontSize as typeScale } from '../../theme';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_WIDTH = SCREEN_WIDTH - 32; // outer scroll has 16px horizontal padding on each side
@@ -747,7 +748,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   homeLabel: {
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     textTransform: 'uppercase',
@@ -755,7 +756,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   greetingMask: {
-    fontSize: 26,
+    fontSize: typeScale['5xl'],
     fontFamily: 'Handlee_400Regular',
     letterSpacing: 0.5,
   },
@@ -803,7 +804,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   statValue: {
-    fontSize: 28,
+    fontSize: typeScale['6xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -814,7 +815,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.5)',
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontFamily: 'Handlee_400Regular',
     color: '#4a1a6b',
     letterSpacing: 0.3,
@@ -827,7 +828,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   sectionLabel: {
-    fontSize: 18,
+    fontSize: typeScale.xl,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     letterSpacing: 0.3,
@@ -837,7 +838,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   seeAllMask: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
   },
   eventsScrollContent: {
@@ -901,20 +902,20 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   birthdayAvatarText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
   },
   birthdayInfo: {
     flex: 1,
   },
   birthdayName: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     letterSpacing: 0.3,
   },
   birthdayRelation: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 2,
@@ -923,7 +924,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   birthdayDate: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#4a1a6b',
   },
@@ -939,7 +940,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   badgeUrgentText: {
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -950,7 +951,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   badgeSoonText: {
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -958,7 +959,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   quickTitle: {
-    fontSize: 18,
+    fontSize: typeScale.xl,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     marginBottom: 12,
@@ -1011,21 +1012,20 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   quickBtnIcon: {
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
   },
   quickBtnTextWhite: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
-    fontWeight: '500',
   },
   quickBtnTextPink: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
   quickBtnTextBlue: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#4a8a9a',
   },
@@ -1071,12 +1071,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
   emptySubtext: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#999',
     marginTop: 4,

@@ -27,6 +27,7 @@ import { useMinDurationRefresh } from '../../hooks/useMinDurationRefresh';
 import useAlert from '../../hooks/useAlert';
 import { usePlanStatus, useInvalidatePlanStatus } from '../subscription/hooks';
 import type { ScreenProps, IconProps } from '../../types/navigation';
+import { fontSize as typeScale } from '../../theme';
 
 // Icons
 const BackIcon = ({ size = 24, color = '#6b3a8a' }: IconProps) => (
@@ -833,7 +834,7 @@ const styles = StyleSheet.create({
     width: 44,
   },
   headerTitleMask: {
-    fontSize: 22,
+    fontSize: typeScale['3xl'],
     fontFamily: 'Handlee_400Regular',
     textAlign: 'center',
   },
@@ -860,7 +861,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     padding: 0,
@@ -884,7 +885,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   resultMetaText: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -919,12 +920,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: typeScale.xl,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
   sectionSubtitle: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 2,
@@ -953,7 +954,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: {
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -962,12 +963,12 @@ const styles = StyleSheet.create({
     marginLeft: 14,
   },
   userName: {
-    fontSize: 17,
+    fontSize: typeScale.xl,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
   mutualText: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 3,
@@ -1013,7 +1014,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   addButtonText: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -1032,13 +1033,13 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     marginBottom: 10,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     textAlign: 'center',
@@ -1052,7 +1053,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fbe5f5',
   },
   inviteButtonText: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#ca9ad6',
   },

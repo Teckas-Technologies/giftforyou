@@ -1,26 +1,51 @@
 {
   "project_info": {
-    "project_number": "634184681428",
-    "project_id": "giftbox4you-c19fb",
-    "storage_bucket": "giftbox4you-c19fb.firebasestorage.app"
+    "project_number": "840677716947",
+    "project_id": "thoughtfully-4ec62",
+    "storage_bucket": "thoughtfully-4ec62.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:634184681428:android:38557fb73bca1905343841",
+        "mobilesdk_app_id": "1:840677716947:android:5a99bd7a61b138cc88b526",
         "android_client_info": {
-          "package_name": "com.thoughtfully.app"
+          "package_name": "com.thoughtfullyapp.mobile"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "840677716947-88m4nh8opad5h9p9gtd0iokth9gud03l.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.thoughtfullyapp.mobile",
+            "certificate_hash": "5b051225097501e1f2d32cef97a26db4d73535ce"
+          }
+        },
+        {
+          "client_id": "840677716947-6i92n8sgb3gkspsm268ilghu05h1sk7o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyD7cT9LVCigvoGci3pv8bhbVRY9j2Dntow"
+          "current_key": "AIzaSyBXDVa6g-y2hjLZ-_V6bQvXxFxOePiOcS0"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "840677716947-24tipbnsvdpm4gh67k8e8dccaa8cje00.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "840677716947-bki23m3nlla6o1d0v13n0f29028sros5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.thoughtfullyapp.mobile"
+              }
+            }
+          ]
         }
       }
     }

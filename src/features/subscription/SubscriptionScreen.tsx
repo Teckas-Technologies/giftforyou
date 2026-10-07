@@ -19,7 +19,7 @@ import {
 } from '../../services/billing';
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
-import { colors } from '../../theme';
+import { colors, fontSize as typeScale } from '../../theme';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
 const BackIcon = ({ size = 24, color = colors.textLight }: IconProps) => (
@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 18,
+    fontSize: typeScale.xl,
     color: colors.textDark,
   },
   loadingContainer: {
@@ -569,14 +569,14 @@ const styles = StyleSheet.create({
   },
   statusTitle: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
     color: colors.textDark,
     textAlign: 'center',
     marginBottom: 6,
   },
   statusSubtitle: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 14,
+    fontSize: typeScale.base,
     color: colors.textLight,
     lineHeight: 20,
     textAlign: 'center',
@@ -590,24 +590,24 @@ const styles = StyleSheet.create({
   },
   statusExpiry: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 12,
+    fontSize: typeScale.sm,
     color: colors.textLight,
   },
   sectionLabel: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 17,
+    fontSize: typeScale.xl,
     color: colors.textLight,
     marginBottom: 12,
   },
   mockDataNotice: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 13,
+    fontSize: typeScale.base,
     color: '#e53935',
     marginBottom: 8,
   },
   emptyText: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 14,
+    fontSize: typeScale.base,
     color: '#999',
     marginBottom: 20,
   },
@@ -645,12 +645,12 @@ const styles = StyleSheet.create({
   },
   savingsBadgeText: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 11,
+    fontSize: typeScale.xs,
     color: '#FFFFFF',
   },
   planOptionLabel: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 15,
+    fontSize: typeScale.md,
     color: colors.textLight,
     marginTop: 6,
   },
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
   },
   planOptionPrice: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 22,
+    fontSize: typeScale['3xl'],
     color: colors.textDark,
     marginTop: 6,
   },
@@ -668,7 +668,7 @@ const styles = StyleSheet.create({
   },
   planOptionSuffix: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 12,
+    fontSize: typeScale.sm,
     color: colors.textLight,
     marginTop: 2,
   },
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
   },
   subscribeButtonText: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 18,
+    fontSize: typeScale.xl,
     color: '#FFFFFF',
   },
   featureList: {
@@ -718,7 +718,7 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 15,
+    fontSize: typeScale.md,
     color: colors.textDark,
     flexShrink: 1,
   },
@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
   },
   footerLinkText: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 14,
+    fontSize: typeScale.base,
     color: colors.textLight,
   },
 });

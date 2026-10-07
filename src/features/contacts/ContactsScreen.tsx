@@ -16,7 +16,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Circle, Line, Rect, Path } from 'react-native-svg';
-import { colors } from '../../theme';
+import { colors, fontSize as typeScale } from '../../theme';
 import { useContacts } from './hooks';
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
@@ -806,12 +806,12 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   headerTitleMask: {
-    fontSize: 24,
+    fontSize: typeScale['4xl'],
     fontFamily: 'Handlee_400Regular',
     textAlign: 'center',
   },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 4,
@@ -869,19 +869,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   discoverTitle: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
   discoverSubtitle: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 2,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -933,14 +933,14 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   tabText: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     lineHeight: 18,
     includeFontPadding: false,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
   tabTextActive: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     lineHeight: 18,
     includeFontPadding: false,
     fontFamily: 'Handlee_400Regular',
@@ -955,7 +955,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabBadgeText: {
-    fontSize: 11,
+    fontSize: typeScale.xs,
     lineHeight: 16,
     includeFontPadding: false,
     fontFamily: 'Handlee_400Regular',
@@ -970,7 +970,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabBadgeTextActive: {
-    fontSize: 11,
+    fontSize: typeScale.xs,
     lineHeight: 16,
     includeFontPadding: false,
     fontFamily: 'Handlee_400Regular',
@@ -994,7 +994,7 @@ const styles = StyleSheet.create({
     borderColor: '#f4cae8',
   },
   viewAllButtonText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#ca9ad6',
   },
@@ -1025,7 +1025,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: {
-    fontSize: 17,
+    fontSize: typeScale.xl,
     fontFamily: 'Handlee_400Regular',
   },
   avatarLocked: {
@@ -1049,7 +1049,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contactName: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -1060,7 +1060,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   birthdayText: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -1070,7 +1070,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   relationTagText: {
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontFamily: 'Handlee_400Regular',
   },
   pendingBadge: {
@@ -1082,7 +1082,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(202, 154, 214, 0.4)',
   },
   pendingBadgeText: {
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -1119,13 +1119,13 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: typeScale.xl,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     marginBottom: 8,
   },
   emptySubtext: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     textAlign: 'center',

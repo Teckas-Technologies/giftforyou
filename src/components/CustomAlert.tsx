@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { fontSize as typeScale } from '../theme';
 import {
   View,
   Text,
@@ -401,14 +402,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     textAlign: 'center',
     marginBottom: 8,
   },
   message: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     textAlign: 'center',
@@ -465,7 +466,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   linkButtonText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#999999',
     textAlign: 'center',
@@ -489,13 +490,13 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   buttonText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     textAlign: 'center',
   },
   primaryButtonText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
     textAlign: 'center',

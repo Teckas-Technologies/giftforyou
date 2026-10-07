@@ -1,4 +1,5 @@
 import React, { ComponentType, useEffect, useRef, useState } from 'react';
+import { fontSize as typeScale } from '../theme';
 import {
   View,
   Text,
@@ -193,11 +194,7 @@ const LoveNotePopup = ({ visible, text, onClose }: LoveNotePopupProps) => {
                 end={{ x: 1, y: 1 }}
                 style={styles.noteBody}
               >
-                <Text style={styles.noteText}>
-                  <Text style={styles.quoteMark}>{'“'}</Text>
-                  {text}
-                  <Text style={styles.quoteMark}>{'”'}</Text>
-                </Text>
+                <Text style={styles.noteText}>{text}</Text>
               </LinearGradient>
 
               <TouchableOpacity activeOpacity={0.85} onPress={onClose} style={styles.closeButton}>
@@ -274,7 +271,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   kicker: {
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontWeight: '700',
     letterSpacing: 1.2,
     textTransform: 'uppercase',
@@ -283,7 +280,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   title: {
-    fontSize: 21,
+    fontSize: 23,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     marginBottom: 16,
@@ -297,13 +294,10 @@ const styles = StyleSheet.create({
   },
   noteText: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 17,
+    fontSize: typeScale.xl,
     lineHeight: 25,
     color: '#330c54',
     textAlign: 'center',
-  },
-  quoteMark: {
-    color: '#ca9ad6',
   },
   closeButton: {
     width: '100%',
@@ -321,8 +315,7 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     fontFamily: 'Handlee_400Regular',
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: typeScale.md,
     color: '#FFFFFF',
   },
 });

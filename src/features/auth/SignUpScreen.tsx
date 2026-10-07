@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { fontSize as typeScale } from '../../theme';
 import {
   View,
   Text,
@@ -547,13 +548,13 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   welcomeText: {
-    fontSize: 24,
+    fontSize: typeScale['4xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     marginBottom: 4,
   },
   subtitleText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginBottom: 22,
@@ -586,7 +587,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 13,
     paddingRight: 14,
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -611,7 +612,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ddd',
   },
   strengthText: {
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontFamily: 'Handlee_400Regular',
     color: '#999',
   },
@@ -619,7 +620,7 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
   },
   errorText: {
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontFamily: 'Handlee_400Regular',
     color: '#F44336',
     marginTop: -6,
@@ -645,7 +646,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   signupButtonText: {
-    fontSize: 17,
+    fontSize: typeScale.xl,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -662,7 +663,7 @@ const styles = StyleSheet.create({
   },
   dividerText: {
     paddingHorizontal: 12,
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#9b8aa3',
   },
@@ -683,7 +684,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   socialButtonText: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -693,12 +694,12 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
   loginText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
   loginLink: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#ca9ad6',
   },

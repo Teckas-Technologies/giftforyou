@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { fontSize as typeScale } from '../../theme';
 import {
   View,
   Text,
@@ -553,11 +554,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitleMask: {
-    fontSize: 26,
+    fontSize: typeScale['5xl'],
     fontFamily: 'Handlee_400Regular',
   },
   headerSubtitle: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 4,
@@ -621,18 +622,18 @@ const styles = StyleSheet.create({
     marginRight: 14,
   },
   emojiText: {
-    fontSize: 26,
+    fontSize: typeScale['5xl'],
   },
   circleInfo: {
     flex: 1,
   },
   circleName: {
-    fontSize: 18,
+    fontSize: typeScale.xl,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
   memberCount: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 3,
@@ -658,7 +659,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   avatarInitial: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -666,7 +667,7 @@ const styles = StyleSheet.create({
     // backgroundColor handled by LinearGradient
   },
   moreText: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
@@ -703,7 +704,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   createText: {
-    fontSize: 17,
+    fontSize: typeScale.xl,
     fontFamily: 'Handlee_400Regular',
     color: '#ca9ad6',
   },

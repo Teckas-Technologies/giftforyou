@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { colors, borderRadius, spacing } from '../theme';
+import { colors, borderRadius, spacing, fontSize as typeScale } from '../theme';
 
 type BadgeVariant = 'default' | 'urgent' | 'soon' | 'later' | 'success' | 'info';
 
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   textBase: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontWeight: '600',
   },
   small: {
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   smallText: {
-    fontSize: 10,
+    fontSize: typeScale.xs,
   },
 
   // Variants

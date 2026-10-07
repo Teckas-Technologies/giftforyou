@@ -22,6 +22,7 @@ import { scheduleEventReminder, saveEventNotificationIds } from '../../services/
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import type { ScreenProps, IconProps } from '../../types/navigation';
+import { fontSize as typeScale } from '../../theme';
 
 // Icons
 const BackIcon = ({ size = 24, color = '#6b3a8a' }: IconProps) => (
@@ -1027,7 +1028,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   headerTitleMask: {
-    fontSize: 22,
+    fontSize: typeScale['3xl'],
     fontFamily: 'Handlee_400Regular',
     textAlign: 'center',
   },
@@ -1055,7 +1056,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   label: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -1067,7 +1068,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
     borderWidth: 1,
@@ -1089,7 +1090,7 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
   },
   selectorText: {
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -1120,15 +1121,15 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   typeEmoji: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
   },
   typeText: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
   typeTextSelected: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -1142,7 +1143,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dateText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -1209,12 +1210,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   reminderText: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
   reminderTextSelected: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -1256,10 +1257,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   saveButtonEmoji: {
-    fontSize: 18,
+    fontSize: typeScale.xl,
   },
   saveButtonText: {
-    fontSize: 18,
+    fontSize: typeScale.xl,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
     letterSpacing: 0.5,
@@ -1291,7 +1292,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   datePickerTitle: {
-    fontSize: 20,
+    fontSize: typeScale['2xl'],
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -1313,7 +1314,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pickerLabel: {
-    fontSize: 12,
+    fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     textAlign: 'center',
@@ -1329,7 +1330,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   confirmButtonText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
@@ -1339,7 +1340,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   clearContactText: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#ca9ad6',
   },
@@ -1366,12 +1367,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   contactEmptyText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },
   contactEmptySubtext: {
-    fontSize: 13,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#999',
     marginTop: 4,
@@ -1399,13 +1400,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   contactAvatarText: {
-    fontSize: 14,
+    fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
   },
   contactName: {
     flex: 1,
-    fontSize: 15,
+    fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
@@ -1439,7 +1440,7 @@ const wheelStyles = StyleSheet.create({
     // Selection handled by indicator
   },
   wheelItemText: {
-    fontSize: 16,
+    fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
   },

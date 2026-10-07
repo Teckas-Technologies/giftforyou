@@ -3,3 +3,4 @@
 export { colors } from './colors';
 export type { ColorToken } from './colors';
 export { spacing, borderRadius, shadows, iconSizes, avatarSizes } from './spacing';
+export { fontSize } from './typography';
