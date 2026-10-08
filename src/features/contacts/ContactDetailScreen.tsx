@@ -11,6 +11,8 @@ import {
   Easing,
   ActivityIndicator,
   Linking,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
@@ -432,6 +434,7 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
   const contentAnim = useRef(new Animated.Value(0)).current;
   const avatarPulse = useRef(new Animated.Value(1)).current;
   const sectionAnims = useRef([...Array(5)].map(() => new Animated.Value(0))).current;
+  const scrollRef = useRef<any>(null);
 
   // Raw contact + preferences payload via React Query — see hooks.js for
   // why revisiting this same contact no longer re-shows a spinner, while
@@ -695,6 +698,19 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
     setEditingNote(true);
   };
 
+  // This screen had no keyboard handling at all before — the note field
+  // sits well below the fold on a long contact page, so without this the
+  // keyboard covered it on both platforms (Android's adjustResize alone
+  // doesn't scroll a specific field into view, only resizes the window).
+  const handleNoteInputFocus = (event: any) => {
+    const nodeHandle = event.target;
+    setTimeout(() => {
+      scrollRef.current
+        ?.getScrollResponder?.()
+        ?.scrollResponderScrollNativeHandleToKeyboard(nodeHandle, 80, true);
+    }, 50);
+  };
+
   const handleSaveNote = async () => {
     if (savingNote) return;
     setSavingNote(true);
@@ -806,680 +822,704 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
         </View>
       )}
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Profile Header */}
-        <Animated.View
-          style={[
-            styles.profileHeader,
-            {
-              opacity: avatarAnim,
-              transform: [{ scale: Animated.multiply(avatarAnim, avatarPulse) }],
-            },
-          ]}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        // Header above (paddingTop 50 + 44px back button + paddingBottom
+        // 16 = 110) sits outside this KeyboardAvoidingView's own frame, so
+        // iOS needs to be told about that extra space explicitly, same
+        // fix applied to SendLoveNoteScreen/RedeemCouponScreen.
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 0}
+      >
+        <ScrollView
+          ref={scrollRef}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
         >
-          <LinearGradient
-            colors={['#ca9ad6', '#70d0dd']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.avatarContainer}
+          {/* Profile Header */}
+          <Animated.View
+            style={[
+              styles.profileHeader,
+              {
+                opacity: avatarAnim,
+                transform: [{ scale: Animated.multiply(avatarAnim, avatarPulse) }],
+              },
+            ]}
           >
-            <Text style={styles.avatarText}>{getInitials(contact.name)}</Text>
-          </LinearGradient>
-          <Text style={styles.contactName}>{contact.name}</Text>
-          {contact.nickname && <Text style={styles.nickname}>"{contact.nickname}"</Text>}
-          <View style={styles.relationshipBadge}>
-            <Text style={styles.relationshipEmoji}>
-              {getRelationshipEmoji(contact.relationship)}
-            </Text>
-            <Text style={styles.relationshipText}>
-              {getRelationshipLabel(contact.relationship)}
-            </Text>
-          </View>
-        </Animated.View>
+            <LinearGradient
+              colors={['#ca9ad6', '#70d0dd']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.avatarContainer}
+            >
+              <Text style={styles.avatarText}>{getInitials(contact.name)}</Text>
+            </LinearGradient>
+            <Text style={styles.contactName}>{contact.name}</Text>
+            {contact.nickname && <Text style={styles.nickname}>"{contact.nickname}"</Text>}
+            <View style={styles.relationshipBadge}>
+              <Text style={styles.relationshipEmoji}>
+                {getRelationshipEmoji(contact.relationship)}
+              </Text>
+              <Text style={styles.relationshipText}>
+                {getRelationshipLabel(contact.relationship)}
+              </Text>
+            </View>
+          </Animated.View>
 
-        {/* Basic Info */}
-        <Animated.View style={[styles.section, createSlideStyle(sectionAnims[0])]}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionEmoji}>👤</Text>
-            <Text style={styles.sectionTitle}>Basic Info</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <View style={styles.infoIcon}>
-              <EmailIcon size={18} color="#6b3a8a" />
+          {/* Basic Info */}
+          <Animated.View style={[styles.section, createSlideStyle(sectionAnims[0])]}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionEmoji}>👤</Text>
+              <Text style={styles.sectionTitle}>Basic Info</Text>
             </View>
-            <View style={styles.infoTextWrap}>
-              <Text style={styles.infoSubLabel}>Email</Text>
-              <Text style={styles.infoText}>{contact.email || 'Not set'}</Text>
-            </View>
-          </View>
-          {contact.phone ? (
             <View style={styles.infoRow}>
               <View style={styles.infoIcon}>
-                <PhoneIcon size={18} color="#6b3a8a" />
+                <EmailIcon size={18} color="#6b3a8a" />
               </View>
               <View style={styles.infoTextWrap}>
-                <Text style={styles.infoSubLabel}>Phone</Text>
-                <Text style={styles.infoText}>{contact.phone}</Text>
+                <Text style={styles.infoSubLabel}>Email</Text>
+                <Text style={styles.infoText}>{contact.email || 'Not set'}</Text>
               </View>
             </View>
-          ) : null}
-          <View style={styles.infoRow}>
-            <View style={styles.infoIcon}>
-              <CalendarIcon size={18} color="#6b3a8a" />
-            </View>
-            <View style={styles.infoTextWrap}>
-              <Text style={styles.infoSubLabel}>Birthday</Text>
-              <Text style={styles.infoText}>{formatDate(contact.birthday)}</Text>
-            </View>
-          </View>
-          {/* Special Dates — anniversaries the contact entered in the
-              questionnaire's basic-info step (returned by the API from its
-              own table, independent of the Upcoming Events list). */}
-          {contact.specialDates.map((sd: any, index: number) => (
-            <View key={`special-${index}`} style={styles.infoRow}>
+            {contact.phone ? (
+              <View style={styles.infoRow}>
+                <View style={styles.infoIcon}>
+                  <PhoneIcon size={18} color="#6b3a8a" />
+                </View>
+                <View style={styles.infoTextWrap}>
+                  <Text style={styles.infoSubLabel}>Phone</Text>
+                  <Text style={styles.infoText}>{contact.phone}</Text>
+                </View>
+              </View>
+            ) : null}
+            <View style={styles.infoRow}>
               <View style={styles.infoIcon}>
                 <CalendarIcon size={18} color="#6b3a8a" />
               </View>
               <View style={styles.infoTextWrap}>
-                <Text style={styles.infoSubLabel}>
-                  {sd.title ? `Special Date — ${sd.title}` : 'Special Date'}
-                </Text>
-                <Text style={styles.infoText}>{formatDate(sd.date)}</Text>
+                <Text style={styles.infoSubLabel}>Birthday</Text>
+                <Text style={styles.infoText}>{formatDate(contact.birthday)}</Text>
               </View>
             </View>
-          ))}
-        </Animated.View>
-
-        {/* Upcoming Events */}
-        <Animated.View style={[styles.section, createSlideStyle(sectionAnims[1])]}>
-          <View style={styles.sectionHeader}>
-            <CalendarIcon size={20} color="#ca9ad6" />
-            <Text style={styles.sectionTitle}>Upcoming Events</Text>
-          </View>
-          {contact.upcomingEvents.length > 0 ? (
-            contact.upcomingEvents.map((event: any) => (
-              <View key={event.id} style={styles.eventCard}>
-                <LinearGradient
-                  colors={['#fbe5f5', '#ccf9ff']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.eventIconBg}
-                >
-                  <Text style={styles.eventEmoji}>🎂</Text>
-                </LinearGradient>
-                <View style={styles.eventDetails}>
-                  <Text style={styles.eventName}>{event.name}</Text>
-                  <Text style={styles.eventDate}>{formatDate(event.date)}</Text>
+            {/* Special Dates — anniversaries the contact entered in the
+              questionnaire's basic-info step (returned by the API from its
+              own table, independent of the Upcoming Events list). */}
+            {contact.specialDates.map((sd: any, index: number) => (
+              <View key={`special-${index}`} style={styles.infoRow}>
+                <View style={styles.infoIcon}>
+                  <CalendarIcon size={18} color="#6b3a8a" />
                 </View>
-                <View style={styles.daysUntilBadge}>
-                  <Text style={styles.daysUntilText}>{event.daysUntil}d</Text>
+                <View style={styles.infoTextWrap}>
+                  <Text style={styles.infoSubLabel}>
+                    {sd.title ? `Special Date — ${sd.title}` : 'Special Date'}
+                  </Text>
+                  <Text style={styles.infoText}>{formatDate(sd.date)}</Text>
                 </View>
               </View>
-            ))
-          ) : (
-            <Text style={styles.emptyText}>No upcoming events</Text>
-          )}
-        </Animated.View>
+            ))}
+          </Animated.View>
 
-        {/* Gift Preferences */}
-        {contact.hasQuestionnaire && (
-          <Animated.View style={[styles.section, createSlideStyle(sectionAnims[2])]}>
+          {/* Upcoming Events */}
+          <Animated.View style={[styles.section, createSlideStyle(sectionAnims[1])]}>
             <View style={styles.sectionHeader}>
-              <GiftIcon size={20} color="#ca9ad6" />
-              <Text style={styles.sectionTitle}>Gift Preferences</Text>
+              <CalendarIcon size={20} color="#ca9ad6" />
+              <Text style={styles.sectionTitle}>Upcoming Events</Text>
             </View>
+            {contact.upcomingEvents.length > 0 ? (
+              contact.upcomingEvents.map((event: any) => (
+                <View key={event.id} style={styles.eventCard}>
+                  <LinearGradient
+                    colors={['#fbe5f5', '#ccf9ff']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.eventIconBg}
+                  >
+                    <Text style={styles.eventEmoji}>🎂</Text>
+                  </LinearGradient>
+                  <View style={styles.eventDetails}>
+                    <Text style={styles.eventName}>{event.name}</Text>
+                    <Text style={styles.eventDate}>{formatDate(event.date)}</Text>
+                  </View>
+                  <View style={styles.daysUntilBadge}>
+                    <Text style={styles.daysUntilText}>{event.daysUntil}d</Text>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.emptyText}>No upcoming events</Text>
+            )}
+          </Animated.View>
 
-            {/* Gift Types */}
-            {contact.preferences.giftTypes?.length > 0 && (
-              <View style={styles.preferenceRow}>
-                <Text style={styles.preferenceLabel}>Loves to receive</Text>
-                <View style={styles.tagContainer}>
-                  {contact.preferences.giftTypes.map((type: any, index: number) => (
-                    <View key={index} style={styles.plainTag}>
-                      <Text style={styles.plainTagText}>
-                        {emojiFor(type)} {type}
+          {/* Gift Preferences */}
+          {contact.hasQuestionnaire && (
+            <Animated.View style={[styles.section, createSlideStyle(sectionAnims[2])]}>
+              <View style={styles.sectionHeader}>
+                <GiftIcon size={20} color="#ca9ad6" />
+                <Text style={styles.sectionTitle}>Gift Preferences</Text>
+              </View>
+
+              {/* Gift Types */}
+              {contact.preferences.giftTypes?.length > 0 && (
+                <View style={styles.preferenceRow}>
+                  <Text style={styles.preferenceLabel}>Loves to receive</Text>
+                  <View style={styles.tagContainer}>
+                    {contact.preferences.giftTypes.map((type: any, index: number) => (
+                      <View key={index} style={styles.plainTag}>
+                        <Text style={styles.plainTagText}>
+                          {emojiFor(type)} {type}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                  {contact.preferences.giftDetails ? (
+                    <>
+                      <Text style={styles.preferenceSubLabel}>
+                        Any specific gift ideas or things you collect?
                       </Text>
-                    </View>
-                  ))}
-                </View>
-                {contact.preferences.giftDetails ? (
-                  <>
-                    <Text style={styles.preferenceSubLabel}>
-                      Any specific gift ideas or things you collect?
-                    </Text>
-                    <Text style={styles.preferenceDetailValue}>
-                      {contact.preferences.giftDetails}
-                    </Text>
-                  </>
-                ) : null}
-              </View>
-            )}
-
-            {/* Interests/Activities */}
-            {contact.preferences.activities?.length > 0 && (
-              <View style={styles.preferenceRow}>
-                <Text style={styles.preferenceLabel}>Interests & Hobbies</Text>
-                <View style={styles.tagContainer}>
-                  {contact.preferences.activities.map((activity: any, index: number) => (
-                    <View key={index} style={styles.plainTag}>
-                      <Text style={styles.plainTagText}>
-                        {emojiFor(activity)} {activity}
+                      <Text style={styles.preferenceDetailValue}>
+                        {contact.preferences.giftDetails}
                       </Text>
-                    </View>
-                  ))}
+                    </>
+                  ) : null}
                 </View>
-                {contact.preferences.activityDetails ? (
-                  <>
-                    <Text style={styles.preferenceSubLabel}>Tell us more about what you enjoy</Text>
-                    <Text style={styles.preferenceDetailValue}>
-                      {contact.preferences.activityDetails}
-                    </Text>
-                  </>
-                ) : null}
-              </View>
-            )}
+              )}
 
-            {/* Personal Style */}
-            {(contact.preferences.style?.length > 0 || contact.preferences.styleOther) && (
-              <View style={styles.preferenceRow}>
-                <Text style={styles.preferenceLabel}>Personal Style</Text>
-                <View style={styles.tagContainer}>
-                  {contact.preferences.style.map((style: any, index: number) => (
-                    <View key={index} style={styles.plainTag}>
-                      <Text style={styles.plainTagText}>
-                        {emojiFor(style)} {style}
+              {/* Interests/Activities */}
+              {contact.preferences.activities?.length > 0 && (
+                <View style={styles.preferenceRow}>
+                  <Text style={styles.preferenceLabel}>Interests & Hobbies</Text>
+                  <View style={styles.tagContainer}>
+                    {contact.preferences.activities.map((activity: any, index: number) => (
+                      <View key={index} style={styles.plainTag}>
+                        <Text style={styles.plainTagText}>
+                          {emojiFor(activity)} {activity}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                  {contact.preferences.activityDetails ? (
+                    <>
+                      <Text style={styles.preferenceSubLabel}>
+                        Tell us more about what you enjoy
                       </Text>
-                    </View>
-                  ))}
+                      <Text style={styles.preferenceDetailValue}>
+                        {contact.preferences.activityDetails}
+                      </Text>
+                    </>
+                  ) : null}
                 </View>
-                {contact.preferences.styleOther ? (
-                  <>
-                    <Text style={styles.preferenceSubLabel}>Describe your style (if Other)</Text>
-                    <Text style={styles.preferenceDetailValue}>
-                      {contact.preferences.styleOther}
-                    </Text>
-                  </>
-                ) : null}
-              </View>
-            )}
+              )}
 
-            {/* Favorite Colors */}
-            {(contact.preferences.colors?.length > 0 || contact.preferences.colorsOther) && (
-              <View style={styles.preferenceRow}>
-                <Text style={styles.preferenceLabel}>Favorite Colors</Text>
-                <View style={styles.tagContainer}>
-                  {contact.preferences.colors.map((color: any, index: number) => (
-                    <View key={index} style={styles.plainTag}>
-                      <Text style={styles.plainTagText}>{color}</Text>
-                    </View>
-                  ))}
+              {/* Personal Style */}
+              {(contact.preferences.style?.length > 0 || contact.preferences.styleOther) && (
+                <View style={styles.preferenceRow}>
+                  <Text style={styles.preferenceLabel}>Personal Style</Text>
+                  <View style={styles.tagContainer}>
+                    {contact.preferences.style.map((style: any, index: number) => (
+                      <View key={index} style={styles.plainTag}>
+                        <Text style={styles.plainTagText}>
+                          {emojiFor(style)} {style}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                  {contact.preferences.styleOther ? (
+                    <>
+                      <Text style={styles.preferenceSubLabel}>Describe your style (if Other)</Text>
+                      <Text style={styles.preferenceDetailValue}>
+                        {contact.preferences.styleOther}
+                      </Text>
+                    </>
+                  ) : null}
                 </View>
-                {contact.preferences.colorsOther ? (
-                  <>
-                    <Text style={styles.preferenceSubLabel}>Any other favorite colors?</Text>
-                    <Text style={styles.preferenceDetailValue}>
-                      {contact.preferences.colorsOther}
-                    </Text>
-                  </>
-                ) : null}
-              </View>
-            )}
+              )}
 
-            {/* Likes Surprises */}
-            {contact.preferences.likesSurprises !== null && (
-              <View style={styles.preferenceRow}>
-                <Text style={styles.preferenceLabel}>Surprise Preference</Text>
-                <View
-                  style={[
-                    styles.surpriseBadge,
-                    { backgroundColor: contact.preferences.likesSurprises ? '#e8f5e9' : '#fff3e0' },
-                  ]}
-                >
-                  <Text
+              {/* Favorite Colors */}
+              {(contact.preferences.colors?.length > 0 || contact.preferences.colorsOther) && (
+                <View style={styles.preferenceRow}>
+                  <Text style={styles.preferenceLabel}>Favorite Colors</Text>
+                  <View style={styles.tagContainer}>
+                    {contact.preferences.colors.map((color: any, index: number) => (
+                      <View key={index} style={styles.plainTag}>
+                        <Text style={styles.plainTagText}>{color}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  {contact.preferences.colorsOther ? (
+                    <>
+                      <Text style={styles.preferenceSubLabel}>Any other favorite colors?</Text>
+                      <Text style={styles.preferenceDetailValue}>
+                        {contact.preferences.colorsOther}
+                      </Text>
+                    </>
+                  ) : null}
+                </View>
+              )}
+
+              {/* Likes Surprises */}
+              {contact.preferences.likesSurprises !== null && (
+                <View style={styles.preferenceRow}>
+                  <Text style={styles.preferenceLabel}>Surprise Preference</Text>
+                  <View
                     style={[
-                      styles.surpriseText,
-                      { color: contact.preferences.likesSurprises ? '#43a047' : '#f57c00' },
+                      styles.surpriseBadge,
+                      {
+                        backgroundColor: contact.preferences.likesSurprises ? '#e8f5e9' : '#fff3e0',
+                      },
                     ]}
                   >
-                    {contact.preferences.likesSurprises
-                      ? '🎉 Loves surprises!'
-                      : '📋 Prefers to know ahead'}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Causes & Values */}
-            {(contact.preferences.causes?.length > 0 || contact.preferences.causesOther) && (
-              <View style={styles.preferenceRow}>
-                <Text style={styles.preferenceLabel}>Causes They Care About</Text>
-                <View style={styles.tagContainer}>
-                  {contact.preferences.causes.map((cause: any, index: number) => (
-                    <View key={index} style={styles.plainTag}>
-                      <Text style={styles.plainTagText}>
-                        {emojiFor(cause)} {cause}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-                {contact.preferences.causesOther ? (
-                  <>
-                    <Text style={styles.preferenceSubLabel}>Other causes or values?</Text>
-                    <Text style={styles.preferenceDetailValue}>
-                      {contact.preferences.causesOther}
+                    <Text
+                      style={[
+                        styles.surpriseText,
+                        { color: contact.preferences.likesSurprises ? '#43a047' : '#f57c00' },
+                      ]}
+                    >
+                      {contact.preferences.likesSurprises
+                        ? '🎉 Loves surprises!'
+                        : '📋 Prefers to know ahead'}
                     </Text>
-                  </>
-                ) : null}
-              </View>
-            )}
-          </Animated.View>
-        )}
+                  </View>
+                </View>
+              )}
 
-        {/* Food & Flowers */}
-        {contact.hasQuestionnaire &&
-          (contact.preferences.flower?.length > 0 ||
-            contact.preferences.flowerDetails ||
-            contact.preferences.cuisines?.length > 0 ||
-            contact.preferences.desserts?.length > 0 ||
-            contact.preferences.cuisineOther ||
-            contact.preferences.favoriteMeal ||
-            contact.preferences.dessertDetails) && (
-            <Animated.View style={[styles.section, createSlideStyle(sectionAnims[3])]}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionEmoji}>🌸</Text>
-                <Text style={styles.sectionTitle}>Food & Flowers</Text>
-              </View>
+              {/* Causes & Values */}
+              {(contact.preferences.causes?.length > 0 || contact.preferences.causesOther) && (
+                <View style={styles.preferenceRow}>
+                  <Text style={styles.preferenceLabel}>Causes They Care About</Text>
+                  <View style={styles.tagContainer}>
+                    {contact.preferences.causes.map((cause: any, index: number) => (
+                      <View key={index} style={styles.plainTag}>
+                        <Text style={styles.plainTagText}>
+                          {emojiFor(cause)} {cause}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                  {contact.preferences.causesOther ? (
+                    <>
+                      <Text style={styles.preferenceSubLabel}>Other causes or values?</Text>
+                      <Text style={styles.preferenceDetailValue}>
+                        {contact.preferences.causesOther}
+                      </Text>
+                    </>
+                  ) : null}
+                </View>
+              )}
+            </Animated.View>
+          )}
 
-              {/* Favorite Flower — chips with the same per-flower emojis the
+          {/* Food & Flowers */}
+          {contact.hasQuestionnaire &&
+            (contact.preferences.flower?.length > 0 ||
+              contact.preferences.flowerDetails ||
+              contact.preferences.cuisines?.length > 0 ||
+              contact.preferences.desserts?.length > 0 ||
+              contact.preferences.cuisineOther ||
+              contact.preferences.favoriteMeal ||
+              contact.preferences.dessertDetails) && (
+              <Animated.View style={[styles.section, createSlideStyle(sectionAnims[3])]}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionEmoji}>🌸</Text>
+                  <Text style={styles.sectionTitle}>Food & Flowers</Text>
+                </View>
+
+                {/* Favorite Flower — chips with the same per-flower emojis the
                 invite form shows, and 🌿 for the form's section-specific
                 "Other" option (other sections use ✨, but flowers uses 🌿). */}
-              {(contact.preferences.flower?.length > 0 || contact.preferences.flowerDetails) && (
-                <View style={styles.preferenceRow}>
-                  <Text style={styles.preferenceLabel}>Favorite Flower</Text>
-                  <View style={styles.tagContainer}>
-                    {contact.preferences.flower.map((flower: any, index: number) => (
-                      <View key={index} style={styles.plainTag}>
-                        <Text style={styles.plainTagText}>
-                          {emojiFor(flower, '🌿')} {flower}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                  {contact.preferences.flowerDetails ? (
-                    <>
-                      <Text style={styles.preferenceSubLabel}>
-                        Any specific flower arrangements you love?
-                      </Text>
-                      <Text style={styles.preferenceDetailValue}>
-                        {contact.preferences.flowerDetails}
-                      </Text>
-                    </>
-                  ) : null}
-                </View>
-              )}
-
-              {/* Cuisines */}
-              {(contact.preferences.cuisines?.length > 0 ||
-                contact.preferences.cuisineOther ||
-                contact.preferences.restaurant ||
-                contact.preferences.favoriteMeal) && (
-                <View style={styles.preferenceRow}>
-                  <Text style={styles.preferenceLabel}>Favorite Cuisines</Text>
-                  <View style={styles.tagContainer}>
-                    {contact.preferences.cuisines.map((cuisine: any, index: number) => (
-                      <View key={index} style={styles.plainTag}>
-                        <Text style={styles.plainTagText}>
-                          {emojiFor(cuisine, '🍴')} {cuisine}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                  {contact.preferences.cuisineOther ? (
-                    <>
-                      <Text style={styles.preferenceSubLabel}>Any other cuisine preferences?</Text>
-                      <Text style={styles.preferenceDetailValue}>
-                        {contact.preferences.cuisineOther}
-                      </Text>
-                    </>
-                  ) : null}
-                  {contact.preferences.restaurant ? (
-                    <>
-                      <Text style={styles.preferenceSubLabel}>🍽️ Your favorite restaurant</Text>
-                      <Text style={styles.preferenceDetailValue}>
-                        {contact.preferences.restaurant}
-                      </Text>
-                    </>
-                  ) : null}
-                  {contact.preferences.favoriteMeal ? (
-                    <>
-                      <Text style={styles.preferenceSubLabel}>
-                        🍲 Your favorite meal at that restaurant
-                      </Text>
-                      <Text style={styles.preferenceDetailValue}>
-                        {contact.preferences.favoriteMeal}
-                      </Text>
-                    </>
-                  ) : null}
-                </View>
-              )}
-
-              {/* Desserts */}
-              {(contact.preferences.desserts?.length > 0 || contact.preferences.dessertDetails) && (
-                <View style={styles.preferenceRow}>
-                  <Text style={styles.preferenceLabel}>Favorite Desserts</Text>
-                  <View style={styles.tagContainer}>
-                    {contact.preferences.desserts.map((dessert: any, index: number) => (
-                      <View key={index} style={styles.plainTag}>
-                        <Text style={styles.plainTagText}>
-                          {emojiFor(dessert, '🍰')} {dessert}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                  {contact.preferences.dessertDetails ? (
-                    <>
-                      <Text style={styles.preferenceSubLabel}>Dessert preferences</Text>
-                      <Text style={styles.preferenceDetailValue}>
-                        {contact.preferences.dessertDetails}
-                      </Text>
-                    </>
-                  ) : null}
-                </View>
-              )}
-            </Animated.View>
-          )}
-
-        {/* Entertainment */}
-        {contact.hasQuestionnaire &&
-          (contact.preferences.musicGenre?.length > 0 ||
-            contact.preferences.movieGenre?.length > 0) && (
-            <Animated.View style={[styles.section, createSlideStyle(sectionAnims[3])]}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionEmoji}>🎬</Text>
-                <Text style={styles.sectionTitle}>Entertainment</Text>
-              </View>
-
-              {/* Music */}
-              {contact.preferences.musicGenre?.length > 0 && (
-                <View style={styles.preferenceRow}>
-                  <Text style={styles.preferenceLabel}>Music Taste</Text>
-                  <View style={styles.tagContainer}>
-                    {contact.preferences.musicGenre.map((genre: any, index: number) => (
-                      <View key={index} style={styles.plainTag}>
-                        <Text style={styles.plainTagText}>
-                          {emojiFor(genre, '🎵')} {genre}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                  {contact.preferences.favoriteArtists ? (
-                    <>
-                      <Text style={styles.preferenceSubLabel}>
-                        Favorite albums, artists, or singers
-                      </Text>
-                      <Text style={styles.preferenceDetailValue}>
-                        {contact.preferences.favoriteArtists}
-                      </Text>
-                    </>
-                  ) : null}
-                </View>
-              )}
-
-              {/* Movies */}
-              {contact.preferences.movieGenre?.length > 0 && (
-                <View style={styles.preferenceRow}>
-                  <Text style={styles.preferenceLabel}>Movie Preferences</Text>
-                  <View style={styles.tagContainer}>
-                    {contact.preferences.movieGenre.map((genre: any, index: number) => (
-                      <View key={index} style={styles.plainTag}>
-                        <Text style={styles.plainTagText}>
-                          {emojiFor(genre, '🎬')} {genre}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                  {contact.preferences.favoriteMovies ? (
-                    <>
-                      <Text style={styles.preferenceSubLabel}>
-                        Specific movies or shows you like
-                      </Text>
-                      <Text style={styles.preferenceDetailValue}>
-                        {contact.preferences.favoriteMovies}
-                      </Text>
-                    </>
-                  ) : null}
-                </View>
-              )}
-            </Animated.View>
-          )}
-
-        {/* Wishlist */}
-        {contact.hasQuestionnaire &&
-          (contact.preferences.wishlistText ||
-            contact.preferences.wishlistLinks?.length > 0 ||
-            contact.preferences.registryLink) && (
-            <Animated.View style={[styles.section, createSlideStyle(sectionAnims[3])]}>
-              <View style={styles.sectionHeader}>
-                <ClipboardIcon size={20} color="#ca9ad6" />
-                <Text style={styles.sectionTitle}>Wishlist & Notes</Text>
-              </View>
-
-              {contact.preferences.wishlistText ? (
-                <View style={styles.preferenceRow}>
-                  <Text style={styles.preferenceLabel}>Anything on your wishlist right now?</Text>
-                  <Text style={styles.wishlistTextContent}>{contact.preferences.wishlistText}</Text>
-                </View>
-              ) : null}
-
-              {contact.preferences.wishlistLinks?.length > 0 && (
-                <View style={styles.preferenceRow}>
-                  <Text style={styles.preferenceLabel}>Wishlist Links</Text>
-                  {contact.preferences.wishlistLinks.map((url: any, index: number) => (
-                    <Text
-                      key={index}
-                      style={styles.linkText}
-                      onPress={() => Linking.openURL(url).catch(() => {})}
-                    >
-                      🔗 {url}
-                    </Text>
-                  ))}
-                </View>
-              )}
-
-              {contact.preferences.registryLink ? (
-                <View style={styles.preferenceRow}>
-                  <Text style={styles.preferenceLabel}>Registry</Text>
-                  <Text
-                    style={styles.linkText}
-                    onPress={() =>
-                      Linking.openURL(contact.preferences.registryLink).catch(() => {})
-                    }
-                  >
-                    🎁 {contact.preferences.registryLink}
-                  </Text>
-                  {contact.preferences.registryDetails ? (
-                    <>
-                      <Text style={styles.preferenceSubLabel}>Registry Details</Text>
-                      <Text style={styles.preferenceDetailValue}>
-                        {contact.preferences.registryDetails}
-                      </Text>
-                    </>
-                  ) : null}
-                  {contact.preferences.registryExpiry ? (
-                    <>
-                      <Text style={styles.preferenceSubLabel}>Registry Expiry Date</Text>
-                      <Text style={styles.preferenceDetailValue}>
-                        {formatAppDate(
-                          contact.preferences.registryExpiry,
-                          { month: 'long', day: 'numeric', year: 'numeric' },
-                          '',
-                        )}
-                      </Text>
-                    </>
-                  ) : null}
-                </View>
-              ) : null}
-            </Animated.View>
-          )}
-
-        {/* Clothing Sizes — saved as a free-text string; older data may be
-            a key→value object, so handle both shapes. */}
-        {contact.hasQuestionnaire &&
-          (typeof contact.preferences.sizes === 'string'
-            ? contact.preferences.sizes.trim().length > 0
-            : contact.preferences.sizes && Object.keys(contact.preferences.sizes).length > 0) && (
-            <Animated.View style={[styles.section, createSlideStyle(sectionAnims[3])]}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionEmoji}>👕</Text>
-                <Text style={styles.sectionTitle}>Clothing / Shoe / Ring Sizes</Text>
-              </View>
-              {typeof contact.preferences.sizes === 'string' ? (
-                <Text style={styles.wishlistTextContent}>{contact.preferences.sizes}</Text>
-              ) : (
-                <View style={styles.sizesGrid}>
-                  {Object.entries(contact.preferences.sizes as Record<string, any>).map(
-                    ([key, value]) =>
-                      value ? (
-                        <View key={key} style={styles.sizeItem}>
-                          <Text style={styles.sizeLabel}>{key}</Text>
-                          <Text style={styles.sizeValue}>{value}</Text>
+                {(contact.preferences.flower?.length > 0 || contact.preferences.flowerDetails) && (
+                  <View style={styles.preferenceRow}>
+                    <Text style={styles.preferenceLabel}>Favorite Flower</Text>
+                    <View style={styles.tagContainer}>
+                      {contact.preferences.flower.map((flower: any, index: number) => (
+                        <View key={index} style={styles.plainTag}>
+                          <Text style={styles.plainTagText}>
+                            {emojiFor(flower, '🌿')} {flower}
+                          </Text>
                         </View>
-                      ) : null,
-                  )}
-                </View>
-              )}
-            </Animated.View>
-          )}
+                      ))}
+                    </View>
+                    {contact.preferences.flowerDetails ? (
+                      <>
+                        <Text style={styles.preferenceSubLabel}>
+                          Any specific flower arrangements you love?
+                        </Text>
+                        <Text style={styles.preferenceDetailValue}>
+                          {contact.preferences.flowerDetails}
+                        </Text>
+                      </>
+                    ) : null}
+                  </View>
+                )}
 
-        {/* Private note — visible only to this contact's owner, never to
+                {/* Cuisines */}
+                {(contact.preferences.cuisines?.length > 0 ||
+                  contact.preferences.cuisineOther ||
+                  contact.preferences.restaurant ||
+                  contact.preferences.favoriteMeal) && (
+                  <View style={styles.preferenceRow}>
+                    <Text style={styles.preferenceLabel}>Favorite Cuisines</Text>
+                    <View style={styles.tagContainer}>
+                      {contact.preferences.cuisines.map((cuisine: any, index: number) => (
+                        <View key={index} style={styles.plainTag}>
+                          <Text style={styles.plainTagText}>
+                            {emojiFor(cuisine, '🍴')} {cuisine}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                    {contact.preferences.cuisineOther ? (
+                      <>
+                        <Text style={styles.preferenceSubLabel}>
+                          Any other cuisine preferences?
+                        </Text>
+                        <Text style={styles.preferenceDetailValue}>
+                          {contact.preferences.cuisineOther}
+                        </Text>
+                      </>
+                    ) : null}
+                    {contact.preferences.restaurant ? (
+                      <>
+                        <Text style={styles.preferenceSubLabel}>🍽️ Your favorite restaurant</Text>
+                        <Text style={styles.preferenceDetailValue}>
+                          {contact.preferences.restaurant}
+                        </Text>
+                      </>
+                    ) : null}
+                    {contact.preferences.favoriteMeal ? (
+                      <>
+                        <Text style={styles.preferenceSubLabel}>
+                          🍲 Your favorite meal at that restaurant
+                        </Text>
+                        <Text style={styles.preferenceDetailValue}>
+                          {contact.preferences.favoriteMeal}
+                        </Text>
+                      </>
+                    ) : null}
+                  </View>
+                )}
+
+                {/* Desserts */}
+                {(contact.preferences.desserts?.length > 0 ||
+                  contact.preferences.dessertDetails) && (
+                  <View style={styles.preferenceRow}>
+                    <Text style={styles.preferenceLabel}>Favorite Desserts</Text>
+                    <View style={styles.tagContainer}>
+                      {contact.preferences.desserts.map((dessert: any, index: number) => (
+                        <View key={index} style={styles.plainTag}>
+                          <Text style={styles.plainTagText}>
+                            {emojiFor(dessert, '🍰')} {dessert}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                    {contact.preferences.dessertDetails ? (
+                      <>
+                        <Text style={styles.preferenceSubLabel}>Dessert preferences</Text>
+                        <Text style={styles.preferenceDetailValue}>
+                          {contact.preferences.dessertDetails}
+                        </Text>
+                      </>
+                    ) : null}
+                  </View>
+                )}
+              </Animated.View>
+            )}
+
+          {/* Entertainment */}
+          {contact.hasQuestionnaire &&
+            (contact.preferences.musicGenre?.length > 0 ||
+              contact.preferences.movieGenre?.length > 0) && (
+              <Animated.View style={[styles.section, createSlideStyle(sectionAnims[3])]}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionEmoji}>🎬</Text>
+                  <Text style={styles.sectionTitle}>Entertainment</Text>
+                </View>
+
+                {/* Music */}
+                {contact.preferences.musicGenre?.length > 0 && (
+                  <View style={styles.preferenceRow}>
+                    <Text style={styles.preferenceLabel}>Music Taste</Text>
+                    <View style={styles.tagContainer}>
+                      {contact.preferences.musicGenre.map((genre: any, index: number) => (
+                        <View key={index} style={styles.plainTag}>
+                          <Text style={styles.plainTagText}>
+                            {emojiFor(genre, '🎵')} {genre}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                    {contact.preferences.favoriteArtists ? (
+                      <>
+                        <Text style={styles.preferenceSubLabel}>
+                          Favorite albums, artists, or singers
+                        </Text>
+                        <Text style={styles.preferenceDetailValue}>
+                          {contact.preferences.favoriteArtists}
+                        </Text>
+                      </>
+                    ) : null}
+                  </View>
+                )}
+
+                {/* Movies */}
+                {contact.preferences.movieGenre?.length > 0 && (
+                  <View style={styles.preferenceRow}>
+                    <Text style={styles.preferenceLabel}>Movie Preferences</Text>
+                    <View style={styles.tagContainer}>
+                      {contact.preferences.movieGenre.map((genre: any, index: number) => (
+                        <View key={index} style={styles.plainTag}>
+                          <Text style={styles.plainTagText}>
+                            {emojiFor(genre, '🎬')} {genre}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                    {contact.preferences.favoriteMovies ? (
+                      <>
+                        <Text style={styles.preferenceSubLabel}>
+                          Specific movies or shows you like
+                        </Text>
+                        <Text style={styles.preferenceDetailValue}>
+                          {contact.preferences.favoriteMovies}
+                        </Text>
+                      </>
+                    ) : null}
+                  </View>
+                )}
+              </Animated.View>
+            )}
+
+          {/* Wishlist */}
+          {contact.hasQuestionnaire &&
+            (contact.preferences.wishlistText ||
+              contact.preferences.wishlistLinks?.length > 0 ||
+              contact.preferences.registryLink) && (
+              <Animated.View style={[styles.section, createSlideStyle(sectionAnims[3])]}>
+                <View style={styles.sectionHeader}>
+                  <ClipboardIcon size={20} color="#ca9ad6" />
+                  <Text style={styles.sectionTitle}>Wishlist & Notes</Text>
+                </View>
+
+                {contact.preferences.wishlistText ? (
+                  <View style={styles.preferenceRow}>
+                    <Text style={styles.preferenceLabel}>Anything on your wishlist right now?</Text>
+                    <Text style={styles.wishlistTextContent}>
+                      {contact.preferences.wishlistText}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {contact.preferences.wishlistLinks?.length > 0 && (
+                  <View style={styles.preferenceRow}>
+                    <Text style={styles.preferenceLabel}>Wishlist Links</Text>
+                    {contact.preferences.wishlistLinks.map((url: any, index: number) => (
+                      <Text
+                        key={index}
+                        style={styles.linkText}
+                        onPress={() => Linking.openURL(url).catch(() => {})}
+                      >
+                        🔗 {url}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+
+                {contact.preferences.registryLink ? (
+                  <View style={styles.preferenceRow}>
+                    <Text style={styles.preferenceLabel}>Registry</Text>
+                    <Text
+                      style={styles.linkText}
+                      onPress={() =>
+                        Linking.openURL(contact.preferences.registryLink).catch(() => {})
+                      }
+                    >
+                      🎁 {contact.preferences.registryLink}
+                    </Text>
+                    {contact.preferences.registryDetails ? (
+                      <>
+                        <Text style={styles.preferenceSubLabel}>Registry Details</Text>
+                        <Text style={styles.preferenceDetailValue}>
+                          {contact.preferences.registryDetails}
+                        </Text>
+                      </>
+                    ) : null}
+                    {contact.preferences.registryExpiry ? (
+                      <>
+                        <Text style={styles.preferenceSubLabel}>Registry Expiry Date</Text>
+                        <Text style={styles.preferenceDetailValue}>
+                          {formatAppDate(
+                            contact.preferences.registryExpiry,
+                            { month: 'long', day: 'numeric', year: 'numeric' },
+                            '',
+                          )}
+                        </Text>
+                      </>
+                    ) : null}
+                  </View>
+                ) : null}
+              </Animated.View>
+            )}
+
+          {/* Clothing Sizes — saved as a free-text string; older data may be
+            a key→value object, so handle both shapes. */}
+          {contact.hasQuestionnaire &&
+            (typeof contact.preferences.sizes === 'string'
+              ? contact.preferences.sizes.trim().length > 0
+              : contact.preferences.sizes && Object.keys(contact.preferences.sizes).length > 0) && (
+              <Animated.View style={[styles.section, createSlideStyle(sectionAnims[3])]}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionEmoji}>👕</Text>
+                  <Text style={styles.sectionTitle}>Clothing / Shoe / Ring Sizes</Text>
+                </View>
+                {typeof contact.preferences.sizes === 'string' ? (
+                  <Text style={styles.wishlistTextContent}>{contact.preferences.sizes}</Text>
+                ) : (
+                  <View style={styles.sizesGrid}>
+                    {Object.entries(contact.preferences.sizes as Record<string, any>).map(
+                      ([key, value]) =>
+                        value ? (
+                          <View key={key} style={styles.sizeItem}>
+                            <Text style={styles.sizeLabel}>{key}</Text>
+                            <Text style={styles.sizeValue}>{value}</Text>
+                          </View>
+                        ) : null,
+                    )}
+                  </View>
+                )}
+              </Animated.View>
+            )}
+
+          {/* Private note — visible only to this contact's owner, never to
             the contact themselves. */}
-        <Animated.View style={[styles.section, createSlideStyle(sectionAnims[4])]}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Private Note</Text>
-            {!editingNote && (
-              <TouchableOpacity onPress={handleStartEditNote} hitSlop={8}>
-                <EditIcon size={18} color="#ca9ad6" />
+          <Animated.View style={[styles.section, createSlideStyle(sectionAnims[4])]}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Private Note</Text>
+              {!editingNote && (
+                <TouchableOpacity onPress={handleStartEditNote} hitSlop={8}>
+                  <EditIcon size={18} color="#ca9ad6" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {editingNote ? (
+              <View>
+                <TextInput
+                  style={styles.noteInput}
+                  value={noteDraft}
+                  onChangeText={setNoteDraft}
+                  onFocus={handleNoteInputFocus}
+                  placeholder="Type your note here..."
+                  placeholderTextColor="#b8a5c4"
+                  multiline
+                  autoFocus
+                  maxLength={500}
+                />
+                <View style={styles.noteActions}>
+                  <TouchableOpacity
+                    style={styles.noteCancelButton}
+                    onPress={() => setEditingNote(false)}
+                    disabled={savingNote}
+                  >
+                    <Text style={styles.noteCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.noteSaveButton}
+                    onPress={handleSaveNote}
+                    disabled={savingNote}
+                  >
+                    {savingNote ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.noteSaveText}>Save</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : contact.notes ? (
+              <Text style={styles.notesText}>{contact.notes}</Text>
+            ) : (
+              <TouchableOpacity onPress={handleStartEditNote}>
+                <Text style={styles.emptyText}>
+                  Add a private note — only you can see this, even if they use the app too.
+                </Text>
               </TouchableOpacity>
             )}
-          </View>
+          </Animated.View>
 
-          {editingNote ? (
-            <View>
-              <TextInput
-                style={styles.noteInput}
-                value={noteDraft}
-                onChangeText={setNoteDraft}
-                placeholder="e.g. wants Chanel No. 5"
-                placeholderTextColor="#b8a5c4"
-                multiline
-                autoFocus
-                maxLength={500}
-              />
-              <View style={styles.noteActions}>
+          {/* Pending Friend Request Banner */}
+          {contact.isPending && (
+            <Animated.View style={[styles.actionContainer, createSlideStyle(sectionAnims[4])]}>
+              <View style={styles.pendingBanner}>
+                <Text style={styles.pendingBannerTitle}>Waiting for response</Text>
+                <Text style={styles.pendingBannerBody}>
+                  You'll see {contact.name?.split(' ')[0] || 'their'} gift preferences once they
+                  accept your request.
+                </Text>
                 <TouchableOpacity
-                  style={styles.noteCancelButton}
-                  onPress={() => setEditingNote(false)}
-                  disabled={savingNote}
+                  style={styles.cancelRequestButton}
+                  onPress={handleCancelRequest}
+                  disabled={cancellingRequest}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.noteCancelText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.noteSaveButton}
-                  onPress={handleSaveNote}
-                  disabled={savingNote}
-                >
-                  {savingNote ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  {cancellingRequest ? (
+                    <ActivityIndicator size="small" color="#6b3a8a" />
                   ) : (
-                    <Text style={styles.noteSaveText}>Save</Text>
+                    <Text style={styles.cancelRequestText}>Cancel Request</Text>
                   )}
                 </TouchableOpacity>
               </View>
-            </View>
-          ) : contact.notes ? (
-            <Text style={styles.notesText}>{contact.notes}</Text>
-          ) : (
-            <TouchableOpacity onPress={handleStartEditNote}>
-              <Text style={styles.emptyText}>
-                Add a private note — only you can see this, even if they use the app too.
-              </Text>
-            </TouchableOpacity>
+            </Animated.View>
           )}
-        </Animated.View>
 
-        {/* Pending Friend Request Banner */}
-        {contact.isPending && (
-          <Animated.View style={[styles.actionContainer, createSlideStyle(sectionAnims[4])]}>
-            <View style={styles.pendingBanner}>
-              <Text style={styles.pendingBannerTitle}>Waiting for response</Text>
-              <Text style={styles.pendingBannerBody}>
-                You'll see {contact.name?.split(' ')[0] || 'their'} gift preferences once they
-                accept your request.
-              </Text>
-              <TouchableOpacity
-                style={styles.cancelRequestButton}
-                onPress={handleCancelRequest}
-                disabled={cancellingRequest}
-                activeOpacity={0.7}
-              >
-                {cancellingRequest ? (
-                  <ActivityIndicator size="small" color="#6b3a8a" />
-                ) : (
-                  <Text style={styles.cancelRequestText}>Cancel Request</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
-        )}
-
-        {/* Send Love Note — any accepted contact WITH a real app account, not
+          {/* Send Love Note — any accepted contact WITH a real app account, not
             gated on questionnaire status like the invite button above (a
             note isn't tied to gift preferences). Guest contacts (invited via
             link, never signed up) have no account to notify, so the backend
             rejects sending to them — hide the button rather than let it lead
             to that dead end. */}
-        {!contact.isPending && contact.hasAccount && (
-          <Animated.View style={[styles.actionContainer, createSlideStyle(sectionAnims[4])]}>
-            <TouchableOpacity activeOpacity={0.7} onPress={handleSendLoveNote}>
-              <LinearGradient
-                colors={['#ca9ad6', '#70d0dd']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.actionButton}
-              >
-                <HeartIcon size={20} color="#FFFFFF" />
-                <Text style={styles.actionButtonText}>Send Love Note</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-            <Text style={styles.actionHint}>Send {contact.name.split(' ')[0]} a sweet note</Text>
-          </Animated.View>
-        )}
+          {!contact.isPending && contact.hasAccount && (
+            <Animated.View style={[styles.actionContainer, createSlideStyle(sectionAnims[4])]}>
+              <TouchableOpacity activeOpacity={0.7} onPress={handleSendLoveNote}>
+                <LinearGradient
+                  colors={['#ca9ad6', '#70d0dd']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.actionButton}
+                >
+                  <HeartIcon size={20} color="#FFFFFF" />
+                  <Text style={styles.actionButtonText}>Send Love Note</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              <Text style={styles.actionHint}>Send {contact.name.split(' ')[0]} a sweet note</Text>
+            </Animated.View>
+          )}
 
-        {/* Delete Contact — paid plans only (see planLimitService.canDeleteContacts
+          {/* Delete Contact — paid plans only (see planLimitService.canDeleteContacts
             on the backend for why free never gets this). Hidden entirely
             rather than shown-disabled, matching the free-plan design. */}
-        {canDeleteContact && !contact.isPending && (
-          <Animated.View style={[styles.actionContainer, createSlideStyle(sectionAnims[4])]}>
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={handleDeleteContact}
-              disabled={deletingContact}
-              activeOpacity={0.7}
-            >
-              {deletingContact ? (
-                <ActivityIndicator size="small" color="#e53935" />
-              ) : (
-                <>
-                  <TrashIcon size={18} color="#e53935" />
-                  <Text style={styles.deleteButtonText}>Delete Contact</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </Animated.View>
-        )}
+          {canDeleteContact && !contact.isPending && (
+            <Animated.View style={[styles.actionContainer, createSlideStyle(sectionAnims[4])]}>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={handleDeleteContact}
+                disabled={deletingContact}
+                activeOpacity={0.7}
+              >
+                {deletingContact ? (
+                  <ActivityIndicator size="small" color="#e53935" />
+                ) : (
+                  <>
+                    <TrashIcon size={18} color="#e53935" />
+                    <Text style={styles.deleteButtonText}>Delete Contact</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </Animated.View>
+          )}
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Custom Alert */}
       <CustomAlert {...alertConfig} onClose={hideAlert} />
