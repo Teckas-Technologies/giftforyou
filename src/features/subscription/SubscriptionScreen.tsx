@@ -357,7 +357,9 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
   const statusSubtitle =
     plan === 'organization' && organizationName
       ? `Access provided by ${organizationName}.`
-      : copy.subtitle;
+      : isLifetimeMember
+        ? 'Welcome to our founding community 💕'
+        : copy.subtitle;
 
   return (
     <View style={styles.container}>
@@ -401,24 +403,22 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
                   end={{ x: 1, y: 0 }}
                   style={styles.ribbon}
                 >
-                  {/* "Founding Member" is longer than "Monthly"/"Yearly",
-                      which the ribbon's fixed width was sized for — it
-                      overflowed past the card's clipped corner. Auto-shrink
-                      instead of guessing a fixed size, so any label length
-                      stays inside the ribbon. `ribbon`'s alignItems:'center'
-                      otherwise lets this Text size to its own content,
-                      which gives adjustsFontSizeToFit nothing to shrink
-                      against — width:'100%' bounds it to the ribbon. */}
+                  {/* "Founding Member" kept overflowing as one line (tried
+                      auto-shrink, then a smaller fixed size — neither fit
+                      reliably). Forcing an explicit line break instead of
+                      hoping word-wrap kicks in at the right width: "FOUNDING"
+                      / "MEMBER" each fit the ribbon easily on their own. */}
                   <Text
-                    style={[styles.ribbonText, { width: '100%', textAlign: 'center' }]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.6}
+                    style={[
+                      styles.ribbonText,
+                      { width: '100%', textAlign: 'center' },
+                      isLifetimeMember && styles.ribbonTextLong,
+                    ]}
+                    numberOfLines={isLifetimeMember ? 2 : 1}
                   >
-                    {(isLifetimeMember
-                      ? 'Founding Member'
-                      : activePeriodLabel.replace(' Plan', '')
-                    ).toUpperCase()}
+                    {isLifetimeMember
+                      ? 'FOUNDING\nMEMBER'
+                      : activePeriodLabel.replace(' Plan', '').toUpperCase()}
                   </Text>
                 </LinearGradient>
               </View>
@@ -440,19 +440,13 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
               <View style={styles.statRow}>
                 <View style={styles.stat}>
                   <Text style={styles.statCap}>Plan</Text>
-                  {/* Wrapping to 2 lines here (while Price/Billing stay on
-                      1) threw off the row's vertical alignment. Shrink to
-                      fit instead of wrapping, so all 3 cells stay 1 line.
-                      `stat`'s alignItems:'center' lets Text size to its own
-                      content by default, which gives adjustsFontSizeToFit
-                      nothing to shrink against — width:'100%' bounds it. */}
-                  <Text
-                    style={[styles.statVal, { width: '100%', textAlign: 'center' }]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                  >
-                    Founding Member
-                  </Text>
+                  {/* Shrinking this to fit 1 line made it visibly smaller
+                      than Price/Billing's text — inconsistent and ugly.
+                      Let it wrap to 2 lines at the SAME size as the other
+                      cells instead; `stat`'s justifyContent:'center' below
+                      keeps all 3 cells vertically centered together so a
+                      taller 2-line cell doesn't throw off the row. */}
+                  <Text style={styles.statVal}>Founding Member</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.stat}>
@@ -746,13 +740,13 @@ const styles = StyleSheet.create({
   // off-card ends get clipped to the card's rounded corners.
   ribbonWrap: {
     position: 'absolute',
-    top: 14,
+    top: 10,
     right: -46,
     transform: [{ rotate: '40deg' }],
   },
   ribbon: {
     width: 170,
-    paddingVertical: 5,
+    paddingVertical: 4,
     paddingHorizontal: 4,
     alignItems: 'center',
     shadowColor: '#B88A1E',
@@ -765,6 +759,12 @@ const styles = StyleSheet.create({
     fontSize: typeScale.sm,
     color: '#5A3C05',
     letterSpacing: 0.5,
+  },
+  // "FOUNDING" / "MEMBER" on 2 lines are each about the same length as
+  // "MONTHLY"/"YEARLY" on 1 — same font size is fine, just tighten the
+  // line spacing so the 2 lines sit close together.
+  ribbonTextLong: {
+    lineHeight: typeScale.sm + 1,
   },
   orbRing: {
     padding: 6,
@@ -826,6 +826,7 @@ const styles = StyleSheet.create({
   stat: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 11,
   },
   statDivider: {

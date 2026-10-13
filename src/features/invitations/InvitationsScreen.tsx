@@ -12,6 +12,8 @@ import {
   Modal,
   ActivityIndicator,
   Share,
+  KeyboardAvoidingView,
+  Platform,
   Keyboard,
   TouchableWithoutFeedback,
 } from 'react-native';
@@ -21,7 +23,6 @@ import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { sendInvitation, resendInvitation } from '../../services/api';
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
-import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
 import { scrollFocusedInputIntoView } from '../../utils/scrollToInput';
 import { isValidEmail } from '../../lib/validation';
 import { useInvitations } from './hooks';
@@ -328,7 +329,6 @@ const InvitationsScreen = ({ navigation, route }: ScreenProps) => {
   const fabPulse = useRef(new Animated.Value(1)).current;
   const modalAnim = useRef(new Animated.Value(0)).current;
   const modalScrollRef = useRef<any>(null);
-  const keyboardHeight = useKeyboardHeight();
 
   useEffect(() => {
     Animated.sequence([
@@ -761,13 +761,11 @@ const InvitationsScreen = ({ navigation, route }: ScreenProps) => {
         onRequestClose={() => closeModal()}
       >
         <View style={styles.modalOverlay}>
-          {/* Plain KeyboardAvoidingView is no help inside an RN Modal on
-              Android (the Modal is its own separate native window, which
-              the behavior can't resize), and only partially helped on iOS
-              (doesn't know to scroll the Personal Message field into view).
-              Measured keyboard height now drives both the ScrollView's
-              bottom padding and that field's onFocus scroll directly. */}
-          <View style={styles.modalKeyboardWrapper}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            enabled={Platform.OS === 'ios'}
+            style={styles.modalKeyboardWrapper}
+          >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
               <View style={styles.modalOverlayInner}>
                 <TouchableOpacity
@@ -822,7 +820,6 @@ const InvitationsScreen = ({ navigation, route }: ScreenProps) => {
                       showsVerticalScrollIndicator={false}
                       keyboardShouldPersistTaps="handled"
                       style={styles.modalScrollContent}
-                      contentContainerStyle={{ paddingBottom: keyboardHeight + 24 }}
                     >
                       <View style={styles.inputContainer}>
                         <Text style={styles.inputLabel}>Friend's Name *</Text>
@@ -941,7 +938,7 @@ const InvitationsScreen = ({ navigation, route }: ScreenProps) => {
                 </Animated.View>
               </View>
             </TouchableWithoutFeedback>
-          </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 

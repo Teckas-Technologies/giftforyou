@@ -12,6 +12,7 @@ import {
   Dimensions,
   ActivityIndicator,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -22,7 +23,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getQuestionnaire, saveQuestionnaire } from '../../services/api';
 import { formatDate as formatAppDate } from '../../utils/date';
 import { CustomAlert, SkeletonBlock } from '../../components';
-import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
 import { scrollFocusedInputIntoView } from '../../utils/scrollToInput';
 import useAlert from '../../hooks/useAlert';
 import type { ScreenProps, IconProps } from '../../types/navigation';
@@ -696,7 +696,6 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
   // Sections share one persistent ScrollView, so its scroll offset carries
   // over between pages. Reset it to the top on every section change.
   const scrollRef = useRef<any>(null);
-  const keyboardHeight = useKeyboardHeight();
 
   // windowSoftInputMode="adjustResize" (Android) / KeyboardAvoidingView's
   // `padding` (iOS) only resize the available space — neither knows which
@@ -1183,17 +1182,14 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
         </View>
       )}
 
-      <View style={styles.keyboardAvoider}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoider}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <ScrollView
           ref={scrollRef}
           showsVerticalScrollIndicator={false}
-          // `KeyboardAvoidingView`'s `padding` behavior only resizes the
-          // available space — it doesn't know which field is focused, so a
-          // question near the bottom of a section stayed covered. Measured
-          // keyboard height drives both this padding AND handleInputFocus's
-          // scroll, as one coherent mechanism instead of two that fought
-          // each other (see useKeyboardHeight.ts).
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: keyboardHeight + 24 }]}
+          contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           removeClippedSubviews={false}
@@ -1246,11 +1242,11 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
 
           {/* Bottom spacer just clears the absolutely-positioned Back /
             Continue buttons (nav sits at bottom:30 + ~50px tall). The
-            keyboard itself is handled by the contentContainerStyle padding
-            above, so no extra room is needed here for the keyboard. */}
+            keyboard itself is handled by KeyboardAvoidingView above, so
+            no extra room is needed here for the keyboard. */}
           <View style={{ height: 120 }} />
         </ScrollView>
-      </View>
+      </KeyboardAvoidingView>
 
       {/* Navigation Buttons */}
       <View style={styles.navButtons}>

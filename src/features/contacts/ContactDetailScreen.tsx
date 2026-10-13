@@ -11,6 +11,8 @@ import {
   Easing,
   ActivityIndicator,
   Linking,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
@@ -18,7 +20,6 @@ import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { cancelFriendRequest, removeFromCircle, updateCircle } from '../../services/api';
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
-import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
 import { scrollFocusedInputIntoView } from '../../utils/scrollToInput';
 import { formatDate as formatAppDate, daysUntil as appDaysUntil } from '../../utils/date';
 import { useContactRaw, contactDetailQueryKey, CONTACTS_QUERY_KEY } from './hooks';
@@ -435,7 +436,6 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
   const avatarPulse = useRef(new Animated.Value(1)).current;
   const sectionAnims = useRef([...Array(5)].map(() => new Animated.Value(0))).current;
   const scrollRef = useRef<any>(null);
-  const keyboardHeight = useKeyboardHeight();
 
   // Raw contact + preferences payload via React Query — see hooks.js for
   // why revisiting this same contact no longer re-shows a spinner, while
@@ -820,16 +820,14 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
         </View>
       )}
 
-      <View style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <ScrollView
           ref={scrollRef}
           showsVerticalScrollIndicator={false}
-          // `KeyboardAvoidingView`'s `padding` behavior only resizes the
-          // available space — it doesn't know which field is focused, so
-          // the note field (well below the fold on this long page) stayed
-          // covered. Measured keyboard height drives both this padding
-          // AND handleNoteInputFocus's scroll, as one coherent mechanism.
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: keyboardHeight + 24 }]}
+          contentContainerStyle={styles.scrollContent}
         >
           {/* Profile Header */}
           <Animated.View
@@ -1517,7 +1515,7 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
 
           <View style={{ height: 40 }} />
         </ScrollView>
-      </View>
+      </KeyboardAvoidingView>
 
       {/* Custom Alert */}
       <CustomAlert {...alertConfig} onClose={hideAlert} />
