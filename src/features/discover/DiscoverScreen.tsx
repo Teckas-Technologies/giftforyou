@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   RefreshControl,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -658,7 +660,10 @@ const DiscoverScreen = ({ navigation }: ScreenProps) => {
   ];
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <LinearGradient
         colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
         locations={[0, 0.3, 0.7, 1]}
@@ -800,7 +805,7 @@ const DiscoverScreen = ({ navigation }: ScreenProps) => {
 
       {/* Custom Alert */}
       <CustomAlert {...alertConfig} onClose={hideAlert} />
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

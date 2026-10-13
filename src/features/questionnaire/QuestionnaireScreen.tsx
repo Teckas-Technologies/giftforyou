@@ -696,14 +696,15 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
   // over between pages. Reset it to the top on every section change.
   const scrollRef = useRef<any>(null);
 
-  // KeyboardAvoidingView's `padding` behavior only resizes the available
-  // space when the keyboard opens — it has no idea which input is focused,
-  // so it can't scroll that specific field into view. For a question near
-  // the bottom of a section, the field was already at the edge of the
-  // visible area, and the keyboard covering that same space with no
-  // compensating scroll left it hidden behind the keyboard while typing.
-  // This explicitly scrolls the focused input above the keyboard.
+  // Android's windowSoftInputMode="adjustResize" (see app.config.js) only
+  // resizes the root window when the keyboard opens — it has no idea which
+  // input is focused, so a question near the bottom of a section can still
+  // end up hidden behind the keyboard. This explicitly scrolls the focused
+  // input above the keyboard, Android-only: iOS instead gets pushed up by
+  // KeyboardAvoidingView's own `padding` behavior below, and running both
+  // at once on iOS stacked and overshot well past the keyboard.
   const handleInputFocus = (event: any) => {
+    if (Platform.OS !== 'android') return;
     const nodeHandle = event.target;
     setTimeout(() => {
       scrollRef.current
@@ -1187,18 +1188,11 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
       )}
 
       <KeyboardAvoidingView
-        // `handleInputFocus` below already scrolls the focused field above
-        // the keyboard on every platform. On iOS that was stacking with
-        // this component's own `padding` behavior — both pushed content up
-        // at once, overshooting well past the keyboard (a big empty gap
-        // above it, unlike Android). Android still needs `padding` here:
-        // unlike iOS it has no native window resize of its own beyond
-        // windowSoftInputMode="adjustResize" (see app.config.js), which
-        // only resizes the root window, not this component's own layout.
-        // iOS gets no behavior at all, so the single manual scroll is the
-        // only thing moving content — matching Android's one-step feel.
+        // iOS: plain `padding` behavior, same as every other screen in the
+        // app (Login/SignUp/Contacts/etc). `handleInputFocus`'s manual
+        // scroll is now Android-only, so the two no longer stack/overshoot.
         style={styles.keyboardAvoider}
-        behavior={Platform.OS === 'android' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
           ref={scrollRef}

@@ -60,7 +60,9 @@ module.exports = {
       backgroundColor: '#FDEEF3',
     },
     ios: {
-      supportsTablet: true,
+      // false: app is iPhone-only — this also means Apple won't require
+      // iPad screenshots for the App Store listing.
+      supportsTablet: false,
       // Changed from com.thoughtfully.app — that Bundle ID is permanently
       // locked to the agency's Apple Developer account once a TestFlight
       // build was uploaded under it (Apple does not release a Bundle ID

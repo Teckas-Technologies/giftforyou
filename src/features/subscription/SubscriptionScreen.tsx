@@ -348,6 +348,11 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
     }
   };
 
+  // The ribbon/stat row already read this from RevenueCat's product id
+  // (see loadData) — reuse it here instead of re-deriving it, so "lifetime"
+  // always means the same thing in both places.
+  const isLifetimeMember = activePeriodLabel === 'Founding Member';
+
   const copy = PLAN_COPY[plan] || PLAN_COPY.free;
   const statusSubtitle =
     plan === 'organization' && organizationName
@@ -396,7 +401,22 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
                   end={{ x: 1, y: 0 }}
                   style={styles.ribbon}
                 >
-                  <Text style={styles.ribbonText}>{activePeriodLabel.replace(' Plan', '')}</Text>
+                  {/* "Founding Member" is longer than "Monthly"/"Yearly",
+                      which the ribbon's fixed width was sized for — it
+                      overflowed past the card's clipped corner. Auto-shrink
+                      instead of guessing a fixed size, so any label length
+                      stays inside the ribbon. */}
+                  <Text
+                    style={styles.ribbonText}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.6}
+                  >
+                    {(isLifetimeMember
+                      ? 'Founding Member'
+                      : activePeriodLabel.replace(' Plan', '')
+                    ).toUpperCase()}
+                  </Text>
                 </LinearGradient>
               </View>
             )}
@@ -413,7 +433,24 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
             <Text style={styles.statusTitle}>{copy.title}</Text>
             <Text style={styles.statusSubtitle}>{statusSubtitle}</Text>
 
-            {plan === 'individual' && planExpiresAt ? (
+            {plan === 'individual' && isLifetimeMember ? (
+              <View style={styles.statRow}>
+                <View style={styles.stat}>
+                  <Text style={styles.statCap}>Plan</Text>
+                  <Text style={styles.statVal}>Founding Member</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.stat}>
+                  <Text style={styles.statCap}>Price</Text>
+                  <Text style={styles.statVal}>{activePriceString || '—'}</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.stat}>
+                  <Text style={styles.statCap}>Billing</Text>
+                  <Text style={styles.statVal}>One-time</Text>
+                </View>
+              </View>
+            ) : plan === 'individual' && planExpiresAt ? (
               <View style={styles.statRow}>
                 <View style={styles.stat}>
                   <Text style={styles.statCap}>Plan</Text>
@@ -445,7 +482,12 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
               )
             )}
 
-            {plan === 'individual' && (
+            {/* Founding Members bought a one-time non-consumable — there is
+                no subscription for Apple/Google's "Manage or cancel" screen
+                to show, so that button would just land them on an empty or
+                unrelated subscriptions page. Only recurring (monthly/yearly)
+                plans get the button. */}
+            {plan === 'individual' && !isLifetimeMember && (
               <TouchableOpacity
                 onPress={handleManageSubscription}
                 style={styles.manageButton}
@@ -454,6 +496,12 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
                 <GearIcon size={15} color={colors.textDark} />
                 <Text style={styles.manageButtonText}>Manage or cancel</Text>
               </TouchableOpacity>
+            )}
+
+            {plan === 'individual' && isLifetimeMember && (
+              <Text style={styles.lifetimeNote}>
+                One-time payment — no subscription to manage or cancel.
+              </Text>
             )}
           </View>
 
@@ -690,12 +738,13 @@ const styles = StyleSheet.create({
   ribbonWrap: {
     position: 'absolute',
     top: 14,
-    right: -36,
+    right: -46,
     transform: [{ rotate: '40deg' }],
   },
   ribbon: {
-    width: 150,
+    width: 170,
     paddingVertical: 5,
+    paddingHorizontal: 4,
     alignItems: 'center',
     shadowColor: '#B88A1E',
     shadowOffset: { width: 0, height: 3 },
@@ -706,7 +755,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
     fontSize: typeScale.sm,
     color: '#5A3C05',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   orbRing: {
     padding: 6,
@@ -802,6 +851,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
     fontSize: typeScale.base,
     color: colors.textDark,
+  },
+  lifetimeNote: {
+    marginTop: 16,
+    fontFamily: 'Handlee_400Regular',
+    fontSize: typeScale.sm,
+    color: colors.textLight,
+    textAlign: 'center',
   },
   sectionLabelRow: {
     flexDirection: 'row',

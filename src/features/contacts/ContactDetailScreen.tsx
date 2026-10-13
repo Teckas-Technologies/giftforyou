@@ -703,6 +703,13 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
   // keyboard covered it on both platforms (Android's adjustResize alone
   // doesn't scroll a specific field into view, only resizes the window).
   const handleNoteInputFocus = (event: any) => {
+    // iOS already gets pushed up by KeyboardAvoidingView's `padding`
+    // behavior below — this legacy scroll-responder API is unreliable
+    // under the New Architecture and was double-pushing content on iOS
+    // (overshooting past the keyboard) when both ran together. Android's
+    // adjustResize only resizes the window, not a specific field into
+    // view, so it still needs this manual scroll.
+    if (Platform.OS !== 'android') return;
     const nodeHandle = event.target;
     setTimeout(() => {
       scrollRef.current
@@ -824,13 +831,10 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        // `handleNoteInputFocus` below already scrolls the focused note
-        // field above the keyboard. Having `padding` behavior active here
-        // too on iOS stacked with that manual scroll — both pushed content
-        // up for the same keyboard event, overshooting past the keyboard.
-        // No behavior on iOS now, same as Android: the single manual
-        // scroll is the only thing moving content on both platforms.
-        behavior={undefined}
+        // iOS: plain `padding` behavior, same as every other screen in the
+        // app (Login/SignUp/Contacts/etc). `handleNoteInputFocus`'s manual
+        // scroll is now Android-only, so the two no longer stack/overshoot.
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
           ref={scrollRef}
