@@ -4,20 +4,17 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Polyline } from 'react-native-svg';
 import { submitLoveNoteIdea } from '../../services/api';
 import { CustomAlert } from '../../components';
 import useAlert from '../../hooks/useAlert';
-import { scrollFocusedInputIntoView } from '../../utils/scrollToInput';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
 const MAX_NOTE_LENGTH = 500;
@@ -90,67 +87,59 @@ const SubmitLoveNoteScreen = ({ navigation }: ScreenProps) => {
         <View style={{ width: 44 }} />
       </View>
 
-      <KeyboardAvoidingView
+      {/* KeyboardAwareScrollView (react-native-keyboard-controller) replaces
+          the old ScrollView + KeyboardAvoidingView combo. It measures the
+          focused field's real on-screen position directly, so (unlike
+          KeyboardAvoidingView, which only knew its own frame) it doesn't
+          need a manual offset to account for the back-button header
+          rendered above it. */}
+      <KeyboardAwareScrollView
+        ref={scrollRef}
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        // iOS only: this KeyboardAvoidingView only wraps the ScrollView
-        // below the back-button header rendered above it, so it has no
-        // idea that header takes up space — without this offset it
-        // under-reserves room for the keyboard and the note input near the
-        // bottom stays hidden behind it. Matches the header's own actual
-        // height: paddingTop (50) + the 44px back button + paddingBottom
-        // (16) = 110. Android doesn't need this — windowSoftInputMode=
-        // "adjustResize" (app.config.js) already resizes the whole window
-        // for it, so adding an offset there too would double-compensate.
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 0}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        bottomOffset={24}
       >
-        <ScrollView
-          ref={scrollRef}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          <Text style={styles.sectionLabel}>Your idea</Text>
-          <Text style={styles.sectionHint}>
-            Got a love note idea? Suggest it here — if we love it, we'll add it to the app!
-          </Text>
-          <TextInput
-            style={styles.noteInput}
-            value={noteText}
-            onChangeText={setNoteText}
-            onFocus={(e) => scrollFocusedInputIntoView(e, scrollRef)}
-            placeholder="E.g., You are capable of amazing things"
-            placeholderTextColor="#b8a5c4"
-            multiline
-            maxLength={MAX_NOTE_LENGTH}
-            textAlignVertical="top"
-          />
-          <Text style={styles.charCount}>
-            {noteText.length}/{MAX_NOTE_LENGTH}
-          </Text>
+        <Text style={styles.sectionLabel}>Your idea</Text>
+        <Text style={styles.sectionHint}>
+          Got a love note idea? Suggest it here — if we love it, we'll add it to the app!
+        </Text>
+        <TextInput
+          style={styles.noteInput}
+          value={noteText}
+          onChangeText={setNoteText}
+          placeholder="E.g., You are capable of amazing things"
+          placeholderTextColor="#b8a5c4"
+          multiline
+          maxLength={MAX_NOTE_LENGTH}
+          textAlignVertical="top"
+        />
+        <Text style={styles.charCount}>
+          {noteText.length}/{MAX_NOTE_LENGTH}
+        </Text>
 
-          <View style={styles.footer}>
-            <TouchableOpacity
-              disabled={!canSubmit}
-              onPress={handleSubmit}
-              activeOpacity={0.8}
-              style={{ opacity: canSubmit ? 1 : 0.5 }}
+        <View style={styles.footer}>
+          <TouchableOpacity
+            disabled={!canSubmit}
+            onPress={handleSubmit}
+            activeOpacity={0.8}
+            style={{ opacity: canSubmit ? 1 : 0.5 }}
+          >
+            <LinearGradient
+              colors={['#ca9ad6', '#70d0dd']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.submitButton}
             >
-              <LinearGradient
-                colors={['#ca9ad6', '#70d0dd']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.submitButton}
-              >
-                {submitting ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.submitButtonText}>Submit Love Note 💌</Text>
-                )}
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+              {submitting ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.submitButtonText}>Submit Love Note 💌</Text>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAwareScrollView>
 
       <CustomAlert {...alertConfig} onClose={hideAlert} />
     </View>

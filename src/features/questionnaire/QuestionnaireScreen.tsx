@@ -4,7 +4,6 @@ import {
   Text,
   Image,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   TextInput,
   Animated,
@@ -12,8 +11,8 @@ import {
   Dimensions,
   ActivityIndicator,
   Platform,
-  KeyboardAvoidingView,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
@@ -23,7 +22,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getQuestionnaire, saveQuestionnaire } from '../../services/api';
 import { formatDate as formatAppDate } from '../../utils/date';
 import { CustomAlert, SkeletonBlock } from '../../components';
-import { scrollFocusedInputIntoView } from '../../utils/scrollToInput';
 import useAlert from '../../hooks/useAlert';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 import { fontSize as typeScale } from '../../theme';
@@ -697,17 +695,6 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
   // over between pages. Reset it to the top on every section change.
   const scrollRef = useRef<any>(null);
 
-  // windowSoftInputMode="adjustResize" (Android) / KeyboardAvoidingView's
-  // `padding` (iOS) only resize the available space — neither knows which
-  // input is focused, so a question near the bottom of a section can still
-  // end up hidden behind the keyboard. This scrolls the focused input above
-  // it directly, on both platforms, using the modern UIManager.measureLayout
-  // (the old scrollResponderScrollNativeHandleToKeyboard this replaced is
-  // unreliable under the New Architecture).
-  const handleInputFocus = (event: any) => {
-    scrollFocusedInputIntoView(event, scrollRef);
-  };
-
   useEffect(() => {
     Animated.timing(contentAnim, {
       toValue: 1,
@@ -952,7 +939,6 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
               placeholderTextColor="#999"
               value={answers[question.id] || ''}
               onChangeText={(text) => handleTextChange(question.id, text)}
-              onFocus={handleInputFocus}
               multiline={false}
             />
           </View>
@@ -971,7 +957,6 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
               placeholderTextColor="#999"
               value={answers[question.id] || ''}
               onChangeText={(text) => handleTextChange(question.id, text)}
-              onFocus={handleInputFocus}
               multiline={false}
               keyboardType="url"
               autoCapitalize="none"
@@ -1031,7 +1016,6 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
               placeholderTextColor="#999"
               value={answers[question.id] || ''}
               onChangeText={(text) => handleTextChange(question.id, text)}
-              onFocus={handleInputFocus}
               multiline
               numberOfLines={6}
               textAlignVertical="top"
@@ -1182,71 +1166,73 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
         </View>
       )}
 
-      <KeyboardAvoidingView
+      {/* KeyboardAwareScrollView (react-native-keyboard-controller) replaces
+          the old ScrollView + KeyboardAvoidingView + manual scroll-to-field
+          combo — it measures the keyboard and the focused input on the UI
+          thread and scrolls automatically, which is what a question near
+          the bottom of a section actually needed. */}
+      <KeyboardAwareScrollView
+        ref={scrollRef}
         style={styles.keyboardAvoider}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        removeClippedSubviews={false}
+        bottomOffset={24}
       >
-        <ScrollView
-          ref={scrollRef}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          removeClippedSubviews={false}
-        >
-          {!loading && (
-            <Animated.View
-              style={[
-                styles.sectionContainer,
-                {
-                  opacity: contentAnim,
-                  transform: [
-                    {
-                      translateX: contentAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [30, 0],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            >
-              {/* Section Header */}
-              <View style={styles.sectionHeader}>
+        {!loading && (
+          <Animated.View
+            style={[
+              styles.sectionContainer,
+              {
+                opacity: contentAnim,
+                transform: [
+                  {
+                    translateX: contentAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [30, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            {/* Section Header */}
+            <View style={styles.sectionHeader}>
+              <LinearGradient
+                colors={['#fbe5f5', '#ccf9ff']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.sectionEmojiBg}
+              >
+                <Text style={styles.sectionEmoji}>{section.emoji}</Text>
+              </LinearGradient>
+              <MaskedView
+                maskElement={<Text style={styles.sectionTitleMask}>{section.title}</Text>}
+              >
                 <LinearGradient
-                  colors={['#fbe5f5', '#ccf9ff']}
+                  colors={['#ca9ad6', '#70d0dd']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  style={styles.sectionEmojiBg}
                 >
-                  <Text style={styles.sectionEmoji}>{section.emoji}</Text>
+                  <Text style={[styles.sectionTitleMask, { opacity: 0 }]}>{section.title}</Text>
                 </LinearGradient>
-                <MaskedView
-                  maskElement={<Text style={styles.sectionTitleMask}>{section.title}</Text>}
-                >
-                  <LinearGradient
-                    colors={['#ca9ad6', '#70d0dd']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                  >
-                    <Text style={[styles.sectionTitleMask, { opacity: 0 }]}>{section.title}</Text>
-                  </LinearGradient>
-                </MaskedView>
-                <Text style={styles.sectionSubtitle}>{section.subtitle}</Text>
-              </View>
+              </MaskedView>
+              <Text style={styles.sectionSubtitle}>{section.subtitle}</Text>
+            </View>
 
-              {/* Questions */}
-              {section.questions.map(renderQuestion)}
-            </Animated.View>
-          )}
+            {/* Questions */}
+            {section.questions.map(renderQuestion)}
+          </Animated.View>
+        )}
 
-          {/* Bottom spacer just clears the absolutely-positioned Back /
+        {/* Bottom spacer just clears the absolutely-positioned Back /
             Continue buttons (nav sits at bottom:30 + ~50px tall). The
-            keyboard itself is handled by KeyboardAvoidingView above, so
+            keyboard itself is handled by KeyboardAwareScrollView above, so
             no extra room is needed here for the keyboard. */}
-          <View style={{ height: 120 }} />
-        </ScrollView>
-      </KeyboardAvoidingView>
+        <View style={{ height: 120 }} />
+      </KeyboardAwareScrollView>
 
       {/* Navigation Buttons */}
       <View style={styles.navButtons}>
@@ -1297,6 +1283,11 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
           only tapping outside would dismiss it). */}
       {pickerFor && Platform.OS === 'ios' && (
         <View style={styles.datePickerOverlay}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            onPress={() => setPickerFor(null)}
+            activeOpacity={1}
+          />
           <View style={styles.datePickerCard}>
             <DateTimePicker
               value={isoToDate(answers[pickerFor])}
@@ -1593,10 +1584,10 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   datePickerDoneButton: {
-    marginTop: 8,
-    alignSelf: 'flex-end',
-    paddingVertical: 10,
-    paddingHorizontal: 22,
+    marginTop: 12,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    paddingVertical: 12,
     borderRadius: 12,
     backgroundColor: '#ca9ad6',
   },

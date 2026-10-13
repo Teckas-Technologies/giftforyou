@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import * as Notifications from 'expo-notifications';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './src/lib/queryClient';
@@ -172,12 +173,19 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
-        <AuthProvider>
-          <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
-            <StatusBar style="dark" />
-            <AppNavigator />
-          </View>
-        </AuthProvider>
+        {/* Required once at the app root by react-native-keyboard-controller
+            (KeyboardAwareScrollView, used on the screens with multiline
+            textareas, needs this context to exist somewhere above it). Pure
+            context provider, renders no UI — screens that don't use the
+            library are unaffected. */}
+        <KeyboardProvider>
+          <AuthProvider>
+            <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+              <StatusBar style="dark" />
+              <AppNavigator />
+            </View>
+          </AuthProvider>
+        </KeyboardProvider>
       </SafeAreaProvider>
     </QueryClientProvider>
   );

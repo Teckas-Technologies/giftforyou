@@ -8,12 +8,11 @@ import {
   TextInput,
   Animated,
   Easing,
-  Platform,
-  KeyboardAvoidingView,
   Modal,
   ActivityIndicator,
   FlatList,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
@@ -21,7 +20,6 @@ import { createEvent, getCircles } from '../../services/api';
 import { scheduleEventReminder, saveEventNotificationIds } from '../../services/notifications';
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
-import { scrollFocusedInputIntoView } from '../../utils/scrollToInput';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 import { fontSize as typeScale } from '../../theme';
 
@@ -541,10 +539,7 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
   const days = Array.from({ length: getDaysInMonth(selectedMonth, selectedYear) }, (_, i) => i + 1);
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <View style={styles.container}>
       <LinearGradient
         colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
         locations={[0, 0.3, 0.7, 1]}
@@ -585,10 +580,16 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
         <View style={{ width: 44 }} />
       </Animated.View>
 
-      <ScrollView
+      {/* KeyboardAwareScrollView (react-native-keyboard-controller) replaces
+          the old ScrollView + KeyboardAvoidingView + manual scroll-to-field
+          combo — it measures the keyboard and the focused input on the UI
+          thread and scrolls automatically, which is what the Notes field
+          (last/lowest in this form) actually needed. */}
+      <KeyboardAwareScrollView
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        bottomOffset={24}
         keyboardShouldPersistTaps="handled"
       >
         <Animated.View style={[styles.formContainer, { opacity: formAnim }]}>
@@ -766,7 +767,6 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
               style={[styles.input, styles.notesInput]}
               value={notes}
               onChangeText={setNotes}
-              onFocus={(e) => scrollFocusedInputIntoView(e, scrollRef)}
               placeholder="Add any notes or gift ideas..."
               placeholderTextColor="#999"
               multiline
@@ -777,7 +777,7 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
         </Animated.View>
 
         <View style={{ height: 120 }} />
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       {/* Save Button - Enhanced UI */}
       <Animated.View
@@ -1001,7 +1001,7 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
 
       {/* Custom Alert */}
       <CustomAlert {...alertConfig} onClose={hideAlert} />
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 

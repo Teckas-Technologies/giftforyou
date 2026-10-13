@@ -7,16 +7,14 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Polyline } from 'react-native-svg';
 import { getCircles, sendLoveNote } from '../../services/api';
 import { CustomAlert, SkeletonBlock } from '../../components';
 import useAlert from '../../hooks/useAlert';
-import { scrollFocusedInputIntoView } from '../../utils/scrollToInput';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 import { fontSize as typeScale } from '../../theme';
 
@@ -216,25 +214,18 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
           </TouchableOpacity>
         </View>
       ) : (
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          // iOS only: this KeyboardAvoidingView only measures its own frame,
-          // which starts BELOW the back-button header above it — without an
-          // offset it doesn't know that header exists, so the note textarea
-          // near the bottom of the form ends up hidden behind the keyboard.
-          // Header height here is static (paddingTop: 50 + the 44pt back
-          // button + paddingBottom: 16 = 110), not insets-based, so the
-          // offset is a fixed number rather than insets.top + remainder.
-          // Android is unaffected: windowSoftInputMode="adjustResize"
-          // already resizes the window natively, so adding an offset there
-          // too would double-compensate.
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 0}
-        >
-          <ScrollView
+        <View style={{ flex: 1 }}>
+          {/* KeyboardAwareScrollView (react-native-keyboard-controller)
+              replaces the old ScrollView + KeyboardAvoidingView combo. It
+              measures the focused field's real on-screen position directly,
+              so (unlike KeyboardAvoidingView, which only knew its own
+              frame) it doesn't need a manual offset to account for the
+              back-button header rendered above it. */}
+          <KeyboardAwareScrollView
             ref={scrollRef}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
+            bottomOffset={24}
           >
             <Text style={styles.sectionLabel}>To</Text>
             {preselectedCircleId ? (
@@ -329,7 +320,6 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
               style={styles.noteInput}
               value={noteText}
               onChangeText={setNoteText}
-              onFocus={(e) => scrollFocusedInputIntoView(e, scrollRef)}
               placeholder="Write something sweet..."
               placeholderTextColor="#b8a5c4"
               multiline
@@ -361,8 +351,8 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
                 </LinearGradient>
               </TouchableOpacity>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+          </KeyboardAwareScrollView>
+        </View>
       )}
 
       <CustomAlert {...alertConfig} onClose={hideAlert} />

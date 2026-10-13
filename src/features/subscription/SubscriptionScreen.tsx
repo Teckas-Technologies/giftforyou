@@ -446,7 +446,11 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
                       cells instead; `stat`'s justifyContent:'center' below
                       keeps all 3 cells vertically centered together so a
                       taller 2-line cell doesn't throw off the row. */}
-                  <Text style={styles.statVal}>Founding Member</Text>
+                  {/* Wrapping to 2 lines left-aligns each line by default
+                      (RN's default Text alignment) — "Member" started at
+                      the same left edge as "Founding" instead of sitting
+                      centered under it. */}
+                  <Text style={[styles.statVal, { textAlign: 'center' }]}>Founding Member</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.stat}>
@@ -764,7 +768,8 @@ const styles = StyleSheet.create({
   // "MONTHLY"/"YEARLY" on 1 — same font size is fine, just tighten the
   // line spacing so the 2 lines sit close together.
   ribbonTextLong: {
-    lineHeight: typeScale.sm + 1,
+    fontSize: 10,
+    lineHeight: 11,
   },
   orbRing: {
     padding: 6,

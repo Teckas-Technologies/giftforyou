@@ -12,18 +12,16 @@ import {
   Modal,
   ActivityIndicator,
   Share,
-  KeyboardAvoidingView,
-  Platform,
   Keyboard,
   TouchableWithoutFeedback,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { sendInvitation, resendInvitation } from '../../services/api';
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
-import { scrollFocusedInputIntoView } from '../../utils/scrollToInput';
 import { isValidEmail } from '../../lib/validation';
 import { useInvitations } from './hooks';
 import { usePlanStatus, useInvalidatePlanStatus } from '../subscription/hooks';
@@ -761,11 +759,7 @@ const InvitationsScreen = ({ navigation, route }: ScreenProps) => {
         onRequestClose={() => closeModal()}
       >
         <View style={styles.modalOverlay}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            enabled={Platform.OS === 'ios'}
-            style={styles.modalKeyboardWrapper}
-          >
+          <View style={styles.modalKeyboardWrapper}>
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
               <View style={styles.modalOverlayInner}>
                 <TouchableOpacity
@@ -815,11 +809,19 @@ const InvitationsScreen = ({ navigation, route }: ScreenProps) => {
                       We'll email them the questionnaire link automatically.
                     </Text>
 
-                    <ScrollView
+                    {/* KeyboardAwareScrollView (react-native-keyboard-controller)
+                        replaces the old ScrollView + outer KeyboardAvoidingView +
+                        manual scroll-to-field combo — it measures the keyboard
+                        and the focused Personal Message field on the UI thread
+                        and scrolls automatically, and (unlike plain
+                        KeyboardAvoidingView) works correctly inside this RN
+                        Modal on Android too. */}
+                    <KeyboardAwareScrollView
                       ref={modalScrollRef}
                       showsVerticalScrollIndicator={false}
                       keyboardShouldPersistTaps="handled"
                       style={styles.modalScrollContent}
+                      bottomOffset={24}
                     >
                       <View style={styles.inputContainer}>
                         <Text style={styles.inputLabel}>Friend's Name *</Text>
@@ -888,7 +890,6 @@ const InvitationsScreen = ({ navigation, route }: ScreenProps) => {
                           style={[styles.input, styles.inputMultiline]}
                           value={newMessage}
                           onChangeText={setNewMessage}
-                          onFocus={(e) => scrollFocusedInputIntoView(e, modalScrollRef)}
                           placeholder="Add a personal note..."
                           placeholderTextColor="#999"
                           multiline
@@ -933,12 +934,12 @@ const InvitationsScreen = ({ navigation, route }: ScreenProps) => {
                       </TouchableOpacity>
 
                       <View style={{ height: 20 }} />
-                    </ScrollView>
+                    </KeyboardAwareScrollView>
                   </LinearGradient>
                 </Animated.View>
               </View>
             </TouchableWithoutFeedback>
-          </KeyboardAvoidingView>
+          </View>
         </View>
       </Modal>
 
