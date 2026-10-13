@@ -153,6 +153,7 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
   const [activePeriodLabel, setActivePeriodLabel] = useState<string | null>(null);
   const [activePriceString, setActivePriceString] = useState<string | null>(null);
   const [organizationName, setOrganizationName] = useState<string | null>(null);
+  const [isFoundingMember, setIsFoundingMember] = useState(false);
   const [offerings, setOfferings] = useState<any[]>([]);
   const [offeringsError, setOfferingsError] = useState(false);
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
@@ -168,6 +169,9 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
       setPlan(status.plan || 'free');
       setPlanExpiresAt(status.planExpiresAt || null);
       setOrganizationName(status.organizationName || null);
+      // Eligibility for the $24 lifetime price — based on signup order
+      // (first 5,000 accounts), not a separate purchase race.
+      setIsFoundingMember(!!status.isFoundingMember);
 
       // Backend's `plan` only stores the tier ('individual'), not which
       // product backs it — read that straight from RevenueCat so the UI can
@@ -181,7 +185,9 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
               ? 'Yearly Plan'
               : productId.includes('monthly')
                 ? 'Monthly Plan'
-                : null,
+                : productId.includes('founding_lifetime')
+                  ? 'Founding Member'
+                  : null,
           );
           setActivePriceString(productId ? await getProductPrice(productId) : null);
         } catch {
@@ -218,15 +224,21 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
     }, [loadData]),
   );
 
-  // Monthly first, Yearly second — matches how most subscription pages lay
-  // out the choice, cheapest-commitment to biggest-commitment.
+  // Monthly, then Yearly, then the $24 lifetime option last (it's the
+  // standout/exclusive choice) — and the lifetime package is stripped out
+  // entirely for anyone who isn't eligible (signup-order based, see
+  // `isFoundingMember` above), so non-Founding-Members never see it at all.
   const sortedOfferings = useMemo(() => {
-    const rank = (pkg: any) => (pkg.packageType === 'ANNUAL' ? 1 : 0);
-    return [...offerings].sort((a, b) => rank(a) - rank(b));
-  }, [offerings]);
+    const rank = (pkg: any) =>
+      pkg.packageType === 'ANNUAL' ? 1 : pkg.packageType === 'LIFETIME' ? 2 : 0;
+    return [...offerings]
+      .filter((pkg) => pkg.packageType !== 'LIFETIME' || isFoundingMember)
+      .sort((a, b) => rank(a) - rank(b));
+  }, [offerings, isFoundingMember]);
 
   const monthly = sortedOfferings.find((p) => p.packageType === 'MONTHLY');
   const yearly = sortedOfferings.find((p) => p.packageType === 'ANNUAL');
+  const lifetime = sortedOfferings.find((p) => p.packageType === 'LIFETIME');
   // % saved per year choosing Yearly over paying Monthly x12, only
   // computable when both a monthly and yearly price actually exist.
   const yearlySavingsPercent =
@@ -235,13 +247,13 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
       : null;
 
   // Default to whichever the offering itself marks as current/first, but
-  // prefer Yearly when both exist — it's the better deal, worth defaulting
-  // to like most subscription pages do.
+  // prefer the $24 lifetime deal when it's available (best value, and
+  // exclusive to Founding Members) — otherwise Yearly, same as before.
   useEffect(() => {
     if (!selectedId && sortedOfferings.length) {
-      setSelectedId((yearly || sortedOfferings[0]).identifier);
+      setSelectedId((lifetime || yearly || sortedOfferings[0]).identifier);
     }
-  }, [sortedOfferings, yearly, selectedId]);
+  }, [sortedOfferings, yearly, lifetime, selectedId]);
 
   const selectedPackage =
     sortedOfferings.find((p) => p.identifier === selectedId) || sortedOfferings[0];
@@ -473,16 +485,21 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
                       (pkg) => {
                         const isSelected = selectedId === pkg.identifier;
                         const isYearly = pkg.packageType === 'ANNUAL';
+                        const isLifetime = pkg.packageType === 'LIFETIME';
                         const periodLabel = isYearly
                           ? 'Yearly'
                           : pkg.packageType === 'MONTHLY'
                             ? 'Monthly'
-                            : pkg.product.title;
+                            : isLifetime
+                              ? 'Lifetime'
+                              : pkg.product.title;
                         const periodSuffix = isYearly
                           ? '/ year'
                           : pkg.packageType === 'MONTHLY'
                             ? '/ month'
-                            : '';
+                            : isLifetime
+                              ? 'once'
+                              : '';
                         return (
                           <TouchableOpacity
                             key={pkg.identifier}
@@ -495,6 +512,11 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
                                 <Text style={styles.savingsBadgeText}>
                                   SAVE {yearlySavingsPercent}%
                                 </Text>
+                              </View>
+                            )}
+                            {isLifetime && (
+                              <View style={styles.savingsBadge}>
+                                <Text style={styles.savingsBadgeText}>FOUNDER</Text>
                               </View>
                             )}
                             <Text
@@ -545,7 +567,9 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
                         <ActivityIndicator size="small" color="#FFFFFF" />
                       ) : (
                         <Text style={styles.subscribeButtonText}>
-                          Subscribe
+                          {selectedPackage?.packageType === 'LIFETIME'
+                            ? 'Get Lifetime Access'
+                            : 'Subscribe'}
                           {selectedPackage ? ` — ${selectedPackage.product.priceString}` : ''}
                         </Text>
                       )}

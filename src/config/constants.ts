@@ -9,11 +9,10 @@ export const APP_CONFIG = {
   packageName: 'com.thoughtfullyapp.mobile',
 
   // Support
-  // NOTE: renamed to match the thoughtfully.com domain per explicit
-  // instruction — but this assumes that domain/inbox/social accounts
-  // actually exist under the new name. Verify before shipping; a broken
-  // support/legal link is worse than a working old-branded one.
-  supportEmail: 'support@thoughtfully.com',
+  // Matches the real contact address used everywhere else (Privacy
+  // Policy, backend emailService.js) — the earlier 'support@thoughtfully.com'
+  // was a different, non-existent domain.
+  supportEmail: 'info@giftthoughtfully.com',
   websiteUrl: 'https://thoughtfully.com',
   faqUrl: 'https://thoughtfully.com/faq',
   privacyPolicyUrl: 'https://thoughtfully.com/privacy',

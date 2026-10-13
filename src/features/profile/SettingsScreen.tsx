@@ -803,13 +803,13 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
             isEnabled={notifications.questionnaires}
             onToggle={(value) => handleNotificationToggle('questionnaires', value)}
           />
-          <SettingRow
+          {/* <SettingRow
             icon={BellIcon}
             label="Tips & Updates"
             hasToggle
             isEnabled={notifications.marketing}
             onToggle={(value) => handleNotificationToggle('marketing', value)}
-          />
+          /> */}
         </Animated.View>
 
         {/* Plan & Billing Section */}
@@ -831,14 +831,23 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
         {/* Support Section */}
         <Animated.View style={[styles.section, createSlideStyle(sectionAnims[3])]}>
           <Text style={styles.sectionTitle}>Support</Text>
-          <SettingRow icon={HelpCircleIcon} label="Help Center" onPress={handleHelpCenter} />
+          {/* Hidden — its only two options were a broken FAQ placeholder
+              link (faqUrl, same wrong domain as supportEmail) and Email
+              Support, which just called handleContactSupport anyway —
+              the separate "Contact Support" row below does that directly.
+              Bring this back once a real FAQ page exists. */}
+          {/* <SettingRow icon={HelpCircleIcon} label="Help Center" onPress={handleHelpCenter} /> */}
           <SettingRow
             icon={MessageCircleIcon}
             label="Contact Support"
             onPress={handleContactSupport}
           />
-          <SettingRow icon={StarIcon} label="Rate App" onPress={handleRateApp} />
-          <SettingRow icon={ShareIcon} label="Share with Friends" onPress={handleShare} />
+          {/* Hidden until the app is actually live on the stores — Rate
+              always opened the Play Store URL regardless of platform, and
+              both appStoreUrl/downloadUrl are still placeholders
+              (constants.ts), so neither worked correctly yet. */}
+          {/* <SettingRow icon={StarIcon} label="Rate App" onPress={handleRateApp} /> */}
+          {/* <SettingRow icon={ShareIcon} label="Share with Friends" onPress={handleShare} /> */}
         </Animated.View>
 
         {/* Danger Zone */}
