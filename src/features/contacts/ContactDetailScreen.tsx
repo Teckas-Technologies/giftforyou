@@ -11,8 +11,6 @@ import {
   Easing,
   ActivityIndicator,
   Linking,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
@@ -20,6 +18,8 @@ import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { cancelFriendRequest, removeFromCircle, updateCircle } from '../../services/api';
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
+import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
+import { scrollFocusedInputIntoView } from '../../utils/scrollToInput';
 import { formatDate as formatAppDate, daysUntil as appDaysUntil } from '../../utils/date';
 import { useContactRaw, contactDetailQueryKey, CONTACTS_QUERY_KEY } from './hooks';
 import { usePlanStatus } from '../subscription/hooks';
@@ -435,6 +435,7 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
   const avatarPulse = useRef(new Animated.Value(1)).current;
   const sectionAnims = useRef([...Array(5)].map(() => new Animated.Value(0))).current;
   const scrollRef = useRef<any>(null);
+  const keyboardHeight = useKeyboardHeight();
 
   // Raw contact + preferences payload via React Query — see hooks.js for
   // why revisiting this same contact no longer re-shows a spinner, while
@@ -700,22 +701,12 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
 
   // This screen had no keyboard handling at all before — the note field
   // sits well below the fold on a long contact page, so without this the
-  // keyboard covered it on both platforms (Android's adjustResize alone
-  // doesn't scroll a specific field into view, only resizes the window).
+  // keyboard covered it on both platforms (padding/adjustResize alone only
+  // resizes the window, it has no idea which field to scroll into view).
+  // Uses the modern UIManager.measureLayout, not the old (and on iOS,
+  // broken-under-New-Architecture) scrollResponderScrollNativeHandleToKeyboard.
   const handleNoteInputFocus = (event: any) => {
-    // iOS already gets pushed up by KeyboardAvoidingView's `padding`
-    // behavior below — this legacy scroll-responder API is unreliable
-    // under the New Architecture and was double-pushing content on iOS
-    // (overshooting past the keyboard) when both ran together. Android's
-    // adjustResize only resizes the window, not a specific field into
-    // view, so it still needs this manual scroll.
-    if (Platform.OS !== 'android') return;
-    const nodeHandle = event.target;
-    setTimeout(() => {
-      scrollRef.current
-        ?.getScrollResponder?.()
-        ?.scrollResponderScrollNativeHandleToKeyboard(nodeHandle, 80, true);
-    }, 50);
+    scrollFocusedInputIntoView(event, scrollRef);
   };
 
   const handleSaveNote = async () => {
@@ -829,17 +820,16 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
         </View>
       )}
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        // iOS: plain `padding` behavior, same as every other screen in the
-        // app (Login/SignUp/Contacts/etc). `handleNoteInputFocus`'s manual
-        // scroll is now Android-only, so the two no longer stack/overshoot.
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <View style={{ flex: 1 }}>
         <ScrollView
           ref={scrollRef}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          // `KeyboardAvoidingView`'s `padding` behavior only resizes the
+          // available space — it doesn't know which field is focused, so
+          // the note field (well below the fold on this long page) stayed
+          // covered. Measured keyboard height drives both this padding
+          // AND handleNoteInputFocus's scroll, as one coherent mechanism.
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: keyboardHeight + 24 }]}
         >
           {/* Profile Header */}
           <Animated.View
@@ -1527,7 +1517,7 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
 
           <View style={{ height: 40 }} />
         </ScrollView>
-      </KeyboardAvoidingView>
+      </View>
 
       {/* Custom Alert */}
       <CustomAlert {...alertConfig} onClose={hideAlert} />

@@ -8,8 +8,6 @@ import {
   TextInput,
   Animated,
   Easing,
-  Platform,
-  KeyboardAvoidingView,
   Modal,
   ActivityIndicator,
   FlatList,
@@ -21,6 +19,8 @@ import { createEvent, getCircles } from '../../services/api';
 import { scheduleEventReminder, saveEventNotificationIds } from '../../services/notifications';
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
+import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
+import { scrollFocusedInputIntoView } from '../../utils/scrollToInput';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 import { fontSize as typeScale } from '../../theme';
 
@@ -343,6 +343,8 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
   const saveButtonAnim = useRef(new Animated.Value(0)).current;
   const inputAnims = useRef([...Array(6)].map(() => new Animated.Value(0))).current;
   const modalAnim = useRef(new Animated.Value(0)).current;
+  const scrollRef = useRef<any>(null);
+  const keyboardHeight = useKeyboardHeight();
 
   // Fetch contacts for picker
   const fetchContacts = async () => {
@@ -539,10 +541,7 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
   const days = Array.from({ length: getDaysInMonth(selectedMonth, selectedYear) }, (_, i) => i + 1);
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <View style={styles.container}>
       <LinearGradient
         colors={['#FFFFFF', '#ccf9ff', '#e0f7fa', '#FFFFFF']}
         locations={[0, 0.3, 0.7, 1]}
@@ -584,8 +583,14 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
       </Animated.View>
 
       <ScrollView
+        ref={scrollRef}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        // `KeyboardAvoidingView`'s `padding` behavior only resizes the
+        // available space — it doesn't know which field is focused, so the
+        // Notes field (last/lowest in this form) stayed covered. Measured
+        // keyboard height drives both this padding AND the Notes field's
+        // onFocus scroll, as one coherent mechanism (see useKeyboardHeight.ts).
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: keyboardHeight + 24 }]}
         keyboardShouldPersistTaps="handled"
       >
         <Animated.View style={[styles.formContainer, { opacity: formAnim }]}>
@@ -763,6 +768,7 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
               style={[styles.input, styles.notesInput]}
               value={notes}
               onChangeText={setNotes}
+              onFocus={(e) => scrollFocusedInputIntoView(e, scrollRef)}
               placeholder="Add any notes or gift ideas..."
               placeholderTextColor="#999"
               multiline
@@ -997,7 +1003,7 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
 
       {/* Custom Alert */}
       <CustomAlert {...alertConfig} onClose={hideAlert} />
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,6 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
@@ -16,6 +14,8 @@ import Svg, { Polyline } from 'react-native-svg';
 import { getCircles, sendLoveNote } from '../../services/api';
 import { CustomAlert, SkeletonBlock } from '../../components';
 import useAlert from '../../hooks/useAlert';
+import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
+import { scrollFocusedInputIntoView } from '../../utils/scrollToInput';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 import { fontSize as typeScale } from '../../theme';
 
@@ -65,6 +65,8 @@ const getInitials = (name?: string) => {
 const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
   const preselectedCircleId = route?.params?.circleId || null;
 
+  const scrollRef = useRef<any>(null);
+  const keyboardHeight = useKeyboardHeight();
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [friends, setFriends] = useState<any[]>([]);
@@ -214,24 +216,18 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
           </TouchableOpacity>
         </View>
       ) : (
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          // iOS only: this KeyboardAvoidingView only measures its own frame,
-          // which starts BELOW the back-button header above it — without an
-          // offset it doesn't know that header exists, so the note textarea
-          // near the bottom of the form ends up hidden behind the keyboard.
-          // Header height here is static (paddingTop: 50 + the 44pt back
-          // button + paddingBottom: 16 = 110), not insets-based, so the
-          // offset is a fixed number rather than insets.top + remainder.
-          // Android is unaffected: windowSoftInputMode="adjustResize"
-          // already resizes the window natively, so adding an offset there
-          // too would double-compensate.
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 0}
-        >
+        <View style={{ flex: 1 }}>
           <ScrollView
+            ref={scrollRef}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
+            // `KeyboardAvoidingView`'s `padding` behavior only resized the
+            // available space — it didn't know the note textarea (below the
+            // friends-picker section) needed scrolling into view, and it
+            // also didn't account for the back-button header sitting above
+            // it. Measured keyboard height now drives both this padding AND
+            // the note field's onFocus scroll directly, so neither gap
+            // applies anymore.
+            contentContainerStyle={[styles.scrollContent, { paddingBottom: keyboardHeight + 24 }]}
           >
             <Text style={styles.sectionLabel}>To</Text>
             {preselectedCircleId ? (
@@ -326,6 +322,7 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
               style={styles.noteInput}
               value={noteText}
               onChangeText={setNoteText}
+              onFocus={(e) => scrollFocusedInputIntoView(e, scrollRef)}
               placeholder="Write something sweet..."
               placeholderTextColor="#b8a5c4"
               multiline
@@ -358,7 +355,7 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
               </TouchableOpacity>
             </View>
           </ScrollView>
-        </KeyboardAvoidingView>
+        </View>
       )}
 
       <CustomAlert {...alertConfig} onClose={hideAlert} />

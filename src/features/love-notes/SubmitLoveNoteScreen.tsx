@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { fontSize as typeScale } from '../../theme';
 import {
   View,
@@ -8,8 +8,6 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
@@ -17,6 +15,8 @@ import Svg, { Polyline } from 'react-native-svg';
 import { submitLoveNoteIdea } from '../../services/api';
 import { CustomAlert } from '../../components';
 import useAlert from '../../hooks/useAlert';
+import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
+import { scrollFocusedInputIntoView } from '../../utils/scrollToInput';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
 const MAX_NOTE_LENGTH = 500;
@@ -37,6 +37,8 @@ const BackIcon = ({ size = 24, color = '#6b3a8a' }: IconProps) => (
 );
 
 const SubmitLoveNoteScreen = ({ navigation }: ScreenProps) => {
+  const scrollRef = useRef<any>(null);
+  const keyboardHeight = useKeyboardHeight();
   const [noteText, setNoteText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -88,23 +90,16 @@ const SubmitLoveNoteScreen = ({ navigation }: ScreenProps) => {
         <View style={{ width: 44 }} />
       </View>
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        // iOS only: this KeyboardAvoidingView only wraps the ScrollView
-        // below the back-button header rendered above it, so it has no
-        // idea that header takes up space — without this offset it
-        // under-reserves room for the keyboard and the note input near the
-        // bottom stays hidden behind it. Matches the header's own actual
-        // height: paddingTop (50) + the 44px back button + paddingBottom
-        // (16) = 110. Android doesn't need this — windowSoftInputMode=
-        // "adjustResize" (app.config.js) already resizes the whole window
-        // for it, so adding an offset there too would double-compensate.
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 0}
-      >
+      <View style={{ flex: 1 }}>
         <ScrollView
+          ref={scrollRef}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          // Measured keyboard height drives both this padding and the note
+          // field's onFocus scroll directly (see useKeyboardHeight.ts),
+          // replacing KeyboardAvoidingView's `padding` behavior, which only
+          // resizes the available space without scrolling a specific field
+          // into view.
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: keyboardHeight + 24 }]}
         >
           <Text style={styles.sectionLabel}>Your idea</Text>
           <Text style={styles.sectionHint}>
@@ -114,6 +109,7 @@ const SubmitLoveNoteScreen = ({ navigation }: ScreenProps) => {
             style={styles.noteInput}
             value={noteText}
             onChangeText={setNoteText}
+            onFocus={(e) => scrollFocusedInputIntoView(e, scrollRef)}
             placeholder="E.g., You are capable of amazing things"
             placeholderTextColor="#b8a5c4"
             multiline
@@ -146,7 +142,7 @@ const SubmitLoveNoteScreen = ({ navigation }: ScreenProps) => {
             </TouchableOpacity>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
+      </View>
 
       <CustomAlert {...alertConfig} onClose={hideAlert} />
     </View>

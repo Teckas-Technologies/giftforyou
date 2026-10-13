@@ -405,9 +405,12 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
                       which the ribbon's fixed width was sized for — it
                       overflowed past the card's clipped corner. Auto-shrink
                       instead of guessing a fixed size, so any label length
-                      stays inside the ribbon. */}
+                      stays inside the ribbon. `ribbon`'s alignItems:'center'
+                      otherwise lets this Text size to its own content,
+                      which gives adjustsFontSizeToFit nothing to shrink
+                      against — width:'100%' bounds it to the ribbon. */}
                   <Text
-                    style={styles.ribbonText}
+                    style={[styles.ribbonText, { width: '100%', textAlign: 'center' }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.6}
@@ -437,7 +440,19 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
               <View style={styles.statRow}>
                 <View style={styles.stat}>
                   <Text style={styles.statCap}>Plan</Text>
-                  <Text style={styles.statVal}>Founding Member</Text>
+                  {/* Wrapping to 2 lines here (while Price/Billing stay on
+                      1) threw off the row's vertical alignment. Shrink to
+                      fit instead of wrapping, so all 3 cells stay 1 line.
+                      `stat`'s alignItems:'center' lets Text size to its own
+                      content by default, which gives adjustsFontSizeToFit
+                      nothing to shrink against — width:'100%' bounds it. */}
+                  <Text
+                    style={[styles.statVal, { width: '100%', textAlign: 'center' }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
+                    Founding Member
+                  </Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.stat}>
@@ -496,12 +511,6 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
                 <GearIcon size={15} color={colors.textDark} />
                 <Text style={styles.manageButtonText}>Manage or cancel</Text>
               </TouchableOpacity>
-            )}
-
-            {plan === 'individual' && isLifetimeMember && (
-              <Text style={styles.lifetimeNote}>
-                One-time payment — no subscription to manage or cancel.
-              </Text>
             )}
           </View>
 
@@ -851,13 +860,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
     fontSize: typeScale.base,
     color: colors.textDark,
-  },
-  lifetimeNote: {
-    marginTop: 16,
-    fontFamily: 'Handlee_400Regular',
-    fontSize: typeScale.sm,
-    color: colors.textLight,
-    textAlign: 'center',
   },
   sectionLabelRow: {
     flexDirection: 'row',
