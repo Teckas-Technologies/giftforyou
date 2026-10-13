@@ -9,13 +9,15 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Polyline, Rect, Line, Path } from 'react-native-svg';
+import Svg, { Polyline, Rect, Line, Path, Circle } from 'react-native-svg';
 import { getPlanStatus } from '../../services/api';
 import {
   getOfferings,
   purchasePackage,
   restorePurchases,
   openManageSubscriptions,
+  getCustomerInfo,
+  getProductPrice,
 } from '../../services/billing';
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
@@ -86,6 +88,22 @@ const BuildingIcon = ({ size = 26, color = '#FFFFFF' }: IconProps) => (
   </Svg>
 );
 
+const GearIcon = ({ size = 16, color = colors.textDark }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Circle cx="12" cy="12" r="3" />
+    <Path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+  </Svg>
+);
+
 const CheckIcon = ({ size = 16, color = colors.secondary }: IconProps) => (
   <Svg
     width={size}
@@ -132,6 +150,8 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState('free');
   const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null);
+  const [activePeriodLabel, setActivePeriodLabel] = useState<string | null>(null);
+  const [activePriceString, setActivePriceString] = useState<string | null>(null);
   const [organizationName, setOrganizationName] = useState<string | null>(null);
   const [offerings, setOfferings] = useState<any[]>([]);
   const [offeringsError, setOfferingsError] = useState(false);
@@ -148,6 +168,30 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
       setPlan(status.plan || 'free');
       setPlanExpiresAt(status.planExpiresAt || null);
       setOrganizationName(status.organizationName || null);
+
+      // Backend's `plan` only stores the tier ('individual'), not which
+      // product backs it — read that straight from RevenueCat so the UI can
+      // show "Monthly Plan" vs "Yearly Plan".
+      if (status.plan === 'individual') {
+        try {
+          const customerInfo = await getCustomerInfo();
+          const productId = customerInfo?.entitlements?.active?.individual?.productIdentifier || '';
+          setActivePeriodLabel(
+            productId.includes('yearly')
+              ? 'Yearly Plan'
+              : productId.includes('monthly')
+                ? 'Monthly Plan'
+                : null,
+          );
+          setActivePriceString(productId ? await getProductPrice(productId) : null);
+        } catch {
+          setActivePeriodLabel(null);
+          setActivePriceString(null);
+        }
+      } else {
+        setActivePeriodLabel(null);
+        setActivePriceString(null);
+      }
 
       // Also offer Individual to Organization-plan users — if their company
       // access ever lapses, they'd otherwise have no way to keep paying on
@@ -332,30 +376,74 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
           contentContainerStyle={styles.scrollContent}
         >
           <View style={styles.statusCard}>
-            <LinearGradient
-              colors={[colors.secondary, colors.primary]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.planIconBadge}
-            >
-              <copy.Icon size={26} color="#FFFFFF" />
-            </LinearGradient>
-            <Text style={styles.statusTitle}>{copy.title}</Text>
-            <Text style={styles.statusSubtitle}>{statusSubtitle}</Text>
-            {planExpiresAt && (
-              <View style={styles.statusExpiryPill}>
-                <Text style={styles.statusExpiry}>
-                  Renews {new Date(planExpiresAt).toLocaleDateString()}
-                </Text>
+            {activePeriodLabel && (
+              <View style={styles.ribbonWrap}>
+                <LinearGradient
+                  colors={['#E8B84B', '#F3D27A']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.ribbon}
+                >
+                  <Text style={styles.ribbonText}>{activePeriodLabel.replace(' Plan', '')}</Text>
+                </LinearGradient>
               </View>
             )}
-          </View>
+            <View style={styles.orbRing}>
+              <LinearGradient
+                colors={[colors.secondary, colors.primary]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.orb}
+              >
+                <copy.Icon size={28} color="#FFFFFF" />
+              </LinearGradient>
+            </View>
+            <Text style={styles.statusTitle}>{copy.title}</Text>
+            <Text style={styles.statusSubtitle}>{statusSubtitle}</Text>
 
-          {plan === 'individual' && (
-            <TouchableOpacity onPress={handleManageSubscription} style={styles.footerLink}>
-              <Text style={styles.footerLinkText}>Manage or cancel subscription</Text>
-            </TouchableOpacity>
-          )}
+            {plan === 'individual' && planExpiresAt ? (
+              <View style={styles.statRow}>
+                <View style={styles.stat}>
+                  <Text style={styles.statCap}>Plan</Text>
+                  <Text style={styles.statVal}>{activePeriodLabel?.replace(' Plan', '')}</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.stat}>
+                  <Text style={styles.statCap}>Price</Text>
+                  <Text style={styles.statVal}>{activePriceString || '—'}</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.stat}>
+                  <Text style={styles.statCap}>Renews</Text>
+                  <Text style={styles.statVal}>
+                    {new Date(planExpiresAt).toLocaleDateString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              planExpiresAt && (
+                <View style={styles.statusExpiryPill}>
+                  <Text style={styles.statusExpiry}>
+                    Renews {new Date(planExpiresAt).toLocaleDateString()}
+                  </Text>
+                </View>
+              )
+            )}
+
+            {plan === 'individual' && (
+              <TouchableOpacity
+                onPress={handleManageSubscription}
+                style={styles.manageButton}
+                activeOpacity={0.8}
+              >
+                <GearIcon size={15} color={colors.textDark} />
+                <Text style={styles.manageButtonText}>Manage or cancel</Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
           {(plan === 'free' || plan === 'organization') && (
             <>
@@ -468,13 +556,21 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
             </>
           )}
 
-          <Text style={styles.sectionLabel}>What's included</Text>
+          <View style={styles.sectionLabelRow}>
+            <GiftIcon size={16} color={colors.secondary} />
+            <Text style={[styles.sectionLabel, { marginBottom: 0 }]}>What's included</Text>
+          </View>
           <View style={styles.featureList}>
-            {FEATURES.map((feature) => (
-              <View key={feature} style={styles.featureRow}>
-                <View style={styles.featureCheck}>
-                  <CheckIcon size={13} color={colors.secondary} />
-                </View>
+            {FEATURES.map((feature, i) => (
+              <View key={feature} style={[styles.featureRow, i > 0 && styles.featureRowDivider]}>
+                <LinearGradient
+                  colors={[colors.primary, colors.secondary]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.featureCheck}
+                >
+                  <CheckIcon size={13} color="#FFFFFF" />
+                </LinearGradient>
                 <Text style={styles.featureText}>{feature}</Text>
               </View>
             ))}
@@ -549,22 +645,61 @@ const styles = StyleSheet.create({
   },
   statusCard: {
     alignItems: 'center',
-    backgroundColor: colors.secondaryLight,
-    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
     padding: 24,
+    paddingTop: 30,
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: colors.secondaryLight,
+    shadowColor: colors.textDark,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 5,
+    overflow: 'hidden',
+    position: 'relative',
   },
-  planIconBadge: {
-    width: 60,
-    height: 60,
-    borderRadius: 18,
+  // Folded-ribbon corner tag (a gift-tag motif, not a generic badge) —
+  // the card needs overflow:'hidden' above so the rotated ribbon's
+  // off-card ends get clipped to the card's rounded corners.
+  ribbonWrap: {
+    position: 'absolute',
+    top: 14,
+    right: -36,
+    transform: [{ rotate: '40deg' }],
+  },
+  ribbon: {
+    width: 150,
+    paddingVertical: 5,
+    alignItems: 'center',
+    shadowColor: '#B88A1E',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+  },
+  ribbonText: {
+    fontFamily: 'Handlee_400Regular',
+    fontSize: typeScale.sm,
+    color: '#5A3C05',
+    letterSpacing: 1,
+  },
+  orbRing: {
+    padding: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(112, 208, 221, 0.14)',
+    marginBottom: 14,
+  },
+  orb: {
+    width: 68,
+    height: 68,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
     shadowColor: colors.secondary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
     elevation: 6,
   },
   statusTitle: {
@@ -578,7 +713,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
     fontSize: typeScale.base,
     color: colors.textLight,
-    lineHeight: 20,
+    // 20 was too tight for the 💕 emoji glyph — iOS crops its top edge
+    // when the line box is shorter than the emoji needs, regardless of
+    // the surrounding text fitting fine at that height.
+    lineHeight: 26,
     textAlign: 'center',
   },
   statusExpiryPill: {
@@ -592,6 +730,60 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
     fontSize: typeScale.sm,
     color: colors.textLight,
+  },
+  statRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    marginTop: 18,
+    backgroundColor: colors.backgroundGray,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.inputBorder,
+  },
+  stat: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 11,
+  },
+  statDivider: {
+    width: 1,
+    alignSelf: 'stretch',
+    backgroundColor: colors.inputBorder,
+  },
+  statCap: {
+    fontFamily: 'Handlee_400Regular',
+    fontSize: typeScale.sm,
+    color: colors.textLight,
+    marginBottom: 2,
+  },
+  statVal: {
+    fontFamily: 'Handlee_400Regular',
+    fontSize: typeScale.md,
+    color: colors.textDark,
+  },
+  manageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    alignSelf: 'stretch',
+    marginTop: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: colors.secondary,
+  },
+  manageButtonText: {
+    fontFamily: 'Handlee_400Regular',
+    fontSize: typeScale.base,
+    color: colors.textDark,
+  },
+  sectionLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 12,
   },
   sectionLabel: {
     fontFamily: 'Handlee_400Regular',
@@ -696,25 +888,39 @@ const styles = StyleSheet.create({
   },
   featureList: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 18,
+    borderRadius: 20,
     marginBottom: 24,
-    borderWidth: 2,
-    borderColor: colors.inputBorder,
+    borderWidth: 1,
+    borderColor: colors.secondaryLight,
+    shadowColor: colors.textDark,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.07,
+    shadowRadius: 16,
+    elevation: 3,
+    overflow: 'hidden',
   },
   featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 14,
+    gap: 13,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  featureRowDivider: {
+    borderTopWidth: 1,
+    borderTopColor: colors.secondaryLight,
   },
   featureCheck: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: colors.secondaryLight,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 2,
   },
   featureText: {
     fontFamily: 'Handlee_400Regular',

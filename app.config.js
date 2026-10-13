@@ -67,10 +67,11 @@ module.exports = {
       // even after the app is deleted). This new app is being set up
       // directly under the client's own Apple Developer account instead.
       bundleIdentifier: 'com.thoughtfullyapp.mobile',
-      // iOS equivalent of versionCode — must increase with every release.
-      // Convention is to keep it identical to `version`. Reset to 1 for
-      // this fresh App Store Connect app (see version comment above).
-      buildNumber: '1',
+      // No buildNumber here on purpose — EAS now manages it remotely
+      // (confirmed by its own build log: "buildNumber field in app config
+      // is ignored when version source is set to remote"), since
+      // autoIncrement + remote version source are enabled in eas.json.
+      // Check the actual current value with `eas build:version:get`.
       // Was missing entirely — Android has the equivalent `googleServicesFile`
       // field below, but iOS needs its own. Without this, Expo's prebuild
       // never copies the file into the native project, so GoogleSignin.
@@ -78,6 +79,11 @@ module.exports = {
       // found" even though the file exists in the project root.
       googleServicesFile: './GoogleService-Info.plist',
       infoPlist: {
+        // Answers Apple's export-compliance question at submission time —
+        // the app only uses standard/exempt encryption (HTTPS), so this is
+        // 'false'. Without it set here, EAS can't auto-save the answer into
+        // a dynamic (.js) config file and asks again on every build.
+        ITSAppUsesNonExemptEncryption: false,
         NSPhotoLibraryUsageDescription:
           'Thoughtfully needs access to your photos so you can set a profile picture.',
         NSCameraUsageDescription:

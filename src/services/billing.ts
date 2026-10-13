@@ -53,6 +53,26 @@ export const purchasePackage = async (pkg: PurchasesPackage) => {
   return customerInfo;
 };
 
+/**
+ * Current RevenueCat customer state — used to read which specific product
+ * (monthly/yearly) backs the active 'individual' entitlement, since the
+ * backend's `users.plan` only stores the tier ('individual'), not the
+ * billing period.
+ */
+export const getCustomerInfo = async () => {
+  return Purchases.getCustomerInfo();
+};
+
+/**
+ * Store-formatted price string (e.g. "$29.99") for one product id — used to
+ * show what the active subscription actually costs, without re-fetching the
+ * whole offering.
+ */
+export const getProductPrice = async (productId: string) => {
+  const products = await Purchases.getProducts([productId]);
+  return products[0]?.priceString || null;
+};
+
 export const restorePurchases = async () => {
   const customerInfo = await Purchases.restorePurchases();
   return customerInfo;

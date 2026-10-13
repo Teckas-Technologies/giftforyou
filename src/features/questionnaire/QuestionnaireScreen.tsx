@@ -1187,23 +1187,18 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
       )}
 
       <KeyboardAvoidingView
-        // Lifts the scroll so the focused input is never hidden behind
-        // the on-screen keyboard. Use `padding` on both platforms —
-        // `height` resized the wrapper rapidly on Android and caused a
-        // visible blink as the keyboard animated in; `padding` just
-        // appends bottom padding equal to keyboard height and is smooth.
+        // `handleInputFocus` below already scrolls the focused field above
+        // the keyboard on every platform. On iOS that was stacking with
+        // this component's own `padding` behavior — both pushed content up
+        // at once, overshooting well past the keyboard (a big empty gap
+        // above it, unlike Android). Android still needs `padding` here:
+        // unlike iOS it has no native window resize of its own beyond
+        // windowSoftInputMode="adjustResize" (see app.config.js), which
+        // only resizes the root window, not this component's own layout.
+        // iOS gets no behavior at all, so the single manual scroll is the
+        // only thing moving content — matching Android's one-step feel.
         style={styles.keyboardAvoider}
-        behavior="padding"
-        // iOS only: KeyboardAvoidingView measures its own frame, which
-        // starts BELOW the header + progress bar above it — without this
-        // offset it doesn't know that space exists, so its padding came
-        // up short and a focused field near the bottom of a section (e.g.
-        // "What is this date?") stayed hidden behind the keyboard with
-        // only its label visible. Android doesn't need this: OS-level
-        // windowSoftInputMode="adjustResize" (see app.config.js) already
-        // resizes the whole window correctly on its own, so giving it an
-        // offset too would just double-compensate.
-        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 82 : 0}
+        behavior={Platform.OS === 'android' ? 'padding' : undefined}
       >
         <ScrollView
           ref={scrollRef}
@@ -1321,6 +1316,12 @@ const QuestionnaireScreen = ({ navigation, route }: ScreenProps) => {
               value={isoToDate(answers[pickerFor])}
               mode="date"
               display="inline"
+              // Brands the selected-day circle, today's outline, and the
+              // month arrows with the app's pink instead of iOS's default
+              // blue — otherwise it reads as a generic, undesigned system
+              // calendar dropped into the app.
+              accentColor="#ca9ad6"
+              themeVariant="light"
               onChange={(event, selectedDate) => {
                 if (selectedDate) {
                   handleTextChange(pickerFor, dateToISO(selectedDate));
@@ -1585,7 +1586,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(51, 12, 84, 0.4)',
+    // Plain black dim, not a purple tint — over the screen's own pastel
+    // gradient, a colored overlay read as the whole screen changing color
+    // rather than a standard modal backdrop.
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,

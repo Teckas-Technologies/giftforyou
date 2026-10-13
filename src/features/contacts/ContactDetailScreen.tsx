@@ -824,12 +824,13 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        // Header above (paddingTop 50 + 44px back button + paddingBottom
-        // 16 = 110) sits outside this KeyboardAvoidingView's own frame, so
-        // iOS needs to be told about that extra space explicitly, same
-        // fix applied to SendLoveNoteScreen/RedeemCouponScreen.
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 0}
+        // `handleNoteInputFocus` below already scrolls the focused note
+        // field above the keyboard. Having `padding` behavior active here
+        // too on iOS stacked with that manual scroll — both pushed content
+        // up for the same keyboard event, overshooting past the keyboard.
+        // No behavior on iOS now, same as Android: the single manual
+        // scroll is the only thing moving content on both platforms.
+        behavior={undefined}
       >
         <ScrollView
           ref={scrollRef}
@@ -1390,61 +1391,64 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
             )}
 
           {/* Private note — visible only to this contact's owner, never to
-            the contact themselves. */}
-          <Animated.View style={[styles.section, createSlideStyle(sectionAnims[4])]}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Private Note</Text>
-              {!editingNote && (
-                <TouchableOpacity onPress={handleStartEditNote} hitSlop={8}>
-                  <EditIcon size={18} color="#ca9ad6" />
+            the contact themselves. Also hidden until they've accepted the
+            circle request: before that it's just a one-sided pending
+            request, same reasoning as why their gift preferences stay
+            hidden until acceptance below. */}
+          {!contact.isPending && (
+            <Animated.View style={[styles.section, createSlideStyle(sectionAnims[4])]}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Private Note</Text>
+                {!editingNote && (
+                  <TouchableOpacity onPress={handleStartEditNote} hitSlop={8}>
+                    <EditIcon size={18} color="#ca9ad6" />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {editingNote ? (
+                <View>
+                  <TextInput
+                    style={styles.noteInput}
+                    value={noteDraft}
+                    onChangeText={setNoteDraft}
+                    onFocus={handleNoteInputFocus}
+                    placeholder="Type your note here..."
+                    placeholderTextColor="#b8a5c4"
+                    multiline
+                    autoFocus
+                    maxLength={500}
+                  />
+                  <View style={styles.noteActions}>
+                    <TouchableOpacity
+                      style={styles.noteCancelButton}
+                      onPress={() => setEditingNote(false)}
+                      disabled={savingNote}
+                    >
+                      <Text style={styles.noteCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.noteSaveButton}
+                      onPress={handleSaveNote}
+                      disabled={savingNote}
+                    >
+                      {savingNote ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <Text style={styles.noteSaveText}>Save</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : contact.notes ? (
+                <Text style={styles.notesText}>{contact.notes}</Text>
+              ) : (
+                <TouchableOpacity onPress={handleStartEditNote}>
+                  <Text style={styles.emptyText}>Tap to add a private note</Text>
                 </TouchableOpacity>
               )}
-            </View>
-
-            {editingNote ? (
-              <View>
-                <TextInput
-                  style={styles.noteInput}
-                  value={noteDraft}
-                  onChangeText={setNoteDraft}
-                  onFocus={handleNoteInputFocus}
-                  placeholder="Type your note here..."
-                  placeholderTextColor="#b8a5c4"
-                  multiline
-                  autoFocus
-                  maxLength={500}
-                />
-                <View style={styles.noteActions}>
-                  <TouchableOpacity
-                    style={styles.noteCancelButton}
-                    onPress={() => setEditingNote(false)}
-                    disabled={savingNote}
-                  >
-                    <Text style={styles.noteCancelText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.noteSaveButton}
-                    onPress={handleSaveNote}
-                    disabled={savingNote}
-                  >
-                    {savingNote ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                      <Text style={styles.noteSaveText}>Save</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : contact.notes ? (
-              <Text style={styles.notesText}>{contact.notes}</Text>
-            ) : (
-              <TouchableOpacity onPress={handleStartEditNote}>
-                <Text style={styles.emptyText}>
-                  Add a private note — only you can see this, even if they use the app too.
-                </Text>
-              </TouchableOpacity>
-            )}
-          </Animated.View>
+            </Animated.View>
+          )}
 
           {/* Pending Friend Request Banner */}
           {contact.isPending && (
