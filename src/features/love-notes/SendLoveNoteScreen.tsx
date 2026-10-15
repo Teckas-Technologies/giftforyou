@@ -198,10 +198,8 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
           >
             <Text style={styles.emptyIconEmoji}>💌</Text>
           </LinearGradient>
-          <Text style={styles.emptyTitle}>No friends yet</Text>
-          <Text style={styles.emptySubtitle}>
-            Add friends first, then come back here to send them a love note.
-          </Text>
+          <Text style={styles.emptyTitle}>Hey, where are your friends?</Text>
+          <Text style={styles.emptySubtitle}>Why don't you add a couple of them?</Text>
           <TouchableOpacity activeOpacity={0.85} onPress={() => navigation.navigate('Invitations')}>
             <LinearGradient
               colors={['#ca9ad6', '#70d0dd']}

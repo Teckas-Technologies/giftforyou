@@ -16,10 +16,13 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
+import { useQueryClient } from '@tanstack/react-query';
 import { createEvent, getCircles } from '../../services/api';
 import { scheduleEventReminder, saveEventNotificationIds } from '../../services/notifications';
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
+import { CALENDAR_EVENTS_QUERY_KEY_PREFIX } from './hooks';
+import { HOME_DASHBOARD_QUERY_KEY } from '../home/hooks';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 import { fontSize as typeScale } from '../../theme';
 
@@ -335,6 +338,7 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
 
   // Custom alert hook
   const { alertConfig, showSuccess, showError, showWarning, hideAlert } = useAlert();
+  const queryClient = useQueryClient();
 
   // Animations
   const headerAnim = useRef(new Animated.Value(0)).current;
@@ -498,6 +502,12 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
       if (notificationIds.length > 0) {
         await saveEventNotificationIds(eventId, notificationIds);
       }
+
+      // Calendar/Home only refetch on a timer or manual pull-to-refresh —
+      // without this, the new event wouldn't show up on either screen until
+      // one of those happens to fire.
+      queryClient.invalidateQueries({ queryKey: CALENDAR_EVENTS_QUERY_KEY_PREFIX });
+      queryClient.invalidateQueries({ queryKey: HOME_DASHBOARD_QUERY_KEY });
 
       showSuccess('Event created with reminders!', () => navigation.goBack());
     } catch (error) {

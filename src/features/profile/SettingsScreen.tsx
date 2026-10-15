@@ -22,7 +22,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
-import { updateSettings, clearUserCredentials, getPlanStatus } from '../../services/api';
+import {
+  updateSettings,
+  clearUserCredentials,
+  getPlanStatus,
+  deleteAccount,
+} from '../../services/api';
 import {
   getNotificationPermissionGranted,
   openNotificationSettings,
@@ -231,6 +236,24 @@ const LogOutIcon = ({ size = 22, color = '#e53935' }: IconProps) => (
   </Svg>
 );
 
+const TrashIcon = ({ size = 22, color = '#e53935' }: IconProps) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Polyline points="3 6 5 6 21 6" />
+    <Path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <Line x1="10" y1="11" x2="10" y2="17" />
+    <Line x1="14" y1="11" x2="14" y2="17" />
+  </Svg>
+);
+
 const EyeIcon = ({ size = 20, color = '#6b3a8a' }: IconProps) => (
   <Svg
     width={size}
@@ -351,6 +374,10 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showNewPasswordConfirm, setShowNewPasswordConfirm] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+
+  const [deleteAccountVisible, setDeleteAccountVisible] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   // Toggling secureTextEntry while a password field is focused makes iOS
   // 17+ add/remove its password-suggestion bar above the keyboard, which
@@ -656,6 +683,37 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
     }
   };
 
+  const handleOpenDeleteAccount = () => {
+    setDeleteConfirmText('');
+    setDeleteAccountVisible(true);
+  };
+
+  const handleCloseDeleteAccount = () => {
+    if (deletingAccount) return;
+    setDeleteAccountVisible(false);
+  };
+
+  // Backend requires the literal string 'DELETE' as a typed confirmation
+  // (see userController.deleteAccount) — the button below stays disabled
+  // until this input matches exactly, so the request is never even sent
+  // on a near-miss.
+  const handleSubmitDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') return;
+
+    setDeletingAccount(true);
+    try {
+      await deleteAccount('DELETE');
+      // Backend already deleted the Supabase Auth user too, so this session
+      // is already invalid server-side — clear local state the same way
+      // logout does, so the app actually navigates back to the login flow.
+      await clearUserCredentials();
+      await signOut();
+    } catch (error: any) {
+      showError(error.message || 'Failed to delete account');
+      setDeletingAccount(false);
+    }
+  };
+
   const handleHelpCenter = () => {
     showOptions('Help Center', 'How can we help you?', [
       {
@@ -855,6 +913,12 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
           style={[styles.section, styles.dangerSection, createSlideStyle(sectionAnims[3])]}
         >
           <SettingRow icon={LogOutIcon} label="Log Out" onPress={handleLogout} isDanger />
+          <SettingRow
+            icon={TrashIcon}
+            label="Delete Account"
+            onPress={handleOpenDeleteAccount}
+            isDanger
+          />
         </Animated.View>
 
         {/* App Info */}
@@ -1096,6 +1160,74 @@ const SettingsScreen = ({ navigation }: ScreenProps) => {
                         <Text style={styles.changeEmailSubmitText}>Save</Text>
                       )}
                     </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              </LinearGradient>
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+      )}
+
+      {/* Delete Account — same plain-overlay approach as Change Email/Password
+          above (avoids RN Modal's native presentation/dismissal lifecycle
+          getting stuck on repeated open/close). */}
+      {deleteAccountVisible && (
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            onPress={handleCloseDeleteAccount}
+            activeOpacity={1}
+          />
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.changeEmailCard}>
+              <LinearGradient
+                colors={['#FFFFFF', '#fff0f0']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.changeEmailContent}
+              >
+                <Text style={[styles.changeEmailTitle, styles.deleteAccountTitle]}>
+                  Delete Account
+                </Text>
+                <Text style={styles.changeEmailSubtitle}>
+                  This permanently deletes your account and everything in it, your profile,
+                  contacts, events, and love notes. This can't be undone.
+                </Text>
+                <Text style={styles.changeEmailHint}>Type DELETE below to confirm.</Text>
+                <TextInput
+                  style={styles.changeEmailInput}
+                  value={deleteConfirmText}
+                  onChangeText={setDeleteConfirmText}
+                  placeholder="DELETE"
+                  placeholderTextColor="#999"
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  editable={!deletingAccount}
+                />
+                <View style={styles.changeEmailButtons}>
+                  <TouchableOpacity
+                    style={styles.changeEmailCancelButton}
+                    onPress={handleCloseDeleteAccount}
+                    disabled={deletingAccount}
+                  >
+                    <Text style={styles.changeEmailCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleSubmitDeleteAccount}
+                    disabled={deletingAccount || deleteConfirmText !== 'DELETE'}
+                    activeOpacity={0.85}
+                    style={{ flex: 1, opacity: deleteConfirmText === 'DELETE' ? 1 : 0.5 }}
+                  >
+                    <View style={styles.deleteAccountSubmitButton}>
+                      {deletingAccount ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <Text style={styles.changeEmailSubmitText}>Delete My Account</Text>
+                      )}
+                    </View>
                   </TouchableOpacity>
                 </View>
               </LinearGradient>
@@ -1373,6 +1505,16 @@ const styles = StyleSheet.create({
     fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
     color: '#FFFFFF',
+  },
+  deleteAccountTitle: {
+    color: '#e53935',
+  },
+  deleteAccountSubmitButton: {
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#e53935',
   },
 });
 

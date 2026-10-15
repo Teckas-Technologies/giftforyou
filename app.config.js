@@ -95,11 +95,10 @@ module.exports = {
     android: {
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
-        // Matches assets/icon.png's own background (#330c54, sampled
-        // directly from the file) — was #FDEEF3 (the splash's light pink),
-        // which made the Android app icon look like a completely different
-        // color scheme from iOS's dark-purple icon (PL-06).
-        backgroundColor: '#330c54',
+        // Matches assets/icon.png's own background — switched back to the
+        // splash's light pink to keep both platforms' icons in the same
+        // lighter color scheme the client asked for.
+        backgroundColor: '#FDEEF3',
       },
       edgeToEdgeEnabled: true,
       // Kept identical to ios.bundleIdentifier above, same convention as

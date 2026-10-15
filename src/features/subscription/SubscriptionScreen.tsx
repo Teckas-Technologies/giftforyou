@@ -169,24 +169,26 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
       setPlan(status.plan || 'free');
       setPlanExpiresAt(status.planExpiresAt || null);
       setOrganizationName(status.organizationName || null);
-      // Eligibility for the $24 lifetime price — based on signup order
+      // Eligibility for the $24/year founding price — based on signup order
       // (first 5,000 accounts), not a separate purchase race.
       setIsFoundingMember(!!status.isFoundingMember);
 
       // Backend's `plan` only stores the tier ('individual'), not which
       // product backs it — read that straight from RevenueCat so the UI can
-      // show "Monthly Plan" vs "Yearly Plan".
+      // show "Monthly Plan" vs "Yearly Plan". Check founding_yearly before
+      // the plain "yearly" check below, since that product id also contains
+      // the substring "yearly".
       if (status.plan === 'individual') {
         try {
           const customerInfo = await getCustomerInfo();
           const productId = customerInfo?.entitlements?.active?.individual?.productIdentifier || '';
           setActivePeriodLabel(
-            productId.includes('yearly')
-              ? 'Yearly Plan'
-              : productId.includes('monthly')
-                ? 'Monthly Plan'
-                : productId.includes('founding_lifetime')
-                  ? 'Founding Member'
+            productId.includes('founding_yearly')
+              ? 'Founding Yearly'
+              : productId.includes('yearly')
+                ? 'Yearly Plan'
+                : productId.includes('monthly')
+                  ? 'Monthly Plan'
                   : null,
           );
           setActivePriceString(productId ? await getProductPrice(productId) : null);
@@ -224,21 +226,25 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
     }, [loadData]),
   );
 
-  // Monthly, then Yearly, then the $24 lifetime option last (it's the
-  // standout/exclusive choice) — and the lifetime package is stripped out
+  // RevenueCat gives the founding package a "CUSTOM" packageType (since it
+  // uses a custom identifier, not the reserved "Annual" one — that's taken
+  // by the regular Yearly package) — so it's matched by identifier instead.
+  const isFoundingPackage = (pkg: any) => pkg.identifier === 'founding_yearly';
+
+  // Monthly, then Yearly, then the $24/year founding option last (it's the
+  // standout/exclusive choice) — and the founding package is stripped out
   // entirely for anyone who isn't eligible (signup-order based, see
   // `isFoundingMember` above), so non-Founding-Members never see it at all.
   const sortedOfferings = useMemo(() => {
-    const rank = (pkg: any) =>
-      pkg.packageType === 'ANNUAL' ? 1 : pkg.packageType === 'LIFETIME' ? 2 : 0;
+    const rank = (pkg: any) => (isFoundingPackage(pkg) ? 2 : pkg.packageType === 'ANNUAL' ? 1 : 0);
     return [...offerings]
-      .filter((pkg) => pkg.packageType !== 'LIFETIME' || isFoundingMember)
+      .filter((pkg) => !isFoundingPackage(pkg) || isFoundingMember)
       .sort((a, b) => rank(a) - rank(b));
   }, [offerings, isFoundingMember]);
 
   const monthly = sortedOfferings.find((p) => p.packageType === 'MONTHLY');
   const yearly = sortedOfferings.find((p) => p.packageType === 'ANNUAL');
-  const lifetime = sortedOfferings.find((p) => p.packageType === 'LIFETIME');
+  const founding = sortedOfferings.find((p) => isFoundingPackage(p));
   // % saved per year choosing Yearly over paying Monthly x12, only
   // computable when both a monthly and yearly price actually exist.
   const yearlySavingsPercent =
@@ -247,13 +253,13 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
       : null;
 
   // Default to whichever the offering itself marks as current/first, but
-  // prefer the $24 lifetime deal when it's available (best value, and
+  // prefer the $24/year founding deal when it's available (best value, and
   // exclusive to Founding Members) — otherwise Yearly, same as before.
   useEffect(() => {
     if (!selectedId && sortedOfferings.length) {
-      setSelectedId((lifetime || yearly || sortedOfferings[0]).identifier);
+      setSelectedId((founding || yearly || sortedOfferings[0]).identifier);
     }
-  }, [sortedOfferings, yearly, lifetime, selectedId]);
+  }, [sortedOfferings, yearly, founding, selectedId]);
 
   const selectedPackage =
     sortedOfferings.find((p) => p.identifier === selectedId) || sortedOfferings[0];
@@ -349,15 +355,14 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
   };
 
   // The ribbon/stat row already read this from RevenueCat's product id
-  // (see loadData) — reuse it here instead of re-deriving it, so "lifetime"
-  // always means the same thing in both places.
-  const isLifetimeMember = activePeriodLabel === 'Founding Member';
+  // (see loadData) — reuse it here instead of re-deriving it.
+  const isFoundingActive = activePeriodLabel === 'Founding Yearly';
 
   const copy = PLAN_COPY[plan] || PLAN_COPY.free;
   const statusSubtitle =
     plan === 'organization' && organizationName
       ? `Access provided by ${organizationName}.`
-      : isLifetimeMember
+      : isFoundingActive
         ? 'Welcome to our founding community 💕'
         : copy.subtitle;
 
@@ -412,11 +417,11 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
                     style={[
                       styles.ribbonText,
                       { width: '100%', textAlign: 'center' },
-                      isLifetimeMember && styles.ribbonTextLong,
+                      isFoundingActive && styles.ribbonTextLong,
                     ]}
-                    numberOfLines={isLifetimeMember ? 2 : 1}
+                    numberOfLines={isFoundingActive ? 2 : 1}
                   >
-                    {isLifetimeMember
+                    {isFoundingActive
                       ? 'FOUNDING\nMEMBER'
                       : activePeriodLabel.replace(' Plan', '').toUpperCase()}
                   </Text>
@@ -436,34 +441,7 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
             <Text style={styles.statusTitle}>{copy.title}</Text>
             <Text style={styles.statusSubtitle}>{statusSubtitle}</Text>
 
-            {plan === 'individual' && isLifetimeMember ? (
-              <View style={styles.statRow}>
-                <View style={styles.stat}>
-                  <Text style={styles.statCap}>Plan</Text>
-                  {/* Shrinking this to fit 1 line made it visibly smaller
-                      than Price/Billing's text — inconsistent and ugly.
-                      Let it wrap to 2 lines at the SAME size as the other
-                      cells instead; `stat`'s justifyContent:'center' below
-                      keeps all 3 cells vertically centered together so a
-                      taller 2-line cell doesn't throw off the row. */}
-                  {/* Wrapping to 2 lines left-aligns each line by default
-                      (RN's default Text alignment) — "Member" started at
-                      the same left edge as "Founding" instead of sitting
-                      centered under it. */}
-                  <Text style={[styles.statVal, { textAlign: 'center' }]}>Founding Member</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.stat}>
-                  <Text style={styles.statCap}>Price</Text>
-                  <Text style={styles.statVal}>{activePriceString || '—'}</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.stat}>
-                  <Text style={styles.statCap}>Billing</Text>
-                  <Text style={styles.statVal}>One-time</Text>
-                </View>
-              </View>
-            ) : plan === 'individual' && planExpiresAt ? (
+            {plan === 'individual' && planExpiresAt ? (
               <View style={styles.statRow}>
                 <View style={styles.stat}>
                   <Text style={styles.statCap}>Plan</Text>
@@ -495,12 +473,7 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
               )
             )}
 
-            {/* Founding Members bought a one-time non-consumable — there is
-                no subscription for Apple/Google's "Manage or cancel" screen
-                to show, so that button would just land them on an empty or
-                unrelated subscriptions page. Only recurring (monthly/yearly)
-                plans get the button. */}
-            {plan === 'individual' && !isLifetimeMember && (
+            {plan === 'individual' && (
               <TouchableOpacity
                 onPress={handleManageSubscription}
                 style={styles.manageButton}
@@ -540,20 +513,20 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
                       (pkg) => {
                         const isSelected = selectedId === pkg.identifier;
                         const isYearly = pkg.packageType === 'ANNUAL';
-                        const isLifetime = pkg.packageType === 'LIFETIME';
+                        const isFounding = isFoundingPackage(pkg);
                         const periodLabel = isYearly
                           ? 'Yearly'
                           : pkg.packageType === 'MONTHLY'
                             ? 'Monthly'
-                            : isLifetime
-                              ? 'Lifetime'
+                            : isFounding
+                              ? 'Founding'
                               : pkg.product.title;
                         const periodSuffix = isYearly
                           ? '/ year'
                           : pkg.packageType === 'MONTHLY'
                             ? '/ month'
-                            : isLifetime
-                              ? 'once'
+                            : isFounding
+                              ? '/ year'
                               : '';
                         return (
                           <TouchableOpacity
@@ -569,7 +542,7 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
                                 </Text>
                               </View>
                             )}
-                            {isLifetime && (
+                            {isFounding && (
                               <View style={styles.savingsBadge}>
                                 <Text style={styles.savingsBadgeText}>FOUNDER</Text>
                               </View>
@@ -622,9 +595,7 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
                         <ActivityIndicator size="small" color="#FFFFFF" />
                       ) : (
                         <Text style={styles.subscribeButtonText}>
-                          {selectedPackage?.packageType === 'LIFETIME'
-                            ? 'Get Lifetime Access'
-                            : 'Subscribe'}
+                          Subscribe
                           {selectedPackage ? ` — ${selectedPackage.product.priceString}` : ''}
                         </Text>
                       )}
@@ -750,7 +721,13 @@ const styles = StyleSheet.create({
   },
   ribbon: {
     width: 170,
-    paddingVertical: 4,
+    // Asymmetric on purpose: Handlee's line-height leaves extra invisible
+    // space below each line's glyphs (not above), so a symmetric 4/4 pad
+    // reads as noticeably bottom-heavy once ribbonTextLong's taller
+    // lineHeight (needed to stop "FOUNDING" clipping) compounds it across
+    // 2 lines. Shifting weight to paddingTop recenters the text visually.
+    paddingTop: 7,
+    paddingBottom: 1,
     paddingHorizontal: 4,
     alignItems: 'center',
     shadowColor: '#B88A1E',
@@ -766,10 +743,12 @@ const styles = StyleSheet.create({
   },
   // "FOUNDING" / "MEMBER" on 2 lines are each about the same length as
   // "MONTHLY"/"YEARLY" on 1 — same font size is fine, just tighten the
-  // line spacing so the 2 lines sit close together.
+  // line spacing so the 2 lines sit close together. lineHeight must stay
+  // >= ~14 even at this font size: Handlee's glyphs render taller than the
+  // font size implies, so anything tighter clips the top of "FOUNDING".
   ribbonTextLong: {
     fontSize: 10,
-    lineHeight: 11,
+    lineHeight: 14,
   },
   orbRing: {
     padding: 6,

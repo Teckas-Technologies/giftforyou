@@ -689,7 +689,7 @@ const HomeScreen = ({ navigation }: ScreenProps) => {
                   end={{ x: 1, y: 1 }}
                   style={styles.quickBtn}
                 >
-                  <Text style={styles.quickBtnIcon}>🎁</Text>
+                  <Text style={styles.quickBtnIcon}>📆</Text>
                   <Text style={styles.quickBtnTextBlue}>Add Event</Text>
                 </LinearGradient>
               </Animated.View>
