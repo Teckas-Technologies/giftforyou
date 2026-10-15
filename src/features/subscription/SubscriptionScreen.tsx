@@ -150,6 +150,7 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState('free');
   const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null);
+  const [willRenew, setWillRenew] = useState(true);
   const [activePeriodLabel, setActivePeriodLabel] = useState<string | null>(null);
   const [activePriceString, setActivePriceString] = useState<string | null>(null);
   const [organizationName, setOrganizationName] = useState<string | null>(null);
@@ -168,6 +169,7 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
       const status = await getPlanStatus();
       setPlan(status.plan || 'free');
       setPlanExpiresAt(status.planExpiresAt || null);
+      setWillRenew(status.willRenew !== false);
       setOrganizationName(status.organizationName || null);
       // Eligibility for the $24/year founding price — based on signup order
       // (first 5,000 accounts), not a separate purchase race.
@@ -454,7 +456,7 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.stat}>
-                  <Text style={styles.statCap}>Renews</Text>
+                  <Text style={styles.statCap}>{willRenew ? 'Renews' : 'Access ends'}</Text>
                   <Text style={styles.statVal}>
                     {new Date(planExpiresAt).toLocaleDateString(undefined, {
                       month: 'short',
@@ -467,7 +469,8 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
               planExpiresAt && (
                 <View style={styles.statusExpiryPill}>
                   <Text style={styles.statusExpiry}>
-                    Renews {new Date(planExpiresAt).toLocaleDateString()}
+                    {willRenew ? 'Renews' : 'Access ends'}{' '}
+                    {new Date(planExpiresAt).toLocaleDateString()}
                   </Text>
                 </View>
               )
