@@ -130,7 +130,7 @@ const PLAN_COPY: Record<
   },
   individual: {
     title: "You're on the Individual Plan",
-    subtitle: 'Thanks for supporting Thoughtfully! 💕',
+    subtitle: 'Enjoy unlimited access to Thoughtfully 💕',
     Icon: StarIcon,
   },
   organization: {
@@ -522,7 +522,7 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
                           : pkg.packageType === 'MONTHLY'
                             ? 'Monthly'
                             : isFounding
-                              ? 'Founding'
+                              ? 'Founding Member'
                               : pkg.product.title;
                         const periodSuffix = isYearly
                           ? '/ year'
