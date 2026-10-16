@@ -151,6 +151,7 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
   const [plan, setPlan] = useState('free');
   const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null);
   const [willRenew, setWillRenew] = useState(true);
+  const [hasBillingIssue, setHasBillingIssue] = useState(false);
   const [activePeriodLabel, setActivePeriodLabel] = useState<string | null>(null);
   const [activePriceString, setActivePriceString] = useState<string | null>(null);
   const [organizationName, setOrganizationName] = useState<string | null>(null);
@@ -170,6 +171,7 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
       setPlan(status.plan || 'free');
       setPlanExpiresAt(status.planExpiresAt || null);
       setWillRenew(status.willRenew !== false);
+      setHasBillingIssue(!!status.hasBillingIssue);
       setOrganizationName(status.organizationName || null);
       // Eligibility for the $24/year founding price — based on signup order
       // (first 5,000 accounts), not a separate purchase race.
@@ -474,6 +476,15 @@ const SubscriptionScreen = ({ navigation }: ScreenProps) => {
                   </Text>
                 </View>
               )
+            )}
+
+            {plan === 'individual' && hasBillingIssue && (
+              <View style={styles.billingIssueBanner}>
+                <Text style={styles.billingIssueText}>
+                  ⚠️ We couldn't charge your payment method. Please update it to keep your plan
+                  active.
+                </Text>
+              </View>
             )}
 
             {plan === 'individual' && (
@@ -831,6 +842,23 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
     fontSize: typeScale.md,
     color: colors.textDark,
+    textAlign: 'center',
+  },
+  billingIssueBanner: {
+    marginTop: 16,
+    backgroundColor: '#FFF4E5',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#F3C98B',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    alignSelf: 'stretch',
+  },
+  billingIssueText: {
+    fontFamily: 'Handlee_400Regular',
+    fontSize: typeScale.sm,
+    color: '#8A5A1E',
+    textAlign: 'center',
   },
   manageButton: {
     flexDirection: 'row',
@@ -915,6 +943,7 @@ const styles = StyleSheet.create({
     fontSize: typeScale.md,
     color: colors.textLight,
     marginTop: 6,
+    textAlign: 'center',
   },
   planOptionLabelSelected: {
     color: colors.textDark,
