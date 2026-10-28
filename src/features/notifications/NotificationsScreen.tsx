@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
@@ -216,6 +217,21 @@ const NotificationsScreen = ({ navigation }: ScreenProps) => {
       console.error('Error marking all as read:', error);
     }
   };
+
+  // Matches how most apps handle this (Instagram, LinkedIn, etc.): opening
+  // the notifications list clears the unread badge on its own, instead of
+  // requiring the user to tap every notification individually. The short
+  // delay lets the "unread" styling be visible for a moment first.
+  useFocusEffect(
+    useCallback(() => {
+      if (!notifications.some((n) => !n.is_read)) return;
+      const timer = setTimeout(() => {
+        handleMarkAllRead();
+      }, 1500);
+      return () => clearTimeout(timer);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [notifications]),
+  );
 
   const handleMarkRead = async (id: string) => {
     try {

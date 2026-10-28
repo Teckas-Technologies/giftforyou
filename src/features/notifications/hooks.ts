@@ -125,6 +125,7 @@ export function useNotificationActions() {
         ...prev,
         notifications: prev.notifications.map((n) => ({ ...n, is_read: true })),
       }));
+      queryClient.invalidateQueries({ queryKey: UNREAD_COUNT_QUERY_KEY });
     },
     markRead: async (id: string) => {
       await markNotificationRead(id);
@@ -132,6 +133,7 @@ export function useNotificationActions() {
         ...prev,
         notifications: prev.notifications.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
       }));
+      queryClient.invalidateQueries({ queryKey: UNREAD_COUNT_QUERY_KEY });
     },
     deleteOne: async (id: string) => {
       await deleteNotification(id);
@@ -139,6 +141,7 @@ export function useNotificationActions() {
         ...prev,
         notifications: prev.notifications.filter((n) => n.id !== id),
       }));
+      queryClient.invalidateQueries({ queryKey: UNREAD_COUNT_QUERY_KEY });
     },
   };
 }
