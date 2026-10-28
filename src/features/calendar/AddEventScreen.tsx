@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,9 @@ import {
   Easing,
   Modal,
   ActivityIndicator,
-  FlatList,
+  Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
@@ -177,143 +178,6 @@ const reminderOptions = [
   { id: '1_month', label: '1 month before', value: 30 },
 ];
 
-const months = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
-const getDaysInMonth = (month: number, year: number) => {
-  return new Date(year, month + 1, 0).getDate();
-};
-
-// Wheel picker constants
-const ITEM_HEIGHT = 44;
-const VISIBLE_ITEMS = 5;
-
-interface WheelPickerProps {
-  data: any[];
-  selectedIndex: number;
-  onSelect: (index: number) => void;
-  renderItem?: (item: any) => React.ReactNode;
-  keyExtractor?: (item: any) => string;
-}
-
-// WheelPicker Component for smooth scrolling date selection
-const WheelPicker = ({
-  data,
-  selectedIndex,
-  onSelect,
-  renderItem,
-  keyExtractor,
-}: WheelPickerProps) => {
-  const flatListRef = useRef<any>(null);
-  const [isScrolling, setIsScrolling] = useState(false);
-
-  useEffect(() => {
-    if (flatListRef.current && !isScrolling && selectedIndex >= 0) {
-      flatListRef.current.scrollToOffset({
-        offset: selectedIndex * ITEM_HEIGHT,
-        animated: false,
-      });
-    }
-  }, [selectedIndex, isScrolling]);
-
-  const handleMomentumScrollEnd = useCallback(
-    (event: any) => {
-      const offsetY = event.nativeEvent.contentOffset.y;
-      const index = Math.round(offsetY / ITEM_HEIGHT);
-      const clampedIndex = Math.max(0, Math.min(index, data.length - 1));
-      if (clampedIndex !== selectedIndex) {
-        onSelect(clampedIndex);
-      }
-      setIsScrolling(false);
-    },
-    [data.length, selectedIndex, onSelect],
-  );
-
-  const handleScrollBeginDrag = useCallback(() => {
-    setIsScrolling(true);
-  }, []);
-
-  // Add empty items at start and end for padding
-  const paddedData = [
-    { id: 'pad-start-1', empty: true },
-    { id: 'pad-start-2', empty: true },
-    ...data.map((item, index) => ({
-      value: item,
-      id: keyExtractor ? keyExtractor(item) : `item-${index}`,
-    })),
-    { id: 'pad-end-1', empty: true },
-    { id: 'pad-end-2', empty: true },
-  ];
-
-  const renderWheelItem = useCallback(
-    ({ item, index }: { item: any; index: number }) => {
-      if (item.empty) {
-        return <View style={{ height: ITEM_HEIGHT }} />;
-      }
-
-      const actualIndex = index - 2; // Adjust for padding items
-      const isSelected = actualIndex === selectedIndex;
-
-      return (
-        <TouchableOpacity
-          style={[wheelStyles.wheelItem, isSelected && wheelStyles.wheelItemSelected]}
-          onPress={() => {
-            onSelect(actualIndex);
-            flatListRef.current?.scrollToOffset({
-              offset: actualIndex * ITEM_HEIGHT,
-              animated: true,
-            });
-          }}
-          activeOpacity={0.7}
-        >
-          <Text
-            style={[wheelStyles.wheelItemText, isSelected && wheelStyles.wheelItemTextSelected]}
-          >
-            {renderItem ? renderItem(item.value) : item.value}
-          </Text>
-        </TouchableOpacity>
-      );
-    },
-    [selectedIndex, onSelect, renderItem],
-  );
-
-  return (
-    <View style={wheelStyles.wheelContainer}>
-      <View style={wheelStyles.selectionIndicator} />
-      <FlatList
-        ref={flatListRef}
-        data={paddedData}
-        renderItem={renderWheelItem}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
-        snapToInterval={ITEM_HEIGHT}
-        decelerationRate="fast"
-        onMomentumScrollEnd={handleMomentumScrollEnd}
-        onScrollBeginDrag={handleScrollBeginDrag}
-        getItemLayout={(data, index) => ({
-          length: ITEM_HEIGHT,
-          offset: ITEM_HEIGHT * index,
-          index,
-        })}
-        style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS }}
-        contentContainerStyle={{ paddingVertical: 0 }}
-      />
-    </View>
-  );
-};
-
 const AddEventScreen = ({ navigation, route }: ScreenProps) => {
   const contact = route?.params?.contact;
 
@@ -321,9 +185,6 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
   const [selectedType, setSelectedType] = useState('birthday');
   const [eventDate, setEventDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-  const [selectedDay, setSelectedDay] = useState(new Date().getDate());
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [isRecurring, setIsRecurring] = useState(true);
   const [selectedReminders, setSelectedReminders] = useState(['1_week']);
   const [notes, setNotes] = useState('');
@@ -424,12 +285,6 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
     }).start(() => setShowDatePicker(false));
   };
 
-  const confirmDate = () => {
-    const date = new Date(selectedYear, selectedMonth, selectedDay);
-    setEventDate(date);
-    closeDatePicker();
-  };
-
   const toggleReminder = (id: string) => {
     setSelectedReminders((prev) =>
       prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id],
@@ -443,6 +298,11 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
       showWarning('Event name needed', 'Please enter an event name (at least 2 characters).', [
         { text: 'OK' },
       ]);
+      return;
+    }
+
+    if (!selectedContact) {
+      showWarning('Contact needed', 'Please select who this event is for.', [{ text: 'OK' }]);
       return;
     }
 
@@ -539,14 +399,6 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
   });
 
   const selectedTypeData = eventTypes.find((t) => t.id === selectedType);
-  // Contact is required, not optional — this app is specifically for
-  // tracking gift-worthy events tied to a person, so an event with nobody
-  // attached doesn't fit its purpose.
-  const isValid = eventName.trim().length > 0 && !!selectedContact;
-
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 10 }, (_, i) => currentYear + i);
-  const days = Array.from({ length: getDaysInMonth(selectedMonth, selectedYear) }, (_, i) => i + 1);
 
   return (
     <View style={styles.container}>
@@ -807,15 +659,13 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
         ]}
       >
         <TouchableOpacity
-          style={[styles.saveButton, (!isValid || saving) && styles.saveButtonDisabled]}
+          style={[styles.saveButton, saving && styles.saveButtonDisabled]}
           onPress={handleSave}
-          disabled={!isValid || saving}
+          disabled={saving}
           activeOpacity={0.8}
         >
           <LinearGradient
-            colors={
-              isValid && !saving ? ['#6b3a8a', '#ca9ad6', '#70d0dd'] : ['#ccc', '#ddd', '#ccc']
-            }
+            colors={!saving ? ['#6b3a8a', '#ca9ad6', '#70d0dd'] : ['#ccc', '#ddd', '#ccc']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.saveButtonGradient}
@@ -834,104 +684,99 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Date Picker Modal */}
-      <Modal
-        visible={showDatePicker}
-        transparent
-        animationType="none"
-        onRequestClose={closeDatePicker}
-      >
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity
-            style={StyleSheet.absoluteFill}
-            onPress={closeDatePicker}
-            activeOpacity={1}
-          />
-          <Animated.View
-            style={[
-              styles.datePickerContainer,
-              {
-                opacity: modalAnim,
-                transform: [
-                  {
-                    scale: modalAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.9, 1],
-                    }),
-                  },
-                  {
-                    translateY: modalAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [50, 0],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            <LinearGradient
-              colors={['#FFFFFF', '#fbe5f5']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.datePickerContent}
+      {/* Date Picker — native OS picker instead of the old custom Month/
+          Day/Year wheel columns, so jumping to an old year is a direct tap
+          (iOS: tap the header to open a year/month grid; Android: the
+          calendar dialog's own header does the same) instead of scrolling
+          a wheel one year at a time. */}
+      {Platform.OS === 'ios' && (
+        <Modal
+          visible={showDatePicker}
+          transparent
+          animationType="none"
+          onRequestClose={closeDatePicker}
+        >
+          <View style={styles.modalOverlay}>
+            <TouchableOpacity
+              style={StyleSheet.absoluteFill}
+              onPress={closeDatePicker}
+              activeOpacity={1}
+            />
+            <Animated.View
+              style={[
+                styles.datePickerContainer,
+                {
+                  opacity: modalAnim,
+                  transform: [
+                    {
+                      scale: modalAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.9, 1],
+                      }),
+                    },
+                    {
+                      translateY: modalAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [50, 0],
+                      }),
+                    },
+                  ],
+                },
+              ]}
             >
-              <View style={styles.datePickerHeader}>
-                <Text style={styles.datePickerTitle}>Select Date</Text>
-                <TouchableOpacity onPress={closeDatePicker} style={styles.closeButton}>
-                  <XIcon size={24} color="#6b3a8a" />
+              <LinearGradient
+                colors={['#FFFFFF', '#fbe5f5']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.datePickerContent}
+              >
+                <View style={styles.datePickerHeader}>
+                  <Text style={styles.datePickerTitle}>Select Date</Text>
+                  <TouchableOpacity onPress={closeDatePicker} style={styles.closeButton}>
+                    <XIcon size={24} color="#6b3a8a" />
+                  </TouchableOpacity>
+                </View>
+
+                <DateTimePicker
+                  value={eventDate}
+                  mode="date"
+                  display="inline"
+                  accentColor="#ca9ad6"
+                  themeVariant="light"
+                  onChange={(event, selectedDate) => {
+                    if (selectedDate) setEventDate(selectedDate);
+                  }}
+                />
+
+                <TouchableOpacity style={styles.confirmButton} onPress={closeDatePicker}>
+                  <LinearGradient
+                    colors={['#ca9ad6', '#70d0dd']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.confirmButtonGradient}
+                  >
+                    <Text style={styles.confirmButtonText}>Confirm</Text>
+                  </LinearGradient>
                 </TouchableOpacity>
-              </View>
-
-              <View style={styles.dateSelectors}>
-                {/* Month Selector */}
-                <View style={styles.pickerColumn}>
-                  <Text style={styles.pickerLabel}>Month</Text>
-                  <WheelPicker
-                    data={months}
-                    selectedIndex={selectedMonth}
-                    onSelect={(index) => setSelectedMonth(index)}
-                    keyExtractor={(item) => `month-${item}`}
-                    renderItem={(item) => item.substring(0, 3)}
-                  />
-                </View>
-
-                {/* Day Selector */}
-                <View style={styles.pickerColumn}>
-                  <Text style={styles.pickerLabel}>Day</Text>
-                  <WheelPicker
-                    data={days}
-                    selectedIndex={days.indexOf(selectedDay)}
-                    onSelect={(index) => setSelectedDay(days[index])}
-                    keyExtractor={(item) => `day-${item}`}
-                  />
-                </View>
-
-                {/* Year Selector */}
-                <View style={styles.pickerColumn}>
-                  <Text style={styles.pickerLabel}>Year</Text>
-                  <WheelPicker
-                    data={years}
-                    selectedIndex={years.indexOf(selectedYear)}
-                    onSelect={(index) => setSelectedYear(years[index])}
-                    keyExtractor={(item) => `year-${item}`}
-                  />
-                </View>
-              </View>
-
-              <TouchableOpacity style={styles.confirmButton} onPress={confirmDate}>
-                <LinearGradient
-                  colors={['#ca9ad6', '#70d0dd']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.confirmButtonGradient}
-                >
-                  <Text style={styles.confirmButtonText}>Confirm</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </LinearGradient>
-          </Animated.View>
-        </View>
-      </Modal>
+              </LinearGradient>
+            </Animated.View>
+          </View>
+        </Modal>
+      )}
+      {Platform.OS === 'android' && showDatePicker && (
+        <DateTimePicker
+          value={eventDate}
+          mode="date"
+          display="calendar"
+          onChange={(event, selectedDate) => {
+            // Android's dialog is its own native modal and closes itself
+            // either way — 'set' = confirmed, 'dismissed' = cancelled.
+            setShowDatePicker(false);
+            if (event?.type === 'dismissed') return;
+            if (selectedDate) setEventDate(selectedDate);
+          }}
+        />
+      )}
 
       {/* Contact Picker Modal */}
       <Modal
@@ -1318,22 +1163,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dateSelectors: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 20,
-  },
-  pickerColumn: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  pickerLabel: {
-    fontSize: typeScale.sm,
-    fontFamily: 'Handlee_400Regular',
-    color: '#6b3a8a',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
   confirmButton: {
     borderRadius: 16,
     overflow: 'hidden',
@@ -1423,44 +1252,6 @@ const styles = StyleSheet.create({
     fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
-  },
-});
-
-// Wheel picker styles
-const wheelStyles = StyleSheet.create({
-  wheelContainer: {
-    height: ITEM_HEIGHT * VISIBLE_ITEMS,
-    overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    width: '100%',
-  },
-  selectionIndicator: {
-    position: 'absolute',
-    top: ITEM_HEIGHT * 2,
-    left: 4,
-    right: 4,
-    height: ITEM_HEIGHT,
-    backgroundColor: '#fbe5f5',
-    borderRadius: 10,
-    zIndex: 0,
-  },
-  wheelItem: {
-    height: ITEM_HEIGHT,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  wheelItemSelected: {
-    // Selection handled by indicator
-  },
-  wheelItemText: {
-    fontSize: typeScale.lg,
-    fontFamily: 'Handlee_400Regular',
-    color: '#6b3a8a',
-  },
-  wheelItemTextSelected: {
-    color: '#ca9ad6',
-    fontFamily: 'Handlee_400Regular',
   },
 });
 

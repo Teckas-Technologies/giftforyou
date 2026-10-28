@@ -30,7 +30,7 @@ async function fetchInvitations(): Promise<Invitation[]> {
     relationship: inv.relationship,
     token: inv.token,
     inviteLink: inv.token
-      ? `${process.env.EXPO_PUBLIC_WEB_APP_URL || 'https://giftbox-frontend-psi.vercel.app'}/invite/${inv.token}`
+      ? `${process.env.EXPO_PUBLIC_WEB_APP_URL || 'https://app.giftthoughtfully.com'}/invite/${inv.token}`
       : null,
   }));
 }

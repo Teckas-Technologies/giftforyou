@@ -13,10 +13,10 @@ export const APP_CONFIG = {
   // Policy, backend emailService.js) — the earlier 'support@thoughtfully.com'
   // was a different, non-existent domain.
   supportEmail: 'info@giftthoughtfully.com',
-  websiteUrl: 'https://thoughtfully.com',
-  faqUrl: 'https://thoughtfully.com/faq',
-  privacyPolicyUrl: 'https://thoughtfully.com/privacy',
-  termsUrl: 'https://thoughtfully.com/terms',
+  websiteUrl: 'https://giftthoughtfully.com',
+  faqUrl: 'https://giftthoughtfully.com/#faq',
+  privacyPolicyUrl: 'https://giftthoughtfully.com/privacy',
+  termsUrl: 'https://giftthoughtfully.com/terms',
 
   // Store Links
   playStoreUrl: 'https://play.google.com/store/apps/details?id=com.thoughtfullyapp.mobile',
