@@ -14,7 +14,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
-import { useNotificationsData, useNotificationActions } from './hooks';
+import * as Notifications from 'expo-notifications';
+import { useNotificationsData, useNotificationActions, useUnreadCount } from './hooks';
+import { setBadgeCount } from '../../services/notifications';
 import { useMinDurationRefresh } from '../../hooks/useMinDurationRefresh';
 import { getRouteForNotification } from '../../services/notificationRouter';
 import { CustomAlert, SkeletonRow } from '../../components';
@@ -222,15 +224,33 @@ const NotificationsScreen = ({ navigation }: ScreenProps) => {
   // the notifications list clears the unread badge on its own, instead of
   // requiring the user to tap every notification individually. The short
   // delay lets the "unread" styling be visible for a moment first.
+  //
+  // The server-side unread count is checked too, not just the visible list:
+  // the list hides `friend_request` rows (and only loads the latest page),
+  // so a hidden unread row used to keep the app icon badge stuck at "1"
+  // forever, because this effect bailed out when every VISIBLE row was read.
+  const { data: serverUnread = 0 } = useUnreadCount(true);
+  const hasUnread = serverUnread > 0 || notifications.some((n) => !n.is_read);
+
+  // Like Instagram: viewing this screen clears the app icon badge and the
+  // pushes sitting in the Android notification tray right away (many Android
+  // launchers show the tray count as the icon badge).
   useFocusEffect(
     useCallback(() => {
-      if (!notifications.some((n) => !n.is_read)) return;
+      setBadgeCount(0);
+      Notifications.dismissAllNotificationsAsync().catch(() => {});
+    }, []),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasUnread) return;
       const timer = setTimeout(() => {
         handleMarkAllRead();
       }, 1500);
       return () => clearTimeout(timer);
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [notifications]),
+    }, [hasUnread]),
   );
 
   const handleMarkRead = async (id: string) => {

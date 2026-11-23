@@ -14,6 +14,9 @@ export interface NotificationRouteInput {
   data?: { contactId?: string; eventId?: string; [key: string]: any };
   related_id?: string;
   eventId?: string;
+  // Notification text and time — used to open a love note on its own screen
+  body?: string;
+  created_at?: string | Date;
 }
 
 export interface NotificationRoute {
@@ -58,10 +61,23 @@ export function getRouteForNotification(
     case 'profile_incomplete':
       return { screen: 'MainApp', params: { screen: 'Profile' } };
 
-    case 'love_note_received':
-      // The note text is already shown in the notification row/body — just
-      // land on the bell screen rather than a dedicated detail screen.
-      return { screen: 'Notifications', params: {} };
+    case 'love_note_received': {
+      // Opens the animated love note screen. Push payloads carry the text
+      // in data.noteText (older pushes: the banner body, passed as `body`);
+      // in-app rows carry it in data.noteText / body.
+      const noteText = data.noteText || notif.body;
+      if (!noteText) return { screen: 'Notifications', params: {} };
+      const sentAt = data.sentAt || notif.created_at;
+      return {
+        screen: 'LoveNoteReceived',
+        params: {
+          senderName: data.senderName || 'A friend',
+          noteText,
+          // params must be plain values — Date objects become ISO strings
+          sentAt: sentAt instanceof Date ? sentAt.toISOString() : sentAt || null,
+        },
+      };
+    }
 
     case 'preference_updated':
       // related_id is the recipient's own gift_circles row id (see backend

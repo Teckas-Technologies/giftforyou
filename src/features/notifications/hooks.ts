@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, QueryClient } from '@tanstack/react-query';
 import {
   getNotifications,
   getPendingRequests,
@@ -89,6 +89,35 @@ export function useUnreadCount(enabled: boolean) {
 }
 
 /**
+ * Called when the user taps a push banner (see App.tsx). Pushes carry
+ * `notificationId` — the matching in-app row — so tapping one marks exactly
+ * that row read and lowers the app icon badge, like Instagram, instead of
+ * waiting for the Notifications screen to be opened. Pushes without an id
+ * (friend requests have no in-app row; older pushes; on-device reminders)
+ * just refresh the count.
+ */
+export async function markPushNotificationRead(queryClient: QueryClient, notificationId?: string) {
+  if (notificationId) {
+    try {
+      await markNotificationRead(notificationId);
+      queryClient.setQueryData<NotificationsData>(NOTIFICATIONS_QUERY_KEY, (prev) =>
+        prev
+          ? {
+              ...prev,
+              notifications: prev.notifications.map((n) =>
+                n.id === notificationId ? { ...n, is_read: true } : n,
+              ),
+            }
+          : prev,
+      );
+    } catch (error: any) {
+      console.log('[push] mark read failed:', error?.message || String(error));
+    }
+  }
+  queryClient.invalidateQueries({ queryKey: UNREAD_COUNT_QUERY_KEY });
+}
+
+/**
  * Mutations for this screen — each makes the API call, then patches the
  * shared cache the same way the old setNotifications/setIncomingRequests
  * updaters did (see usePatchCase in casearc-mobile for the pattern this
@@ -125,6 +154,9 @@ export function useNotificationActions() {
         ...prev,
         notifications: prev.notifications.map((n) => ({ ...n, is_read: true })),
       }));
+      // Drop the badge to 0 immediately (AppNavigator syncs the icon from
+      // this), then confirm with the server.
+      queryClient.setQueryData(UNREAD_COUNT_QUERY_KEY, 0);
       queryClient.invalidateQueries({ queryKey: UNREAD_COUNT_QUERY_KEY });
     },
     markRead: async (id: string) => {

@@ -167,6 +167,27 @@ const getDaysUntil = (dateStr?: string) => {
   return { text: `In ${diffDays} days`, type: 'later' };
 };
 
+// reminder_days is an array (e.g. [7, 1]). Rendering it straight into <Text>
+// glued the numbers together ("71 days before"). Shows exactly the saved
+// values with the Add Event labels, e.g. "On the day, 1 day before, 1 week
+// before". Returns '' when there are none (the row is then hidden).
+const REMINDER_LABELS: Record<number, string> = {
+  0: 'On the day',
+  1: '1 day before',
+  3: '3 days before',
+  7: '1 week before',
+  14: '2 weeks before',
+  30: '1 month before',
+};
+const formatReminderDays = (value: unknown): string => {
+  if (!Array.isArray(value)) return '';
+  const days = [...new Set(value.map(Number).filter((d) => Number.isInteger(d) && d >= 0))];
+  return days
+    .sort((a, b) => a - b)
+    .map((d) => REMINDER_LABELS[d] || `${d} day${d === 1 ? '' : 's'} before`)
+    .join(', ');
+};
+
 const EventDetailScreen = ({ navigation, route }: ScreenProps) => {
   const { eventId, event: passedEvent } = route.params || {};
 
@@ -440,19 +461,20 @@ const EventDetailScreen = ({ navigation, route }: ScreenProps) => {
             )}
 
             {/* Reminder */}
-            {(event.reminderEnabled || event.reminder_enabled) && (
-              <View style={styles.detailRow}>
-                <View style={styles.detailIconContainer}>
-                  <BellIcon size={22} color="#f9a825" />
+            {(event.reminderEnabled || event.reminder_enabled) &&
+              formatReminderDays(event.reminderDays ?? event.reminder_days) !== '' && (
+                <View style={styles.detailRow}>
+                  <View style={styles.detailIconContainer}>
+                    <BellIcon size={22} color="#f9a825" />
+                  </View>
+                  <View style={styles.detailContent}>
+                    <Text style={styles.detailLabel}>Reminder</Text>
+                    <Text style={styles.detailValue}>
+                      {formatReminderDays(event.reminderDays ?? event.reminder_days)}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.detailContent}>
-                  <Text style={styles.detailLabel}>Reminder</Text>
-                  <Text style={styles.detailValue}>
-                    {event.reminderDays || event.reminder_days || 7} days before
-                  </Text>
-                </View>
-              </View>
-            )}
+              )}
           </View>
 
           {/* Notes — field is labeled "Notes" on the Add Event form

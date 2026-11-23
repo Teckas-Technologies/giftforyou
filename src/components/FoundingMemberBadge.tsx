@@ -1,96 +1,103 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { fontSize as typeScale } from '../theme';
+import { View, StyleSheet } from 'react-native';
+import Svg, {
+  Circle,
+  Defs,
+  LinearGradient as SvgLinearGradient,
+  Path,
+  Stop,
+  Text as SvgText,
+  TextPath,
+} from 'react-native-svg';
 
 interface FoundingMemberBadgeProps {
+  /** Founding member number, shown at the bottom of the ring (e.g. 116). */
   number: number;
-  total?: number;
+  /** The avatar, drawn in the middle of the ring. */
+  children: React.ReactNode;
+  /** Diameter of the avatar inside the ring. */
+  avatarSize?: number;
 }
 
-const badgeIcon = require('../../assets/founding-member-badge.png');
+// Founding member avatar ring (client "teal ring" design):
+//   avatar → thin dark outline → gold ring → teal ring with
+//   "FOUNDING MEMBER" curved along the top and the member number at the
+//   bottom. Replaces the old gold "Founding Member #116 of 5000" pill.
+const GOLD_WIDTH = 9;
+const TEAL_WIDTH = 24;
 
-const BADGE_RADIUS = 30;
+const FoundingMemberBadge = ({ number, children, avatarSize = 80 }: FoundingMemberBadgeProps) => {
+  const avatarR = avatarSize / 2;
+  const goldOuterR = avatarR + GOLD_WIDTH;
+  const outerR = goldOuterR + TEAL_WIDTH;
+  const size = outerR * 2;
+  const c = outerR; // centre
+  const textR = goldOuterR + TEAL_WIDTH / 2 - 4; // baseline of the curved text
 
-// Shadow and rounded-corner clipping can't both live on the same gradient
-// view in RN (overflow: 'hidden' needed to clip the gradient to its
-// corners also clips the shadow). Outer View carries the shadow; inner
-// LinearGradient carries the radius + overflow clip, so both render
-// correctly at once.
-const FoundingMemberBadge = ({ number, total = 5000 }: FoundingMemberBadgeProps) => {
+  // Arc over the top, left → right, for the curved label.
+  const topArc = `M ${c - textR},${c} A ${textR},${textR} 0 0 1 ${c + textR},${c}`;
+
   return (
-    <View style={styles.shadowWrap}>
-      <LinearGradient
-        colors={['#FBEFCF', '#EFCB73']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.container}
+    <View
+      style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}
+      accessible
+      accessibilityLabel={`Founding member number ${number}`}
+    >
+      <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
+        <Defs>
+          <SvgLinearGradient id="fmGold" x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0" stopColor="#F6DD8C" />
+            <Stop offset="0.45" stopColor="#D4A62A" />
+            <Stop offset="0.75" stopColor="#B07D12" />
+            <Stop offset="1" stopColor="#F0C95A" />
+          </SvgLinearGradient>
+          <Path id="fmTopArc" d={topArc} />
+        </Defs>
+
+        {/* Teal outer ring */}
+        <Circle cx={c} cy={c} r={outerR} fill="#A8E0DA" />
+        {/* Gold ring */}
+        <Circle cx={c} cy={c} r={goldOuterR} fill="url(#fmGold)" />
+        {/* Thin dark outline around the avatar */}
+        <Circle cx={c} cy={c} r={avatarR + 0.75} fill="#4A3410" />
+
+        <SvgText
+          fill="#1E3A3A"
+          fontSize={11}
+          fontWeight="700"
+          letterSpacing={3}
+          textAnchor="middle"
+        >
+          <TextPath href="#fmTopArc" startOffset="50%">
+            FOUNDING MEMBER
+          </TextPath>
+        </SvgText>
+
+        <SvgText
+          x={c}
+          y={c + goldOuterR + TEAL_WIDTH / 2 + 4}
+          fill="#1E3A3A"
+          fontSize={12}
+          fontWeight="700"
+          letterSpacing={1}
+          textAnchor="middle"
+        >
+          {number}
+        </SvgText>
+      </Svg>
+
+      <View
+        style={{
+          width: avatarSize,
+          height: avatarSize,
+          borderRadius: avatarR,
+          overflow: 'hidden',
+        }}
       >
-        <View style={styles.iconPlate}>
-          <Image source={badgeIcon} style={styles.icon} resizeMode="contain" />
-        </View>
-        <View style={styles.textBlock}>
-          <Text style={styles.label}>Founding Member</Text>
-          <Text style={styles.number}>
-            #{number.toLocaleString()} of {total.toLocaleString()}
-          </Text>
-        </View>
-      </LinearGradient>
+        {children}
+      </View>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  shadowWrap: {
-    alignSelf: 'center',
-    borderRadius: BADGE_RADIUS,
-    shadowColor: '#8a6600',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.18,
-    shadowRadius: 7,
-    elevation: 4,
-  },
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: BADGE_RADIUS,
-    borderWidth: 1.5,
-    borderColor: '#C9A227',
-    overflow: 'hidden',
-  },
-  iconPlate: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FFFBEF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(168, 120, 15, 0.3)',
-  },
-  icon: {
-    width: 28,
-    height: 28,
-  },
-  textBlock: {
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  label: {
-    fontFamily: 'Handlee_400Regular',
-    fontSize: typeScale.lg,
-    color: '#4a3508',
-    lineHeight: typeScale.lg + 4,
-  },
-  number: {
-    fontFamily: 'Handlee_400Regular',
-    fontSize: typeScale.sm,
-    color: '#6b4f0f',
-    lineHeight: typeScale.sm + 4,
-  },
-});
 
 export default FoundingMemberBadge;

@@ -107,8 +107,8 @@ const SmallGiftIcon = ({ size = 16, color = '#ca9ad6' }: IconProps) => (
   </Svg>
 );
 
-// Headphones Icon
-const HeadphonesIcon = ({ size = 20, color = '#70d0dd' }: IconProps) => (
+// Chef Hat Icon
+const ChefHatIcon = ({ size = 20, color = '#70d0dd' }: IconProps) => (
   <Svg
     width={size}
     height={size}
@@ -119,13 +119,13 @@ const HeadphonesIcon = ({ size = 20, color = '#70d0dd' }: IconProps) => (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <Path d="M3 18v-6a9 9 0 0 1 18 0v6" />
-    <Path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+    <Path d="M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z" />
+    <Path d="M6 17h12" />
   </Svg>
 );
 
-// Book Icon
-const BookIcon = ({ size = 20, color = '#70d0dd' }: IconProps) => (
+// Helicopter Icon
+const HelicopterIcon = ({ size = 20, color = '#70d0dd' }: IconProps) => (
   <Svg
     width={size}
     height={size}
@@ -136,13 +136,19 @@ const BookIcon = ({ size = 20, color = '#70d0dd' }: IconProps) => (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <Path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-    <Path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+    <Path d="M4 4h16" />
+    <Path d="M12 4v3" />
+    <Path d="M7 11a4 4 0 0 1 4-4h3a5 5 0 0 1 5 5 3 3 0 0 1-3 3h-5a4 4 0 0 1-4-4Z" />
+    <Path d="M7 11H2" />
+    <Path d="M2 9v4" />
+    <Path d="M10 15v3" />
+    <Path d="M16 15v3" />
+    <Path d="M8 18h10" />
   </Svg>
 );
 
-// Spa/Cookie Icon
-const SpaIcon = ({ size = 20, color = '#f4cae8' }: IconProps) => (
+// Race Car Icon
+const RaceCarIcon = ({ size = 20, color = '#f4cae8' }: IconProps) => (
   <Svg
     width={size}
     height={size}
@@ -153,12 +159,10 @@ const SpaIcon = ({ size = 20, color = '#f4cae8' }: IconProps) => (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <Path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5" />
-    <Path d="M8.5 8.5v.01" />
-    <Path d="M16 15.5v.01" />
-    <Path d="M12 12v.01" />
-    <Path d="M11 17v.01" />
-    <Path d="M7 14v.01" />
+    <Path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+    <Circle cx="7" cy="17" r="2" />
+    <Path d="M9 17h6" />
+    <Circle cx="17" cy="17" r="2" />
   </Svg>
 );
 
@@ -256,7 +260,8 @@ const onboardingData = [
     id: '3',
     title: 'Find',
     titleHighlight: 'perfect',
-    titleEnd: 'gift ideas',
+    titleEnd: 'gift',
+    titleBold: 'ideas',
     theme: 'blue',
   },
   {
@@ -502,29 +507,26 @@ const OnboardingScreen = ({ navigation }: ScreenProps) => {
       <View style={styles.giftCards}>
         <View style={styles.giftCard}>
           <View style={[styles.giftEmoji, { backgroundColor: '#ccf9ff' }]}>
-            <HeadphonesIcon size={24} color="#70d0dd" />
+            <ChefHatIcon size={24} color="#70d0dd" />
           </View>
           <View style={styles.giftDetails}>
-            <Text style={styles.giftName}>Wireless Earbuds</Text>
-            <Text style={[styles.giftPrice, { color: '#70d0dd' }]}>$79</Text>
+            <Text style={styles.giftName}>Chef Experience</Text>
           </View>
         </View>
         <View style={styles.giftCard}>
           <View style={[styles.giftEmoji, { backgroundColor: '#ccf9ff' }]}>
-            <BookIcon size={24} color="#70d0dd" />
+            <HelicopterIcon size={24} color="#70d0dd" />
           </View>
           <View style={styles.giftDetails}>
-            <Text style={styles.giftName}>Book Collection</Text>
-            <Text style={[styles.giftPrice, { color: '#70d0dd' }]}>$45</Text>
+            <Text style={styles.giftName}>Scenic Helicopter Tours</Text>
           </View>
         </View>
         <View style={styles.giftCard}>
           <View style={[styles.giftEmoji, { backgroundColor: '#fbe5f5' }]}>
-            <SpaIcon size={24} color="#f4cae8" />
+            <RaceCarIcon size={24} color="#ca9ad6" />
           </View>
           <View style={styles.giftDetails}>
-            <Text style={styles.giftName}>Spa Gift Set</Text>
-            <Text style={[styles.giftPrice, { color: '#ca9ad6' }]}>$35</Text>
+            <Text style={styles.giftName}>Race Car Driving Experience</Text>
           </View>
         </View>
       </View>
@@ -594,6 +596,9 @@ const OnboardingScreen = ({ navigation }: ScreenProps) => {
                 {item.titleHighlight}
               </Text>
               {item.titleEnd && <Text style={styles.headline}> {item.titleEnd}</Text>}
+              {item.titleBold && (
+                <Text style={[styles.headline, styles.headlineBold]}> {item.titleBold}</Text>
+              )}
             </Text>
           </View>
 
@@ -727,6 +732,14 @@ const styles = StyleSheet.create({
   },
   headlineHighlight: {
     fontFamily: 'Handlee_400Regular',
+  },
+  // Handlee only ships a regular weight, so fontWeight alone won't thicken it
+  // on Android or iOS — a same-color text shadow fakes the bold stroke.
+  headlineBold: {
+    fontWeight: '700',
+    textShadowColor: '#330c54',
+    textShadowOffset: { width: 0.6, height: 0 },
+    textShadowRadius: 0.6,
   },
   description: {
     fontSize: typeScale.md,
@@ -976,11 +989,6 @@ const styles = StyleSheet.create({
     fontSize: typeScale.md,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
-  },
-  giftPrice: {
-    fontSize: typeScale.base,
-    fontFamily: 'Handlee_400Regular',
-    marginTop: 2,
   },
 
   // Feature Pills Styles

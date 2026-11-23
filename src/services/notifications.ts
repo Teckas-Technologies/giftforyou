@@ -229,6 +229,24 @@ export async function cancelNotification(notificationId: string) {
 }
 
 /**
+ * Cancel on-device event reminders scheduled by older app versions (event
+ * reminders now come only from the server, so these would arrive as
+ * duplicates). Leaves any other scheduled notification alone.
+ */
+export async function cancelLocalEventReminders() {
+  try {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    await Promise.all(
+      scheduled
+        .filter((n) => n.content?.data?.type === 'event_reminder')
+        .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)),
+    );
+  } catch (error) {
+    console.log('Error canceling local event reminders:', error);
+  }
+}
+
+/**
  * Cancel all scheduled notifications
  */
 export async function cancelAllNotifications() {

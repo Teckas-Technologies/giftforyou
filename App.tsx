@@ -10,8 +10,10 @@ import {
   registerForPushNotifications,
   addNotificationReceivedListener,
   addNotificationResponseListener,
+  cancelLocalEventReminders,
 } from './src/services/notifications';
 import { getRouteForNotification } from './src/services/notificationRouter';
+import { markPushNotificationRead } from './src/features/notifications/hooks';
 import { navigationRef, AppNavigator } from './src/navigation';
 import { supabase } from './src/config/supabase';
 import { useFonts } from 'expo-font';
@@ -47,6 +49,10 @@ export default function App() {
 
     initPushNotifications();
 
+    // Event reminders now come only from the server; clear any duplicate
+    // on-device ones that older app versions scheduled.
+    cancelLocalEventReminders();
+
     // Listen for notifications received while app is foregrounded
     notificationListener.current = addNotificationReceivedListener((notification: any) => {
       console.log('Notification received:', notification);
@@ -54,13 +60,18 @@ export default function App() {
 
     // Navigate based on a push payload, waiting until the nav tree is mounted
     // (matters for cold-start taps fired before NavigationContainer is ready).
-    const handlePushTap = (data: any) => {
+    const handlePushTap = (content: any) => {
+      const data = content?.data;
       console.log('[push] tapped, raw data:', JSON.stringify(data));
       if (!data) return;
+      // Seen it -> mark its in-app row read and drop the icon badge.
+      markPushNotificationRead(queryClient, data.notificationId);
       const route = getRouteForNotification({
         type: data.type,
         data,
         related_id: data.circleId || data.eventId || data.relatedId,
+        // banner text — lets love notes from older pushes (no data.noteText) open too
+        body: content?.body,
       });
       console.log('[push] resolved route:', JSON.stringify(route));
       if (!route) return;
@@ -86,7 +97,7 @@ export default function App() {
 
     // Warm tap: app is running (foreground or background) when user taps banner.
     responseListener.current = addNotificationResponseListener((response: any) => {
-      handlePushTap(response.notification.request.content.data);
+      handlePushTap(response.notification.request.content);
     });
 
     // Cold start: app was killed and launched by tapping the notification.
@@ -94,7 +105,7 @@ export default function App() {
     // and we have to read it explicitly.
     Notifications.getLastNotificationResponseAsync().then((response) => {
       if (response) {
-        handlePushTap(response.notification.request.content.data);
+        handlePushTap(response.notification.request.content);
       }
     });
 

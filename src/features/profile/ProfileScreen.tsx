@@ -690,29 +690,46 @@ const ProfileScreen = ({ navigation }: ScreenProps) => {
                 activeOpacity={0.85}
                 disabled={uploadingPhoto}
               >
-                <LinearGradient
-                  colors={['#f4cae8', '#70d0dd']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.avatar}
-                >
-                  {profile.photoUrl ? (
-                    <Image source={{ uri: profile.photoUrl }} style={styles.avatarImage} />
-                  ) : profile.avatarType && avatarTypes[profile.avatarType] ? (
-                    <Text style={styles.avatarEmoji}>{avatarTypes[profile.avatarType]}</Text>
-                  ) : profile.name ? (
-                    <Text style={styles.avatarInitials}>{getInitials(profile.name)}</Text>
-                  ) : (
-                    <UserIcon size={32} color="white" />
-                  )}
+                {(() => {
+                  const isFounding = !!(profile.isFoundingMember && profile.foundingMemberNumber);
+                  const avatar = (
+                    <LinearGradient
+                      colors={['#f4cae8', '#70d0dd']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={[styles.avatar, isFounding && styles.avatarInRing]}
+                    >
+                      {profile.photoUrl ? (
+                        <Image
+                          source={{ uri: profile.photoUrl }}
+                          style={[styles.avatarImage, isFounding && styles.avatarImageInRing]}
+                        />
+                      ) : profile.avatarType && avatarTypes[profile.avatarType] ? (
+                        <Text style={styles.avatarEmoji}>{avatarTypes[profile.avatarType]}</Text>
+                      ) : profile.name ? (
+                        <Text style={styles.avatarInitials}>{getInitials(profile.name)}</Text>
+                      ) : (
+                        <UserIcon size={32} color="white" />
+                      )}
 
-                  {/* Uploading overlay */}
-                  {uploadingPhoto && (
-                    <View style={styles.avatarUploadingOverlay}>
-                      <ActivityIndicator size="small" color="#ffffff" />
-                    </View>
-                  )}
-                </LinearGradient>
+                      {/* Uploading overlay */}
+                      {uploadingPhoto && (
+                        <View style={styles.avatarUploadingOverlay}>
+                          <ActivityIndicator size="small" color="#ffffff" />
+                        </View>
+                      )}
+                    </LinearGradient>
+                  );
+                  // Founding members: avatar sits inside the teal/gold
+                  // "FOUNDING MEMBER" ring (replaces the old gold pill).
+                  return isFounding ? (
+                    <FoundingMemberBadge number={profile.foundingMemberNumber}>
+                      {avatar}
+                    </FoundingMemberBadge>
+                  ) : (
+                    avatar
+                  );
+                })()}
 
                 {/* Camera icon hint — tells users the avatar is tappable */}
                 <View style={styles.avatarCameraBadge}>
@@ -747,12 +764,6 @@ const ProfileScreen = ({ navigation }: ScreenProps) => {
             >
               {profile.email || 'No email'}
             </Animated.Text>
-
-            {profile.isFoundingMember && profile.foundingMemberNumber && (
-              <View style={styles.foundingBadgeWrap}>
-                <FoundingMemberBadge number={profile.foundingMemberNumber} />
-              </View>
-            )}
 
             {/* Stats with gradient values */}
             <View style={styles.statsRow}>
@@ -1020,9 +1031,17 @@ const styles = StyleSheet.create({
     color: '#6b3a8a',
     marginBottom: 20,
   },
-  foundingBadgeWrap: {
-    marginTop: -12,
-    marginBottom: 20,
+  // Inside the founding member ring the gold ring is the frame, so no white
+  // border or drop shadow on the avatar itself.
+  avatarInRing: {
+    borderWidth: 0,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  avatarImageInRing: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   statsRow: {
     flexDirection: 'row',
