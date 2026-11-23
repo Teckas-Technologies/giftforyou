@@ -166,17 +166,19 @@ const TABS = [
   { key: 'work', label: 'Colleagues' },
 ];
 
+const CONTACTS_PAGE_SIZE = 5;
+
 const ContactsScreen = ({ navigation }: ScreenProps) => {
   const [searchText, setSearchText] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
-  // Collapses long lists to a first page instead of rendering every contact
-  // at once (this screen has no virtualization) — resets whenever the tab
-  // changes so each tab opens collapsed again.
-  const [showAll, setShowAll] = useState(false);
+  // Shows contacts 5 at a time with a "Load more" button (same as the
+  // Calendar events list) instead of rendering every contact at once (this
+  // screen has no virtualization) — resets whenever the tab changes.
+  const [visibleCount, setVisibleCount] = useState(CONTACTS_PAGE_SIZE);
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    setShowAll(false);
+    setVisibleCount(CONTACTS_PAGE_SIZE);
   };
 
   // Contact circle via React Query — see hooks.js for why revisiting this
@@ -360,10 +362,10 @@ const ContactsScreen = ({ navigation }: ScreenProps) => {
 
   // While actively searching, show every match — capping search results to
   // a page would hide the very thing the user is looking for. Otherwise,
-  // render only the first page until "View All" is tapped.
-  const PAGE_SIZE = 5;
-  const isCapped = !searchText && !showAll && filteredContacts.length > PAGE_SIZE;
-  const displayedContacts = isCapped ? filteredContacts.slice(0, PAGE_SIZE) : filteredContacts;
+  // render 5 at a time, with "Load more" adding the next 5.
+  const displayedContacts = searchText ? filteredContacts : filteredContacts.slice(0, visibleCount);
+  const remainingContacts = filteredContacts.length - displayedContacts.length;
+  const nextContactsBatch = Math.min(CONTACTS_PAGE_SIZE, remainingContacts);
 
   const activeTabLabel = TABS.find((t) => t.key === activeTab)?.label || 'contacts';
 
@@ -679,7 +681,29 @@ const ContactsScreen = ({ navigation }: ScreenProps) => {
 
                   {/* Details */}
                   <View style={styles.contactDetails}>
-                    <Text style={styles.contactName}>{contact.name}</Text>
+                    <View style={styles.contactNameRow}>
+                      <Text style={styles.contactName} numberOfLines={1}>
+                        {contact.name}
+                      </Text>
+                      {/* App friends vs friends who only filled the invite
+                          form — pending requests already show "Requested". */}
+                      {!contact.isPending &&
+                        (contact.isGuest ? (
+                          <View style={[styles.friendTypeBadge, styles.questionnaireBadge]}>
+                            <Text
+                              style={[styles.friendTypeBadgeText, styles.questionnaireBadgeText]}
+                            >
+                              Via questionnaire
+                            </Text>
+                          </View>
+                        ) : (
+                          <View style={[styles.friendTypeBadge, styles.onAppBadge]}>
+                            <Text style={[styles.friendTypeBadgeText, styles.onAppBadgeText]}>
+                              On Thoughtfully
+                            </Text>
+                          </View>
+                        ))}
+                    </View>
                     <View style={styles.contactBirthday}>
                       <CalendarIcon size={12} color="#6b3a8a" />
                       <Text style={styles.birthdayText}>
@@ -718,13 +742,18 @@ const ContactsScreen = ({ navigation }: ScreenProps) => {
             );
           })}
 
-        {isCapped && (
+        {!loading && remainingContacts > 0 && (
           <TouchableOpacity
             style={styles.viewAllButton}
-            onPress={() => setShowAll(true)}
+            onPress={() => setVisibleCount((count) => count + CONTACTS_PAGE_SIZE)}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={`Load ${nextContactsBatch} more contacts`}
           >
-            <Text style={styles.viewAllButtonText}>View All ({filteredContacts.length})</Text>
+            <Text style={styles.viewAllButtonText}>Load {nextContactsBatch} more</Text>
+            <Text style={styles.viewAllButtonSub}>
+              Showing {displayedContacts.length} of {filteredContacts.length}
+            </Text>
           </TouchableOpacity>
         )}
 
@@ -996,7 +1025,13 @@ const styles = StyleSheet.create({
   viewAllButtonText: {
     fontSize: typeScale.base,
     fontFamily: 'Handlee_400Regular',
-    color: '#ca9ad6',
+    color: '#8a4fa3',
+  },
+  viewAllButtonSub: {
+    fontSize: typeScale.sm,
+    fontFamily: 'Handlee_400Regular',
+    color: '#7d6b8f',
+    marginTop: 2,
   },
   contactItemInner: {
     flexDirection: 'row',
@@ -1048,10 +1083,42 @@ const styles = StyleSheet.create({
   contactDetails: {
     flex: 1,
   },
+  contactNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   contactName: {
+    flexShrink: 1,
     fontSize: typeScale.lg,
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
+  },
+  friendTypeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  friendTypeBadgeText: {
+    fontSize: typeScale.xs,
+    lineHeight: 16,
+    includeFontPadding: false,
+    fontFamily: 'Handlee_400Regular',
+  },
+  onAppBadge: {
+    backgroundColor: '#e6fbfd',
+    borderColor: 'rgba(112, 208, 221, 0.5)',
+  },
+  onAppBadgeText: {
+    color: '#2a8f9c',
+  },
+  questionnaireBadge: {
+    backgroundColor: '#f4e8f7',
+    borderColor: 'rgba(202, 154, 214, 0.4)',
+  },
+  questionnaireBadgeText: {
+    color: '#6b3a8a',
   },
   contactBirthday: {
     flexDirection: 'row',

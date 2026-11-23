@@ -12,9 +12,10 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Polyline } from 'react-native-svg';
-import { getCircles, sendLoveNote } from '../../services/api';
+import { getCircles, getLoveNotes, sendLoveNote } from '../../services/api';
 import { CustomAlert, SkeletonBlock } from '../../components';
 import useAlert from '../../hooks/useAlert';
+import { useQueryClient } from '@tanstack/react-query';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 import { fontSize as typeScale } from '../../theme';
 
@@ -65,6 +66,7 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
   const preselectedCircleId = route?.params?.circleId || null;
 
   const scrollRef = useRef<any>(null);
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [friends, setFriends] = useState<any[]>([]);
@@ -72,6 +74,9 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
     preselectedCircleId ? [preselectedCircleId] : [],
   );
   const [noteText, setNoteText] = useState('');
+  // Ready-made notes: the client's daily love notes plus approved user
+  // submissions (approval adds them to the same love_notes list).
+  const [readyNotes, setReadyNotes] = useState<{ id: string; text: string }[]>([]);
 
   const preselectedFriend = preselectedCircleId
     ? friends.find((f) => f.id === preselectedCircleId) || null
@@ -83,12 +88,25 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
     );
   };
 
-  const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
+  // Contacts who only filled the questionnaire link (no app account) — they
+  // can't get Love Notes, so they're left out of the picker below.
+  const [questionnaireOnlyCount, setQuestionnaireOnlyCount] = useState(0);
+
+  const { alertConfig, showSuccess, showError, showInfo, showOptions, hideAlert } = useAlert();
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const circlesRes = await getCircles({ status: 'accepted' });
+      const [circlesRes, notesRes] = await Promise.all([
+        getCircles({ status: 'accepted' }),
+        // The list is optional — if it fails, the user can still write one.
+        getLoveNotes().catch(() => ({ notes: [] })),
+      ]);
+      setReadyNotes(
+        (notesRes?.notes || []).filter(
+          (n: any) => n?.text?.trim() && n.text.length <= MAX_NOTE_LENGTH,
+        ),
+      );
 
       const contactsList = circlesRes.contacts || [];
       // Guest contacts (added via the invite-link/questionnaire flow but who
@@ -106,35 +124,66 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
         });
 
       setFriends(transformedFriends);
+
+      const skipped = contactsList.length - transformedFriends.length;
+      setQuestionnaireOnlyCount(skipped);
+
+      // Every time the screen opens, explain why some contacts are missing.
+      // Not when opened from a contact's page (that contact is an app user).
+      if (skipped > 0 && !preselectedCircleId) {
+        showInfo(
+          'Love Notes are for app friends 💌',
+          'Love Notes can only be sent to friends who use the Thoughtfully app. Friends added via questionnaire will show up here once they download the app.',
+        );
+      }
     } catch (error) {
       showError(error.message || 'Failed to load your friends');
     } finally {
       setLoading(false);
     }
-  }, [showError]);
+  }, [showError, showInfo, preselectedCircleId]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  const handleSend = async () => {
-    if (selectedCircleIds.length === 0 || !noteText.trim() || sending) return;
+  // "Anna" for one friend, "3 friends" for several.
+  const recipientLabel =
+    selectedCircleIds.length === 1
+      ? friends.find((f) => f.id === selectedCircleIds[0])?.name || 'your friend'
+      : `${selectedCircleIds.length} friends`;
+
+  const sendNote = async (rawText: string) => {
+    const text = rawText.trim();
+    if (selectedCircleIds.length === 0 || !text || sending) return;
 
     setSending(true);
     try {
-      const text = noteText.trim();
       await Promise.all(selectedCircleIds.map((circleId) => sendLoveNote(circleId, text)));
-
-      const message =
-        selectedCircleIds.length === 1
-          ? `Love note sent to ${friends.find((f) => f.id === selectedCircleIds[0])?.name || 'your friend'}! 💌`
-          : `Love note sent to ${selectedCircleIds.length} friends! 💌`;
-      showSuccess(message, () => navigation.goBack());
+      // So the contact page's "Love Notes sent" shows this note right away
+      queryClient.invalidateQueries({ queryKey: ['loveNoteHistory'] });
+      showSuccess(`Love note sent to ${recipientLabel}! 💌`, () => navigation.goBack());
     } catch (error) {
       showError(error.message || 'Failed to send love note');
     } finally {
       setSending(false);
     }
+  };
+
+  const handleSend = () => sendNote(noteText);
+
+  // Tapping a ready-made note sends it after one confirm — a sent note can't
+  // be taken back, and cards are easy to tap by accident while scrolling.
+  const handlePickNote = (text: string) => {
+    if (sending) return;
+    if (selectedCircleIds.length === 0) {
+      showInfo('Select a friend first', 'Choose who you want to send this love note to.');
+      return;
+    }
+    showOptions(`Send this love note to ${recipientLabel}?`, `"${text}"`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Send 💌', onPress: () => sendNote(text) },
+    ]);
   };
 
   const canSend = selectedCircleIds.length > 0 && !!noteText.trim() && !sending;
@@ -198,8 +247,20 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
           >
             <Text style={styles.emptyIconEmoji}>💌</Text>
           </LinearGradient>
-          <Text style={styles.emptyTitle}>Hey, where are your friends?</Text>
-          <Text style={styles.emptySubtitle}>Why don't you add a couple of them?</Text>
+          {questionnaireOnlyCount > 0 ? (
+            <>
+              <Text style={styles.emptyTitle}>No app friends yet</Text>
+              <Text style={styles.emptySubtitle}>
+                Love Notes can only be sent to friends who use the Thoughtfully app. Your friends
+                added via questionnaire will show up here once they download the app.
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.emptyTitle}>Hey, where are your friends?</Text>
+              <Text style={styles.emptySubtitle}>Why don't you add a couple of them?</Text>
+            </>
+          )}
           <TouchableOpacity activeOpacity={0.85} onPress={() => navigation.navigate('Invitations')}>
             <LinearGradient
               colors={['#ca9ad6', '#70d0dd']}
@@ -313,7 +374,36 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
               </>
             )}
 
-            <Text style={styles.sectionLabel}>Your love note</Text>
+            {readyNotes.length > 0 && (
+              <>
+                <Text style={styles.sectionLabel}>Pick a love note</Text>
+                <Text style={styles.sectionHint}>Tap a note to send it</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.readyNotesRow}
+                  contentContainerStyle={styles.readyNotesContent}
+                >
+                  {readyNotes.map((note) => (
+                    <TouchableOpacity
+                      key={note.id}
+                      activeOpacity={0.8}
+                      onPress={() => handlePickNote(note.text)}
+                      style={styles.readyNoteCard}
+                    >
+                      <Text style={styles.readyNoteText} numberOfLines={5}>
+                        {note.text}
+                      </Text>
+                      <Text style={styles.readyNoteSend}>Send 💌</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </>
+            )}
+
+            <Text style={styles.sectionLabel}>
+              {readyNotes.length > 0 ? 'Or write your own' : 'Your love note'}
+            </Text>
             <TextInput
               style={styles.noteInput}
               value={noteText}
@@ -362,6 +452,43 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  readyNotesRow: {
+    marginBottom: 16,
+    marginHorizontal: -16,
+  },
+  readyNotesContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    gap: 10,
+  },
+  readyNoteCard: {
+    width: 200,
+    minHeight: 104,
+    padding: 14,
+    justifyContent: 'space-between',
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#f4cae8',
+    shadowColor: '#ca9ad6',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  readyNoteText: {
+    fontFamily: 'Handlee_400Regular',
+    fontSize: typeScale.base,
+    lineHeight: 20,
+    color: '#330c54',
+  },
+  readyNoteSend: {
+    marginTop: 10,
+    alignSelf: 'flex-end',
+    fontFamily: 'Handlee_400Regular',
+    fontSize: typeScale.sm,
+    color: '#ca9ad6',
   },
   header: {
     flexDirection: 'row',

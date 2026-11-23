@@ -789,6 +789,14 @@ export const sendLoveNote = (circleId: string, text: string) =>
   });
 
 /**
+ * Love notes the signed-in user has sent to one contact, newest first
+ * @param circleId - The contact's circle ID
+ * @returns { notes: { id, text, created_at }[], total }
+ */
+export const getLoveNoteHistory = (circleId: string) =>
+  apiRequest(`/api/love-notes/history/${circleId}`);
+
+/**
  * Submit a new love note idea for admin review
  * @param text - The suggested love note text
  */

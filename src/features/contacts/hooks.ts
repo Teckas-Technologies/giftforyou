@@ -18,6 +18,9 @@ export interface Contact {
   // is beyond its one free slot — the server already stripped their real
   // name/birthday/photo, so this row can only render a placeholder.
   locked: boolean;
+  // Shared their gift preferences through an invite link but never signed up
+  // (no member_id). They can't receive Love Notes, so the list labels them.
+  isGuest: boolean;
 }
 
 const getInitials = (name?: string) => {
@@ -72,6 +75,7 @@ async function fetchContacts(): Promise<Contact[]> {
         colorType: index % 2 === 0 ? 'pink' : 'blue',
         isPending: false,
         locked: true,
+        isGuest: false,
       };
     }
 
@@ -95,6 +99,7 @@ async function fetchContacts(): Promise<Contact[]> {
       status: contact.status,
       isPending: contact.status === 'pending',
       locked: false,
+      isGuest: !contact.member_id,
     };
   });
 }

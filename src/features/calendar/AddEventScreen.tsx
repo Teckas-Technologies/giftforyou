@@ -19,7 +19,6 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path, Circle, Line, Polyline, Rect } from 'react-native-svg';
 import { useQueryClient } from '@tanstack/react-query';
 import { createEvent, getCircles } from '../../services/api';
-import { scheduleEventReminder, saveEventNotificationIds } from '../../services/notifications';
 import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import { CALENDAR_EVENTS_QUERY_KEY_PREFIX } from './hooks';
@@ -321,10 +320,12 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
       };
 
       // Get reminder days from selected reminders
-      const reminderDays = selectedReminders.map((id) => {
-        const option = reminderOptions.find((r) => r.id === id);
-        return option?.value || 7;
-      });
+      // Exactly what the user picked — no substitute values. ("On the day"
+      // is 0; the old `|| 7` turned it into 1 week.) Nothing picked = no
+      // reminders for this event.
+      const reminderDays = reminderOptions
+        .filter((r) => selectedReminders.includes(r.id))
+        .map((r) => r.value);
 
       // Format date in local timezone (avoid UTC conversion issues)
       const year = eventDate.getFullYear();
@@ -337,31 +338,19 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
         eventDate: `${year}-${month}-${day}`,
         description: notes || undefined,
         isRecurring: isRecurring,
-        reminderDays: reminderDays.length > 0 ? reminderDays : [7],
+        reminderDays,
+        reminderEnabled: reminderDays.length > 0,
         circleId: selectedContact?.id || undefined,
         contactId: selectedContact?.memberId || undefined,
       };
 
-      const response = await createEvent(eventData);
-      const eventId = response?.event?.id || Date.now().toString();
+      await createEvent(eventData);
 
-      // Schedule local notification reminders. Each scheduled id is saved
-      // against this event so they can be found and cancelled again if the
-      // event is later deleted — without this, a deleted event's reminders
-      // would still fire on schedule, for something that no longer exists.
-      const notificationIds: string[] = [];
-      for (const days of reminderDays) {
-        const notificationId = await scheduleEventReminder({
-          eventId,
-          eventTitle: eventName,
-          eventDate: eventDate,
-          daysBefore: days,
-        });
-        if (notificationId) notificationIds.push(notificationId);
-      }
-      if (notificationIds.length > 0) {
-        await saveEventNotificationIds(eventId, notificationIds);
-      }
+      // No on-device reminders are scheduled here any more: the server sends
+      // each reminder (push + in-app row, at 9 AM Eastern, from the saved
+      // reminderDays). Scheduling a local one as well made every reminder
+      // arrive twice, and the local copy never showed in the Notifications
+      // list or the icon badge.
 
       // Calendar/Home only refetch on a timer or manual pull-to-refresh —
       // without this, the new event wouldn't show up on either screen until
@@ -369,7 +358,10 @@ const AddEventScreen = ({ navigation, route }: ScreenProps) => {
       queryClient.invalidateQueries({ queryKey: CALENDAR_EVENTS_QUERY_KEY_PREFIX });
       queryClient.invalidateQueries({ queryKey: HOME_DASHBOARD_QUERY_KEY });
 
-      showSuccess('Event created with reminders!', () => navigation.goBack());
+      showSuccess(
+        reminderDays.length > 0 ? 'Event created with reminders!' : 'Event created!',
+        () => navigation.goBack(),
+      );
     } catch (error) {
       showError(error.message || 'Failed to create event');
     } finally {

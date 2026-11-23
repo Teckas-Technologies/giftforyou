@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getEventDates, getEvents } from '../../services/api';
-import { getDateParts, daysUntil as appDaysUntil } from '../../utils/date';
+import { getDateParts, formatDate, daysUntil as appDaysUntil } from '../../utils/date';
 
 // Shared prefix so callers can invalidate every cached month at once
 // (React Query matches queryKeys by prefix) after an action that changes
@@ -38,10 +38,36 @@ export const formatEventDate = (dateStr?: string) => {
   return p ? `${p.monthShort} ${p.day}` : '';
 };
 
+// API event -> the shape the calendar list cards render.
+export const toCalendarEvent = (event: any) => {
+  const eventDate = event.eventDate || event.event_date;
+  const parts = getDateParts(eventDate);
+  return {
+    id: event.id || event._id,
+    title: event.title,
+    eventType: event.eventType || event.event_type,
+    eventDate,
+    date: formatEventDate(eventDate),
+    day: parts?.day ?? '',
+    weekday: formatDate(eventDate, { weekday: 'short' }).toUpperCase(),
+    // "DECEMBER 2026" — used to group the All upcoming list by month
+    monthKey: parts ? `${parts.year}-${parts.month}` : '',
+    monthLabel: parts ? `${parts.monthLong} ${parts.year}`.toUpperCase() : '',
+    monthIndex: parts ? parts.month - 1 : 0,
+    year: parts?.year ?? 0,
+    emoji: getEventEmoji(event.eventType || event.event_type),
+    desc: getDaysUntil(eventDate),
+    circleId: event.circleId || event.circle_id,
+    contactName: event.contact?.name,
+  };
+};
+
+export type CalendarEvent = ReturnType<typeof toCalendarEvent>;
+
 export interface CalendarEvents {
   // Day-of-month -> raw date entry from the API, for the calendar grid dots.
   eventDates: Record<number, any>;
-  upcomingEvents: any[];
+  upcomingEvents: CalendarEvent[];
 }
 
 async function fetchCalendarEvents(year: number, month: number): Promise<CalendarEvents> {
@@ -64,17 +90,7 @@ async function fetchCalendarEvents(year: number, month: number): Promise<Calenda
     });
   }
 
-  const upcomingEvents = (monthEventsRes.events || []).map((event: any) => ({
-    id: event.id || event._id,
-    title: event.title,
-    eventType: event.eventType,
-    eventDate: event.eventDate,
-    date: formatEventDate(event.eventDate),
-    emoji: getEventEmoji(event.eventType),
-    desc: getDaysUntil(event.eventDate),
-    circleId: event.circleId || event.circle_id,
-    contactName: event.contact?.name,
-  }));
+  const upcomingEvents = (monthEventsRes.events || []).map(toCalendarEvent);
 
   return { eventDates, upcomingEvents };
 }
@@ -90,6 +106,23 @@ export function useCalendarEvents(year: number, month: number) {
   return useQuery({
     queryKey: eventsQueryKey(year, month),
     queryFn: () => fetchCalendarEvents(year, month),
+    refetchInterval: 30_000,
+  });
+}
+
+/**
+ * Every upcoming event from today onward (no month limit), oldest first.
+ * Powers the "All upcoming" list under the calendar, so events in later
+ * months show without paging the grid month by month. Lives under the same
+ * key prefix, so existing invalidations after add/edit/delete refresh it.
+ */
+export function useAllUpcomingEvents() {
+  return useQuery({
+    queryKey: [...CALENDAR_EVENTS_QUERY_KEY_PREFIX, 'upcoming'],
+    queryFn: async (): Promise<CalendarEvent[]> => {
+      const res = await getEvents({ upcoming: true });
+      return (res?.events || []).map(toCalendarEvent);
+    },
     refetchInterval: 30_000,
   });
 }

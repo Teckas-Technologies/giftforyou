@@ -23,6 +23,8 @@ export { default as SettingsScreen } from '../features/profile/SettingsScreen';
 export { default as DiscoverScreen } from '../features/discover/DiscoverScreen';
 export { default as SendLoveNoteScreen } from '../features/love-notes/SendLoveNoteScreen';
 export { default as SubmitLoveNoteScreen } from '../features/love-notes/SubmitLoveNoteScreen';
+export { default as LoveNoteHistoryScreen } from '../features/love-notes/LoveNoteHistoryScreen';
+export { default as LoveNoteReceivedScreen } from '../features/love-notes/LoveNoteReceivedScreen';
 export { default as SubscriptionScreen } from '../features/subscription/SubscriptionScreen';
 export { default as RedeemCouponScreen } from '../features/subscription/RedeemCouponScreen';
 export { default as CompanyCodeIntroScreen } from '../features/subscription/CompanyCodeIntroScreen';

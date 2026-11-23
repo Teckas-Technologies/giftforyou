@@ -33,6 +33,8 @@ import {
   DiscoverScreen,
   SendLoveNoteScreen,
   SubmitLoveNoteScreen,
+  LoveNoteHistoryScreen,
+  LoveNoteReceivedScreen,
   SubscriptionScreen,
   RedeemCouponScreen,
   CompanyCodeIntroScreen,
@@ -175,6 +177,12 @@ const MainStack = ({
       <Stack.Screen name="Discover" component={DiscoverScreen} />
       <Stack.Screen name="SendLoveNote" component={SendLoveNoteScreen} />
       <Stack.Screen name="SubmitLoveNote" component={SubmitLoveNoteScreen} />
+      <Stack.Screen name="LoveNoteHistory" component={LoveNoteHistoryScreen} />
+      <Stack.Screen
+        name="LoveNoteReceived"
+        component={LoveNoteReceivedScreen}
+        options={{ animation: 'fade' }}
+      />
       <Stack.Screen name="Subscription" component={SubscriptionScreen} />
       <Stack.Screen name="RedeemCoupon" component={RedeemCouponScreen} />
     </Stack.Navigator>

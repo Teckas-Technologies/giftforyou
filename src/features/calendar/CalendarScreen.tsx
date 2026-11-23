@@ -17,7 +17,7 @@ import { colors, fontSize as typeScale } from '../../theme';
 import { SkeletonRow } from '../../components';
 import { getEventsByDate } from '../../services/api';
 import { getDateParts } from '../../utils/date';
-import { useCalendarEvents, getEventEmoji, getDaysUntil, formatEventDate } from './hooks';
+import { useCalendarEvents, useAllUpcomingEvents, toCalendarEvent, CalendarEvent } from './hooks';
 import { useMinDurationRefresh } from '../../hooks/useMinDurationRefresh';
 import type { ScreenProps, IconProps } from '../../types/navigation';
 
@@ -35,6 +35,9 @@ const PlusIcon = ({ size = 24, color = '#FFFFFF' }: IconProps) => (
 );
 
 const { width } = Dimensions.get('window');
+
+// Events shown per page in the list; "Load more" reveals the next batch
+const PAGE_SIZE = 5;
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = [
@@ -71,8 +74,13 @@ const CalendarScreen = ({ navigation }: ScreenProps) => {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [selectedDate, setSelectedDate] = useState<number | null>(null); // Selected date for filtering
-  const [selectedDateEvents, setSelectedDateEvents] = useState<any[]>([]); // Events for selected date
+  const [selectedDateEvents, setSelectedDateEvents] = useState<CalendarEvent[]>([]); // Events for selected date
   const [loadingDateEvents, setLoadingDateEvents] = useState(false);
+  // List under the grid: every upcoming event (default) or just the month
+  // the grid is showing
+  const [listMode, setListMode] = useState<'all' | 'month'>('all');
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const scrollRef = useRef<ScrollView>(null);
 
   const today = new Date().getDate();
   const currentMonthNow = new Date().getMonth();
@@ -88,12 +96,24 @@ const CalendarScreen = ({ navigation }: ScreenProps) => {
   } = useCalendarEvents(currentYear, currentMonth);
   const loading = isCalendarLoading && !calendarData;
   const eventDates = calendarData?.eventDates || {};
-  const upcomingEvents = calendarData?.upcomingEvents || [];
+  const monthEvents = calendarData?.upcomingEvents || [];
+
+  // Every upcoming event from today on, across all months
+  const {
+    data: allUpcoming = [],
+    isLoading: isAllLoading,
+    refetch: refetchAll,
+  } = useAllUpcomingEvents();
+
+  const refetchBoth = useCallback(
+    () => Promise.all([refetch(), refetchAll()]),
+    [refetch, refetchAll],
+  );
 
   // Enforces a minimum visible spinner duration — see the hook's comment
   // for why (a too-fast refetch can leave iOS's native pull-to-refresh
   // spinner visually stuck).
-  const { refreshing, onRefresh } = useMinDurationRefresh(refetch);
+  const { refreshing, onRefresh } = useMinDurationRefresh(refetchBoth);
 
   // Animations
   const headerAnim = useRef(new Animated.Value(0)).current;
@@ -337,17 +357,7 @@ const CalendarScreen = ({ navigation }: ScreenProps) => {
       try {
         setLoadingDateEvents(true);
         const response = await getEventsByDate(dateStr);
-        const events = (response.events || []).map((event: any) => ({
-          id: event.id || event._id,
-          title: event.title,
-          eventType: event.eventType || event.event_type,
-          eventDate: event.eventDate || event.event_date,
-          date: formatEventDate(event.eventDate || event.event_date),
-          emoji: getEventEmoji(event.eventType || event.event_type),
-          desc: getDaysUntil(event.eventDate || event.event_date),
-          circleId: event.circleId || event.circle_id,
-          contactName: event.contact?.name,
-        }));
+        const events = (response.events || []).map(toCalendarEvent);
         setSelectedDateEvents(events);
       } catch (error) {
         console.error('Error fetching events for date:', error);
@@ -358,9 +368,118 @@ const CalendarScreen = ({ navigation }: ScreenProps) => {
     }
   };
 
-  // Get events to display - selected date events or upcoming events
-  const displayedEvents = selectedDate ? selectedDateEvents : upcomingEvents;
-  const isLoadingEvents = selectedDate ? loadingDateEvents : loading;
+  // What the list shows: a tapped date > the viewed month > all upcoming
+  const showingAll = !selectedDate && listMode === 'all';
+  const listEvents = selectedDate
+    ? selectedDateEvents
+    : listMode === 'all'
+      ? allUpcoming
+      : monthEvents;
+  // A tapped date shows everything; the tab lists show PAGE_SIZE at a time
+  const displayedEvents = selectedDate ? listEvents : listEvents.slice(0, visibleCount);
+  const remainingCount = listEvents.length - displayedEvents.length;
+  const nextBatch = Math.min(PAGE_SIZE, remainingCount);
+
+  // Back to the first page whenever the list changes (tab, month, date)
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [listMode, currentMonth, currentYear, selectedDate]);
+
+  // Real per-month totals, so a heading still says "3 events" when only
+  // some of that month's events are on screen yet
+  const monthTotals: Record<string, number> = {};
+  for (const event of allUpcoming) {
+    monthTotals[event.monthKey] = (monthTotals[event.monthKey] || 0) + 1;
+  }
+  const isLoadingEvents = selectedDate
+    ? loadingDateEvents
+    : listMode === 'all'
+      ? isAllLoading && allUpcoming.length === 0
+      : loading;
+
+  // All upcoming → one section per month that HAS events (no empty months)
+  const monthGroups: {
+    key: string;
+    label: string;
+    month: number;
+    year: number;
+    events: CalendarEvent[];
+  }[] = [];
+  if (showingAll) {
+    for (const event of displayedEvents) {
+      const last = monthGroups[monthGroups.length - 1];
+      if (last && last.key === event.monthKey) last.events.push(event);
+      else
+        monthGroups.push({
+          key: event.monthKey,
+          label: event.monthLabel,
+          month: event.monthIndex,
+          year: event.year,
+          events: [event],
+        });
+    }
+  }
+
+  // Tapping a month heading jumps the calendar grid to that month
+  const jumpToMonth = (month: number, year: number) => {
+    setCurrentMonth(month);
+    setCurrentYear(year);
+    setSelectedDate(null);
+    setSelectedDateEvents([]);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  const sectionTitle = selectedDate
+    ? `Events on ${MONTHS[currentMonth].substring(0, 3)} ${selectedDate}`
+    : 'Upcoming Events';
+
+  const emptyTitle = selectedDate
+    ? 'No events on this date'
+    : listMode === 'all'
+      ? 'No upcoming events'
+      : `No events in ${MONTHS[currentMonth]}`;
+  const emptySubtitle = selectedDate
+    ? 'Select another date or add an event'
+    : 'Add an event using the + button';
+
+  const renderEventCard = (event: CalendarEvent, index: number) => {
+    const isToday = event.desc === 'Today';
+    return (
+      <TouchableOpacity
+        key={event.id || index}
+        style={styles.eventCard}
+        activeOpacity={0.8}
+        onPress={() => navigation.navigate('EventDetail', { eventId: event.id, event })}
+      >
+        <LinearGradient
+          colors={['#fbe5f5', '#ccf9ff']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.dateBadge}
+        >
+          <Text style={styles.dateBadgeWeekday}>{event.weekday}</Text>
+          <Text style={styles.dateBadgeDay}>{event.day}</Text>
+        </LinearGradient>
+        <View style={styles.eventContent}>
+          <Text style={styles.eventTitle} numberOfLines={1}>
+            {event.title} {event.emoji}
+          </Text>
+          {event.contactName ? (
+            <Text style={styles.eventContact} numberOfLines={1}>
+              For {event.contactName}
+            </Text>
+          ) : null}
+        </View>
+        {event.desc ? (
+          <View style={[styles.countdownPill, isToday && styles.countdownPillToday]}>
+            <Text style={[styles.countdownText, isToday && styles.countdownTextToday]}>
+              {event.desc}
+            </Text>
+          </View>
+        ) : null}
+      </TouchableOpacity>
+    );
+  };
 
   // Sparkle styles
   const sparkle1Style = {
@@ -508,6 +627,7 @@ const CalendarScreen = ({ navigation }: ScreenProps) => {
       </Animated.View>
 
       <ScrollView
+        ref={scrollRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
@@ -573,17 +693,28 @@ const CalendarScreen = ({ navigation }: ScreenProps) => {
                             {item.hasEvent && <View style={styles.eventDotSelected} />}
                           </LinearGradient>
                         </View>
-                      ) : (
-                        <View style={styles.normalCell}>
-                          <Text style={styles.dayText}>{item.day}</Text>
-                          {item.hasEvent && (
+                      ) : item.hasEvent ? (
+                        // Event day: soft pink→cyan bubble + gradient dot so
+                        // it stands out from plain days in the app theme.
+                        <View style={styles.selectedCellWrapper}>
+                          <LinearGradient
+                            colors={['#fbe5f5', '#ccf9ff']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.eventCell}
+                          >
+                            <Text style={styles.eventDayText}>{item.day}</Text>
                             <LinearGradient
-                              colors={['#f4cae8', '#70d0dd']}
+                              colors={['#ca9ad6', '#70d0dd']}
                               start={{ x: 0, y: 0 }}
                               end={{ x: 1, y: 0 }}
                               style={styles.eventDot}
                             />
-                          )}
+                          </LinearGradient>
+                        </View>
+                      ) : (
+                        <View style={styles.normalCell}>
+                          <Text style={styles.dayText}>{item.day}</Text>
                         </View>
                       )}
                     </TouchableOpacity>
@@ -597,79 +728,101 @@ const CalendarScreen = ({ navigation }: ScreenProps) => {
         {/* Events Section */}
         <Animated.View style={[styles.eventsSection, createFadeStyle(eventsAnim)]}>
           <View style={styles.eventsSectionHeader}>
-            <MaskedView
-              maskElement={
-                <Text style={styles.eventsTitleMask}>
-                  {selectedDate
-                    ? `Events on ${MONTHS[currentMonth].substring(0, 3)} ${selectedDate}`
-                    : 'Upcoming Events'}
-                </Text>
-              }
-            >
+            <MaskedView maskElement={<Text style={styles.eventsTitleMask}>{sectionTitle}</Text>}>
               <LinearGradient
                 colors={['#ca9ad6', '#70d0dd']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <Text style={[styles.eventsTitleMask, { opacity: 0 }]}>
-                  {selectedDate
-                    ? `Events on ${MONTHS[currentMonth].substring(0, 3)} ${selectedDate}`
-                    : 'Upcoming Events'}
-                </Text>
+                <Text style={[styles.eventsTitleMask, { opacity: 0 }]}>{sectionTitle}</Text>
               </LinearGradient>
             </MaskedView>
             {selectedDate && (
-              <TouchableOpacity style={styles.clearDateBtn} onPress={() => setSelectedDate(null)}>
+              <TouchableOpacity
+                style={styles.clearDateBtn}
+                onPress={() => {
+                  setSelectedDate(null);
+                  setSelectedDateEvents([]);
+                }}
+              >
                 <Text style={styles.clearDateText}>Clear</Text>
               </TouchableOpacity>
             )}
           </View>
+
+          {/* All upcoming | the month shown in the grid */}
+          {!selectedDate && (
+            <View style={styles.tabs}>
+              {(
+                [
+                  { key: 'all', label: `All upcoming (${allUpcoming.length})` },
+                  { key: 'month', label: `${MONTHS[currentMonth]} (${monthEvents.length})` },
+                ] as const
+              ).map((t) => (
+                <TouchableOpacity
+                  key={t.key}
+                  style={[styles.tab, listMode === t.key && styles.tabActive]}
+                  onPress={() => setListMode(t.key)}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[styles.tabText, listMode === t.key && styles.tabTextActive]}
+                    numberOfLines={1}
+                  >
+                    {t.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
 
           {isLoadingEvents &&
             [0, 1].map((i) => <SkeletonRow key={`skeleton-${i}`} avatarSize={40} />)}
 
           {!isLoadingEvents && displayedEvents.length === 0 && (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
-                {selectedDate ? 'No events on this date' : 'No upcoming events'}
-              </Text>
-              <Text style={styles.emptySubtext}>
-                {selectedDate
-                  ? 'Select another date or add an event'
-                  : 'Add an event using the + button'}
-              </Text>
+              <Text style={styles.emptyText}>{emptyTitle}</Text>
+              <Text style={styles.emptySubtext}>{emptySubtitle}</Text>
+              {!selectedDate && listMode === 'month' && allUpcoming.length > 0 && (
+                <TouchableOpacity onPress={() => setListMode('all')} activeOpacity={0.8}>
+                  <Text style={styles.emptyLink}>See all upcoming events →</Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
 
           {!isLoadingEvents &&
-            displayedEvents.map((event, index) => (
-              <View key={event.id || index} style={styles.eventItem}>
-                <TouchableOpacity
-                  style={styles.eventItemInner}
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    navigation.navigate('EventDetail', { eventId: event.id, event });
-                  }}
-                >
-                  <Text style={styles.eventTime}>{event.date}</Text>
-                  <LinearGradient
-                    colors={['#f4cae8', '#70d0dd']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.eventDotLarge}
-                  />
-                  <View style={styles.eventContent}>
-                    <Text style={styles.eventTitle}>
-                      {event.title} {event.emoji}
-                    </Text>
-                    <Text style={styles.eventDesc}>{event.desc}</Text>
-                    {event.contactName && (
-                      <Text style={styles.eventContact}>For: {event.contactName}</Text>
-                    )}
+            (showingAll
+              ? monthGroups.map((group) => (
+                  <View key={group.key} style={styles.monthGroup}>
+                    <TouchableOpacity
+                      style={styles.monthHeader}
+                      activeOpacity={0.7}
+                      onPress={() => jumpToMonth(group.month, group.year)}
+                    >
+                      <Text style={styles.monthHeaderText}>{group.label}</Text>
+                      <View style={styles.monthHeaderLine} />
+                      <Text style={styles.monthHeaderCount}>
+                        {monthTotals[group.key]} {monthTotals[group.key] === 1 ? 'event' : 'events'}
+                      </Text>
+                    </TouchableOpacity>
+                    {group.events.map(renderEventCard)}
                   </View>
-                </TouchableOpacity>
-              </View>
-            ))}
+                ))
+              : displayedEvents.map(renderEventCard))}
+
+          {!isLoadingEvents && remainingCount > 0 && (
+            <TouchableOpacity
+              style={styles.loadMoreBtn}
+              activeOpacity={0.8}
+              onPress={() => setVisibleCount((count) => count + PAGE_SIZE)}
+            >
+              <Text style={styles.loadMoreText}>Load {nextBatch} more</Text>
+              <Text style={styles.loadMoreSub}>
+                Showing {displayedEvents.length} of {listEvents.length}
+              </Text>
+            </TouchableOpacity>
+          )}
         </Animated.View>
 
         <View style={{ height: 120 }} />
@@ -854,10 +1007,10 @@ const styles = StyleSheet.create({
   eventDotSelected: {
     position: 'absolute',
     bottom: 2,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#ca9ad6',
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#8a4fa3',
   },
   todayCell: {
     width: 38,
@@ -876,19 +1029,31 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
     fontSize: typeScale.base,
   },
+  eventCell: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  eventDayText: {
+    color: '#8a4fa3',
+    fontFamily: 'Handlee_400Regular',
+    fontSize: typeScale.base,
+  },
   eventDot: {
     position: 'absolute',
-    bottom: 4,
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    bottom: 3,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   eventDotWhite: {
     position: 'absolute',
     bottom: 3,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: '#FFFFFF',
   },
   eventsSection: {
@@ -915,15 +1080,68 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
     color: '#ca9ad6',
   },
-  eventItem: {
-    marginBottom: 12,
+  tabs: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    padding: 4,
+    borderRadius: 14,
+    backgroundColor: '#f4e8f7',
   },
-  eventItemInner: {
+  tab: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  tabActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tabText: {
+    fontSize: typeScale.base,
+    fontFamily: 'Handlee_400Regular',
+    color: '#7d6b8f',
+  },
+  tabTextActive: {
+    color: '#6b3a8a',
+  },
+  monthGroup: {
+    marginBottom: 8,
+  },
+  monthHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 8,
+  },
+  monthHeaderText: {
+    fontSize: typeScale.sm,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+    letterSpacing: 1,
+  },
+  monthHeaderLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ead7f0',
+  },
+  monthHeaderCount: {
+    fontSize: typeScale.xs,
+    fontFamily: 'Handlee_400Regular',
+    color: '#7d6b8f',
+  },
+  eventCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 14,
+    padding: 12,
+    marginBottom: 10,
     gap: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -931,16 +1149,24 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
-  eventTime: {
-    fontSize: typeScale.sm,
-    fontFamily: 'Handlee_400Regular',
-    color: '#6b3a8a',
-    width: 50,
+  dateBadge: {
+    width: 52,
+    height: 56,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  eventDotLarge: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  dateBadgeWeekday: {
+    fontSize: typeScale.xs,
+    fontFamily: 'Handlee_400Regular',
+    color: '#8a4fa3',
+    letterSpacing: 0.5,
+  },
+  dateBadgeDay: {
+    fontSize: typeScale['2xl'],
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    lineHeight: 28,
   },
   eventContent: {
     flex: 1,
@@ -950,17 +1176,58 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
     color: '#330c54',
   },
-  eventDesc: {
+  eventContact: {
     fontSize: typeScale.sm,
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     marginTop: 2,
   },
-  eventContact: {
+  countdownPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: '#e8f9fb',
+  },
+  countdownPillToday: {
+    backgroundColor: '#ca9ad6',
+  },
+  countdownText: {
     fontSize: typeScale.xs,
     fontFamily: 'Handlee_400Regular',
-    color: '#ca9ad6',
-    marginTop: 4,
+    color: '#1f6f7a',
+  },
+  countdownTextToday: {
+    color: '#FFFFFF',
+  },
+  loadMoreBtn: {
+    alignSelf: 'center',
+    alignItems: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    marginTop: 6,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: '#ca9ad6',
+    backgroundColor: '#FFFFFF',
+  },
+  loadMoreText: {
+    fontSize: typeScale.base,
+    fontFamily: 'Handlee_400Regular',
+    color: '#6b3a8a',
+  },
+  loadMoreSub: {
+    fontSize: typeScale.xs,
+    fontFamily: 'Handlee_400Regular',
+    color: '#7d6b8f',
+    marginTop: 2,
+  },
+  emptyLink: {
+    marginTop: 12,
+    fontSize: typeScale.base,
+    fontFamily: 'Handlee_400Regular',
+    color: '#8a4fa3',
   },
   fabContainer: {
     position: 'absolute',

@@ -20,6 +20,7 @@ import { CustomAlert, SkeletonRow } from '../../components';
 import useAlert from '../../hooks/useAlert';
 import { formatDate as formatAppDate, daysUntil as appDaysUntil } from '../../utils/date';
 import { useContactRaw, contactDetailQueryKey, CONTACTS_QUERY_KEY } from './hooks';
+import { useLoveNoteHistory } from '../love-notes/hooks';
 import { usePlanStatus } from '../subscription/hooks';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ScreenProps, IconProps } from '../../types/navigation';
@@ -439,6 +440,11 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
   // navigating to a genuinely different contact still shows one.
   const { data: rawData, isLoading: isContactLoading, isError } = useContactRaw(contactId);
   const loading = isContactLoading && !rawData;
+
+  // Love notes sent to this contact (only app users can receive them)
+  const rawContactRow: any = rawData?.contactData?.contact || rawData?.contactData;
+  const hasAppAccount = !!rawContactRow?.member_id;
+  const { data: loveNotes = [] } = useLoveNoteHistory(contactId, hasAppAccount);
 
   useEffect(() => {
     if (isError) showError('Failed to load contact details');
@@ -1455,6 +1461,64 @@ const ContactDetailScreen = ({ navigation, route }: ScreenProps) => {
             link, never signed up) have no account to notify, so the backend
             rejects sending to them — hide the button rather than let it lead
             to that dead end. */}
+        {/* Love Notes with this contact (sent + received) — latest 3, rest on the history screen */}
+        {!contact.isPending && contact.hasAccount && (
+          <Animated.View style={[styles.section, createSlideStyle(sectionAnims[4])]}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>💌 Love Notes</Text>
+              {loveNotes.length > 0 && <Text style={styles.loveNoteCount}>{loveNotes.length}</Text>}
+            </View>
+
+            {loveNotes.length === 0 ? (
+              <Text style={styles.emptyText}>
+                No love notes yet. Send {contact.name.split(' ')[0]} the first one! 💌
+              </Text>
+            ) : (
+              <>
+                {loveNotes.slice(0, 3).map((note, i) => (
+                  <View
+                    key={note.id}
+                    style={[styles.loveNoteRow, i === 0 && styles.loveNoteRowFirst]}
+                  >
+                    <Text
+                      style={[
+                        styles.loveNoteDirection,
+                        note.direction === 'received' && styles.loveNoteDirectionReceived,
+                      ]}
+                    >
+                      {note.direction === 'sent'
+                        ? 'You sent'
+                        : `From ${contact.name.split(' ')[0]}`}
+                    </Text>
+                    <Text style={styles.loveNoteText}>"{note.text}"</Text>
+                    <Text style={styles.loveNoteDate}>
+                      {formatAppDate(note.created_at, {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      })}
+                    </Text>
+                  </View>
+                ))}
+                {loveNotes.length > 3 && (
+                  <TouchableOpacity
+                    style={styles.loveNoteViewAll}
+                    onPress={() =>
+                      navigation.navigate('LoveNoteHistory', {
+                        circleId: contact.id,
+                        name: contact.name,
+                      })
+                    }
+                    hitSlop={8}
+                  >
+                    <Text style={styles.loveNoteViewAllText}>View all ({loveNotes.length}) ›</Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
+          </Animated.View>
+        )}
+
         {!contact.isPending && contact.hasAccount && (
           <Animated.View style={[styles.actionContainer, createSlideStyle(sectionAnims[4])]}>
             <TouchableOpacity activeOpacity={0.7} onPress={handleSendLoveNote}>
@@ -1839,6 +1903,51 @@ const styles = StyleSheet.create({
     fontFamily: 'Handlee_400Regular',
     color: '#6b3a8a',
     lineHeight: 22,
+  },
+  loveNoteCount: {
+    fontSize: typeScale.sm,
+    fontFamily: 'Handlee_400Regular',
+    color: '#ca9ad6',
+  },
+  loveNoteRow: {
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#f4e8f7',
+  },
+  loveNoteRowFirst: {
+    borderTopWidth: 0,
+    paddingTop: 0,
+  },
+  loveNoteDirection: {
+    fontSize: typeScale.xs,
+    fontFamily: 'Handlee_400Regular',
+    color: '#70d0dd',
+    marginBottom: 2,
+  },
+  loveNoteDirectionReceived: {
+    color: '#ca9ad6',
+  },
+  loveNoteText: {
+    fontSize: typeScale.base,
+    fontFamily: 'Handlee_400Regular',
+    color: '#330c54',
+    lineHeight: 22,
+  },
+  loveNoteDate: {
+    marginTop: 4,
+    alignSelf: 'flex-end',
+    fontSize: typeScale.xs,
+    fontFamily: 'Handlee_400Regular',
+    color: '#a89bb5',
+  },
+  loveNoteViewAll: {
+    alignSelf: 'center',
+    marginTop: 8,
+  },
+  loveNoteViewAllText: {
+    fontSize: typeScale.base,
+    fontFamily: 'Handlee_400Regular',
+    color: '#ca9ad6',
   },
   emptyText: {
     fontSize: typeScale.base,
