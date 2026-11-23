@@ -42,7 +42,7 @@ module.exports = {
     // Connect/Play Console apps (new bundle ID com.thoughtfullyapp.mobile)
     // — this is genuinely their first public submission, with zero
     // relation to the old app's 0.3.x history under the agency's account.
-    version: '1.0.0',
+    version: '2.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
@@ -109,7 +109,7 @@ module.exports = {
       // MUST increase by at least 1 every release, otherwise installs
       // fail with INSTALL_FAILED_VERSION_DOWNGRADE. Reset to 1 for this
       // fresh Play Console app (see version comment above).
-      versionCode: 1,
+      versionCode: 11,
       googleServicesFile: './google-services.json',
       // Android Auto Backup is disabled via the inline `withAllowBackupFalse`
       // plugin (registered below). The top-level `allowBackup` field is not

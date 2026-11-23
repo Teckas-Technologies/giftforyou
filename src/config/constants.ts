@@ -4,7 +4,7 @@
 export const APP_CONFIG = {
   // App Info
   appName: 'Thoughtfully',
-  version: '1.0.0',
+  version: '2.0.0',
   // Matches ios.bundleIdentifier / android.package in app.config.js.
   packageName: 'com.thoughtfullyapp.mobile',
 
