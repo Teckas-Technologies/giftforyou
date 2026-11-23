@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getProfile, getPlanStatus } from '../services/api';
 import { PLAN_STATUS_QUERY_KEY } from '../features/subscription/hooks';
 import { useUnreadCount } from '../features/notifications/hooks';
+import * as Notifications from 'expo-notifications';
 import { setBadgeCount } from '../services/notifications';
 import {
   SplashScreen,
@@ -257,7 +258,16 @@ const AppNavigator = () => {
   // can safely run app-wide, not just while the Notifications screen is open.
   const { data: unreadCount } = useUnreadCount(isAuthenticated);
   useEffect(() => {
-    setBadgeCount(isAuthenticated ? unreadCount || 0 : 0);
+    const count = isAuthenticated ? unreadCount || 0 : 0;
+    setBadgeCount(count);
+    // Many Android launchers (Xiaomi, Realme, Samsung...) show the number of
+    // this app's notifications sitting in the phone's pull-down tray as the
+    // icon badge, ignoring setBadgeCount. So once nothing is unread, also
+    // clear our tray notifications — otherwise an already-read push left in
+    // the tray kept the icon on "1" forever.
+    if (unreadCount === 0 || !isAuthenticated) {
+      Notifications.dismissAllNotificationsAsync().catch(() => {});
+    }
   }, [isAuthenticated, unreadCount]);
 
   // Check whether the questionnaire is completed once authenticated.

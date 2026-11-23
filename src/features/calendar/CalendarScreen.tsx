@@ -35,6 +35,13 @@ const PlusIcon = ({ size = 24, color = '#FFFFFF' }: IconProps) => (
 );
 
 const { width } = Dimensions.get('window');
+// Day circles must fit inside one grid cell on every phone. A cell is
+// (screen − 16px page padding ×2 − 16px card padding ×2) / 7 wide, minus 2px
+// padding each side; keep a 4px gap so neighbouring circles never touch.
+// 36px on normal phones, smaller on narrow ones (e.g. 320px wide).
+const DAY_CELL = (width - 64) / 7;
+const DAY_CIRCLE = Math.min(36, Math.floor(DAY_CELL - 8));
+const TODAY_CIRCLE = Math.min(38, DAY_CIRCLE + 2);
 
 // Events shown per page in the list; "Load more" reveals the next batch
 const PAGE_SIZE = 5;
@@ -991,9 +998,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   selectedCell: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: DAY_CIRCLE,
+    height: DAY_CIRCLE,
+    borderRadius: DAY_CIRCLE / 2,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
@@ -1013,13 +1020,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#8a4fa3',
   },
   todayCell: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: TODAY_CIRCLE,
+    height: TODAY_CIRCLE,
+    borderRadius: TODAY_CIRCLE / 2,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#ca9ad6',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: TODAY_CIRCLE, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
     elevation: 6,
@@ -1030,9 +1037,9 @@ const styles = StyleSheet.create({
     fontSize: typeScale.base,
   },
   eventCell: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: DAY_CIRCLE,
+    height: DAY_CIRCLE,
+    borderRadius: DAY_CIRCLE / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getEventDates, getEvents } from '../../services/api';
+import { getEvents } from '../../services/api';
 import { getDateParts, formatDate, daysUntil as appDaysUntil } from '../../utils/date';
 
 // Shared prefix so callers can invalidate every cached month at once
@@ -77,20 +77,23 @@ async function fetchCalendarEvents(year: number, month: number): Promise<Calenda
   // empty future/past month kept showing whichever events were upcoming
   // from today's real date, and the empty state never triggered for a
   // genuinely empty month.
-  const [datesRes, monthEventsRes] = await Promise.all([
-    getEventDates(year, month + 1).catch(() => ({ dates: [] })),
-    getEvents({ month: month + 1, year }).catch(() => ({ events: [] })),
-  ]);
-
-  const eventDates: Record<number, any> = {};
-  if (datesRes.dates && Array.isArray(datesRes.dates)) {
-    datesRes.dates.forEach((date: any) => {
-      const parts = getDateParts(date.date || date);
-      if (parts) eventDates[parts.day] = date;
-    });
-  }
-
+  const monthEventsRes = await getEvents({ month: month + 1, year }).catch(() => ({
+    events: [],
+  }));
   const upcomingEvents = (monthEventsRes.events || []).map(toCalendarEvent);
+
+  // Grid highlights come from the same events as the month list, so a day
+  // in the list is always marked on the grid. (The separate
+  // /events/calendar/:y/:m endpoint returns { day, eventType } objects,
+  // which this used to read as dates — every lookup failed, so no event day
+  // was ever highlighted.)
+  const eventDates: Record<number, any> = {};
+  upcomingEvents.forEach((event) => {
+    const parts = getDateParts(event.eventDate);
+    if (parts && parts.year === year && parts.month === month + 1) {
+      eventDates[parts.day] = event.eventDate;
+    }
+  });
 
   return { eventDates, upcomingEvents };
 }

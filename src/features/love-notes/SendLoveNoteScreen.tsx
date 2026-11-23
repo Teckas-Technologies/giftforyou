@@ -64,6 +64,9 @@ const getInitials = (name?: string) => {
 // from a contact's detail screen.
 const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
   const preselectedCircleId = route?.params?.circleId || null;
+  // Opened from "Send a love note back": the sender's user id. Their contact
+  // is selected by default once friends load (the user can still change it).
+  const replyToMemberId: string | null = route?.params?.memberId || null;
 
   const scrollRef = useRef<any>(null);
   const queryClient = useQueryClient();
@@ -77,6 +80,15 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
   // Ready-made notes: the client's daily love notes plus approved user
   // submissions (approval adds them to the same love_notes list).
   const [readyNotes, setReadyNotes] = useState<{ id: string; text: string }[]>([]);
+  // Ready-made notes scroll sideways. A fade + arrow on the right edge shows
+  // there are more; it hides once the user reaches the last note.
+  const [notesAtEnd, setNotesAtEnd] = useState(false);
+  const notesViewWidth = useRef(0);
+  const handleNotesScroll = (e: any) => {
+    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    setNotesAtEnd(contentOffset.x + layoutMeasurement.width >= contentSize.width - 8);
+  };
+  const handleNotesSize = (w: number) => setNotesAtEnd(w <= notesViewWidth.current + 8);
 
   const preselectedFriend = preselectedCircleId
     ? friends.find((f) => f.id === preselectedCircleId) || null
@@ -92,7 +104,7 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
   // can't get Love Notes, so they're left out of the picker below.
   const [questionnaireOnlyCount, setQuestionnaireOnlyCount] = useState(0);
 
-  const { alertConfig, showSuccess, showError, showInfo, showOptions, hideAlert } = useAlert();
+  const { alertConfig, showAlert, showSuccess, showError, showInfo, hideAlert } = useAlert();
 
   const loadData = useCallback(async () => {
     try {
@@ -120,17 +132,35 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
         .filter((contact: any) => !!contact.member_id)
         .map((contact: any) => {
           const name = contact.member?.name || contact.name || 'Friend';
-          return { id: contact.id, name, initials: getInitials(name) };
+          return {
+            id: contact.id,
+            memberId: contact.member_id,
+            name,
+            initials: getInitials(name),
+          };
         });
 
-      setFriends(transformedFriends);
+      const replyTo = replyToMemberId
+        ? transformedFriends.find((f: any) => f.memberId === replyToMemberId)
+        : null;
+      // Put the person being replied to first, so their selected avatar is
+      // visible without scrolling the friends row.
+      setFriends(
+        replyTo
+          ? [replyTo, ...transformedFriends.filter((f: any) => f.id !== replyTo.id)]
+          : transformedFriends,
+      );
+      if (replyTo) {
+        setSelectedCircleIds((prev) => (prev.length > 0 ? prev : [replyTo.id]));
+      }
 
       const skipped = contactsList.length - transformedFriends.length;
       setQuestionnaireOnlyCount(skipped);
 
       // Every time the screen opens, explain why some contacts are missing.
       // Not when opened from a contact's page (that contact is an app user).
-      if (skipped > 0 && !preselectedCircleId) {
+      // Not when replying to a note either (the sender is already picked).
+      if (skipped > 0 && !preselectedCircleId && !replyTo) {
         showInfo(
           'Love Notes are for app friends 💌',
           'Love Notes can only be sent to friends who use the Thoughtfully app. Friends added via questionnaire will show up here once they download the app.',
@@ -141,7 +171,7 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
     } finally {
       setLoading(false);
     }
-  }, [showError, showInfo, preselectedCircleId]);
+  }, [showError, showInfo, preselectedCircleId, replyToMemberId]);
 
   useEffect(() => {
     loadData();
@@ -180,10 +210,15 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
       showInfo('Select a friend first', 'Choose who you want to send this love note to.');
       return;
     }
-    showOptions(`Send this love note to ${recipientLabel}?`, `"${text}"`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Send 💌', onPress: () => sendNote(text) },
-    ]);
+    showAlert({
+      type: 'love',
+      title: `Send this love note to ${recipientLabel}?`,
+      message: `"${text}"`,
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Send 💌', onPress: () => sendNote(text) },
+      ],
+    });
   };
 
   const canSend = selectedCircleIds.length > 0 && !!noteText.trim() && !sending;
@@ -377,27 +412,72 @@ const SendLoveNoteScreen = ({ navigation, route }: ScreenProps) => {
             {readyNotes.length > 0 && (
               <>
                 <Text style={styles.sectionLabel}>Pick a love note</Text>
-                <Text style={styles.sectionHint}>Tap a note to send it</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.readyNotesRow}
-                  contentContainerStyle={styles.readyNotesContent}
-                >
-                  {readyNotes.map((note) => (
-                    <TouchableOpacity
-                      key={note.id}
-                      activeOpacity={0.8}
-                      onPress={() => handlePickNote(note.text)}
-                      style={styles.readyNoteCard}
-                    >
-                      <Text style={styles.readyNoteText} numberOfLines={5}>
-                        {note.text}
-                      </Text>
-                      <Text style={styles.readyNoteSend}>Send 💌</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                <View style={styles.notesHintRow}>
+                  <Text style={[styles.sectionHint, { marginBottom: 0 }]}>
+                    Tap a note to send it
+                  </Text>
+                  {readyNotes.length > 1 && (
+                    <Text style={styles.notesSwipeHint}>
+                      {notesAtEnd ? `${readyNotes.length} notes` : 'Swipe for more →'}
+                    </Text>
+                  )}
+                </View>
+                <View style={styles.readyNotesWrap}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.readyNotesRow}
+                    contentContainerStyle={styles.readyNotesContent}
+                    onScroll={handleNotesScroll}
+                    scrollEventThrottle={32}
+                    onLayout={(e) => {
+                      notesViewWidth.current = e.nativeEvent.layout.width;
+                    }}
+                    onContentSizeChange={handleNotesSize}
+                  >
+                    {readyNotes.map((note) => (
+                      <TouchableOpacity
+                        key={note.id}
+                        activeOpacity={0.8}
+                        onPress={() => handlePickNote(note.text)}
+                        style={styles.readyNoteCard}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Send love note: ${note.text}`}
+                      >
+                        <Text style={styles.readyNoteText} numberOfLines={5}>
+                          {note.text}
+                        </Text>
+                        <Text style={styles.readyNoteSend}>Send 💌</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                  {!notesAtEnd && (
+                    // Right-edge fade + arrow: "there's more this way".
+                    // pointerEvents none so it never blocks a card tap.
+                    <View pointerEvents="none" style={styles.notesMoreEdge}>
+                      <LinearGradient
+                        colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.95)']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={StyleSheet.absoluteFill}
+                      />
+                      <View style={styles.notesMoreArrow}>
+                        <Svg
+                          width={18}
+                          height={18}
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#8a4fa3"
+                          strokeWidth={2.5}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <Polyline points="9 18 15 12 9 6" />
+                        </Svg>
+                      </View>
+                    </View>
+                  )}
+                </View>
               </>
             )}
 
@@ -453,19 +533,60 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  readyNotesRow: {
-    marginBottom: 16,
+  notesHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  notesSwipeHint: {
+    fontFamily: 'Handlee_400Regular',
+    fontSize: typeScale.sm,
+    color: '#8a4fa3',
+  },
+  readyNotesWrap: {
     marginHorizontal: -16,
+    marginBottom: 16,
+  },
+  readyNotesRow: {
+    flexGrow: 0,
   },
   readyNotesContent: {
     paddingHorizontal: 16,
     paddingVertical: 4,
     gap: 10,
   },
+  notesMoreEdge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    width: 56,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    paddingRight: 8,
+  },
+  notesMoreArrow: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#f4cae8',
+    shadowColor: '#ca9ad6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
   readyNoteCard: {
-    width: 200,
+    // 160 wide so on a normal phone two cards fit and the third peeks in
+    // from the right edge — another cue that the row scrolls.
+    width: 160,
     minHeight: 104,
-    padding: 14,
+    padding: 12,
     justifyContent: 'space-between',
     borderRadius: 16,
     backgroundColor: '#FFFFFF',

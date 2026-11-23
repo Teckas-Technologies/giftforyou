@@ -733,10 +733,12 @@ const styles = StyleSheet.create({
   headlineHighlight: {
     fontFamily: 'Handlee_400Regular',
   },
-  // Handlee only ships a regular weight, so fontWeight alone won't thicken it
-  // on Android or iOS — a same-color text shadow fakes the bold stroke.
+  // Handlee only ships a regular weight. Don't set fontWeight here: on
+  // Android a bold weight on a font with no bold file swaps in the system
+  // bold font (Roboto), so "ideas" showed in a different font. A same-color
+  // text shadow fakes the bold stroke while staying in Handlee.
   headlineBold: {
-    fontWeight: '700',
+    fontFamily: 'Handlee_400Regular',
     textShadowColor: '#330c54',
     textShadowOffset: { width: 0.6, height: 0 },
     textShadowRadius: 0.6,

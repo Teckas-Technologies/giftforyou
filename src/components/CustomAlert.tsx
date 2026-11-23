@@ -29,7 +29,8 @@ export interface AlertButton {
 
 interface CustomAlertProps {
   visible: boolean;
-  type?: 'success' | 'error' | 'warning' | 'info';
+  // 'love': love note prompts — no icon, app's pink→teal background
+  type?: 'success' | 'error' | 'warning' | 'info' | 'love';
   title?: string;
   message?: string;
   buttons?: AlertButton[];
@@ -173,6 +174,8 @@ const CustomAlert = ({
         return <ErrorIcon />;
       case 'warning':
         return <WarningIcon />;
+      case 'love':
+        return null;
       default:
         return <InfoIcon />;
     }
@@ -186,6 +189,8 @@ const CustomAlert = ({
         return ['#FFEBEE', '#FFCDD2'];
       case 'warning':
         return ['#FFF3E0', '#FFE0B2'];
+      case 'love':
+        return ['#fbe5f5', '#ccf9ff'];
       default:
         return ['#E3F2FD', '#BBDEFB'];
     }
@@ -301,7 +306,7 @@ const CustomAlert = ({
                 end={{ x: 1, y: 1 }}
                 style={styles.alertContent}
               >
-                <View style={styles.iconContainer}>{getIcon()}</View>
+                {type !== 'love' && <View style={styles.iconContainer}>{getIcon()}</View>}
                 <Text style={styles.title}>{title}</Text>
                 {message && <Text style={styles.message}>{message}</Text>}
                 {useLinkLayout ? (

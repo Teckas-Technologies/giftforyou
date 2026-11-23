@@ -72,6 +72,9 @@ export function getRouteForNotification(
         screen: 'LoveNoteReceived',
         params: {
           senderName: data.senderName || 'A friend',
+          // Sender's user id, so "Send a love note back" can preselect them.
+          // Pushes carry data.senderId; in-app rows store it as related_id.
+          senderId: data.senderId || relatedId || null,
           noteText,
           // params must be plain values — Date objects become ISO strings
           sentAt: sentAt instanceof Date ? sentAt.toISOString() : sentAt || null,

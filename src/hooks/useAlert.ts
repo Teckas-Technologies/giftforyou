@@ -3,7 +3,7 @@ import type { AlertButton } from '../components/CustomAlert';
 
 export interface AlertConfig {
   visible: boolean;
-  type: 'success' | 'error' | 'warning' | 'info';
+  type: 'success' | 'error' | 'warning' | 'info' | 'love';
   title: string;
   message: string;
   buttons: AlertButton[];
